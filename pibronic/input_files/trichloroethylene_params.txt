@@ -1,0 +1,10 @@
+# basic input file for creating a vibronic model with vibron
+
+basis
+TZ2P
+
+theory
+CCSD
+
+calculation
+IP

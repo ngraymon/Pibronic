@@ -1,0 +1,8 @@
+# file that specifies the ZMAT
+the job title
+O
+H 1 OH*
+H 1 OH* 2 HOH*
+
+OH = 0.96
+HOH = 109.5

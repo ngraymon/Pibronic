@@ -1,0 +1,11 @@
+# file that specifies the ZMAT
+the job title
+C
+O 1 CO* 
+H 1 CH* 2 HCO*
+H 1 CH* 2 HCO* 3 D*
+
+CO  = 1.3
+CH  = 1.1
+HCO = 122
+D   = 180

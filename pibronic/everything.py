@@ -1,0 +1,159 @@
+#!/home/ngraymon/.dev/ubuntu/16.04/bin/python3
+#
+# system imports
+from pathlib import Path
+import subprocess
+import shutil
+import sys
+import os
+
+# third party imports
+
+
+sys.path.append('/home/ngraymon/pibronic/')
+# local imports
+from pibronic import constants
+from pibronic.log_conf import log
+from pibronic import electronic_structure as ES
+from pibronic.data import vibronic_model_io as vIO
+from pibronic.data import file_structure
+from pibronic.pimc import minimal
+
+
+number_dictionary = {
+    0   :   ("acetonitrile", 200),
+    1   :   ("ammonia", 201),
+    2   :   ("boron_trifluoride", 202),
+    3   :   ("formaldehyde", 203),
+    4   :   ("methane", 204),
+    5   :   ("formamide", 205),
+    6   :   ("formic_acid", 206),
+    7   :   ("hydrogen_peroxide", 207),
+    8   :   ("water", 208),
+    9   :   ("pyridine", 209),
+    10  :   ("furan", 210),
+    11  :   ("trichloroethylene", 211),
+    12  :   ("chloroethylene", 212),
+    13  :   ("acrolein", 213),
+    14  :   ("acrylonitrile", 214),
+    15  :   ("cis_12_dichloroethylene", 215),
+    16  :   ("trans_12_dichloroethylene", 216),
+    17  :   ("11_dichloroethylene", 217),
+    # 18  :   ("", 218),
+    # 19  :   ("", 219),
+    # 20  :   ("", 220),
+    # 21  :   ("", 221),
+    }
+
+assert(len(sys.argv) == 2) # make sure we provide a number
+molecule = number_dictionary[int(sys.argv[1])]
+molecule_name = molecule[0]
+id_data = molecule[1]
+id_rho = 0 # for now we just do the simple option
+
+#--------------------------------------------------------------------------------------------------
+# CREATE THE DIRECTORIES
+
+files = file_structure.FileStructure('/work/ngraymon/pimc/', id_data)
+if not files.directories_exist():
+    files.make_directories()
+else:
+    log.info("directories already exist")
+
+#--------------------------------------------------------------------------------------------------
+# COPY THE INPUT FILES
+
+src_params = '/home/ngraymon/pibronic/pibronic/input_files/' + molecule_name + "_params.txt"
+src_zmat = '/home/ngraymon/pibronic/pibronic/input_files/' + molecule_name + "_zmat.txt"
+dst_params = files.path_es + molecule_name + "_params.txt"
+dst_zmat = files.path_es + molecule_name + "_zmat.txt"
+shutil.copyfile(src_params, dst_params)
+shutil.copyfile(src_zmat, dst_zmat)
+s = "Successfully created input files {:s} {:s}"
+log.flow(s.format(dst_params, dst_zmat))
+
+#--------------------------------------------------------------------------------------------------
+# CREATE THE VIBRONIC MODEL
+
+path_result = files.path_es + molecule_name + "_vibron.h"
+if (not os.path.isfile(path_result)):
+    log.flow("{:s} file not found, attempting to calculate vibronic model".format(path_result))
+    job = ES.VibronExecutionClass(molecule_name, files.path_es)
+    job.calculate_vibronic_model()
+    log.flow("Finished calculating vibronic model")
+else:
+    log.flow("Vibronic model already calculated at: {:s}".format(path_result))
+
+#--------------------------------------------------------------------------------------------------
+# PREPARE INPUT FOR PIMC CALCULATION
+
+# extract the model from *_vibron.h and store in json format
+path_model_coupled = vIO.create_coupling_from_h_file(path_result)
+
+# Create the harmonic version
+path_model_harmonic = vIO.create_harmonic_model(id_data)
+
+# Create the sampling model
+path_model_sampling = vIO.create_basic_sampling_model(id_data, id_rho)
+
+# Copy to rho_0 to represent the simple sampling model
+# path_model_sampling = files.path_data + "rho_0/parameters/sampling_model.json"
+# shutil.copyfile(path_model_harmonic, path_model_sampling)
+
+temperature_list = [250.,275.,300.,325.,350.]
+bead_list =  [10,20,30,40,50,60,70,80,90,100,]
+
+# generate analytical results using julia
+for T in temperature_list:
+    continue
+    command = "python3 ~/pibronic/pibronic/julia_wrapper.py {:d} {:d} {:.2f}\n"
+    sshProcess = subprocess.Popen(["ssh", "-t", "dev002"],
+                            universal_newlines=True,
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            )
+
+    sshProcess.stdin.write(command.format(id_data, 0, T))
+    sshProcess.stdin.close()
+    log.flow("Currently generating analytical parameters at Temperature {:.2f}".format(T))
+    sshProcess.wait(timeout=120)
+
+log.flow("Finished preparing input for PIMC calculation")
+#--------------------------------------------------------------------------------------------------
+# SUBMIT PIMC JOBS
+modes_data, states_data = vIO.get_nmode_nsurf_from_coupled_model(id_data)
+
+parameter_dictionary = {
+    "number_of_samples" : int(1e6),
+    "number_of_states" : states_data,
+    "number_of_modes" : modes_data,
+    "bead_list" : bead_list,
+    "temperature_list" : temperature_list,
+    "delta_beta" : constants.delta_beta,
+    "id_data" : id_data,
+    "id_rho" : id_rho,
+}
+
+engine = minimal.PimcExecutionClass(files, parameter_dictionary)
+
+engine.submit_jobs()
+
+
+log.flow("Finished PIMC calculation")
+#--------------------------------------------------------------------------------------------------
+# RUN JACKKNIFE ON RESULTS TO GENERATE THERMO FILES
+
+
+log.flow("Finished running Jackknife calculations")
+#--------------------------------------------------------------------------------------------------
+# Plot results!
+
+
+log.flow("Finished plotting Z")
+#--------------------------------------------------------------------------------------------------
+# All done!
+
+
+
+
