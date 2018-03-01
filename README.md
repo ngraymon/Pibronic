@@ -16,9 +16,8 @@ Additional scripts are provided for:
 
 ----
 
-This is the README file for the project.
+Currently undergoing refactoring, specifically file I/O and fileStructure
+Ancillary code will be uploading in the near future
+The main PIMC simulation code is provided in minimal.py
 
-Typical contents for this file would include an overview of the project, basic
-usage examples, etc. Generally, including the project changelog in here is not
-a good idea, although a simple "What's New" section for the most recent version
-may be appropriate.
+----
