@@ -8,16 +8,17 @@ import sys
 import os
 
 # third party imports
+import scipy.linalg
 import numpy as np
 from numpy import newaxis as NEW
 from numpy import float64 as F64
-import scipy.linalg
 
 # local imports
-from ..data import vibronic_model_io as vIO
+from ..log_conf import log
 from .. import constants
 from ..constants import hbar
-from ..log_conf import log
+from ..data import file_structure
+from ..data import vibronic_model_io as vIO
 from ..server import job_boss
 
 
@@ -80,6 +81,8 @@ class ModelClass:
 
 
     def load_model(self, filePath):
+        # I think this fails if the list elements are multidimensional numpy arrays
+        # carefully check this
         if None in map(type, [self.omega, self.energy, self.linear, self.quadratic]):
             (   self.energy,
                 self.omega,
@@ -327,31 +330,31 @@ class ModelSampling(ModelClass):
         # the ordered offsets for multiple surfaces
         self.sample_shift = self.state_shift[self.sample_sources, :]
         # calculate the means of each gaussian
+
         # inverse_covariance_matrix = 2. * coth_tensor[:, :, NEW] - sch_tensor[:, :, NEW] * O_eigvals[NEW, NEW, :]
         # inverse_covariance_matrix = 2. * self.const.coth[..., NEW] - self.const.csch[..., NEW] * data.circulant_eigvals[NEW, NEW, ...]
 
         self.inverse_covariance = (2. * self.const.cothANP
                                     - self.const.cschANP * data.circulant_eigvals)
         # print(data.circulant_eigvects.T)
-        print(  "Mode 1 ",
-                self.inverse_covariance[0,0,-1],
-                np.sqrt(self.inverse_covariance[0,0,-1]),
-                np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])),
-                np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0]),
-                6*(np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0])),
-                np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0]/ 20),
-                sep="\n",
-            )
-        print(  "Mode 2 ",
-                self.inverse_covariance[0,1,-1],
-                np.sqrt(self.inverse_covariance[0,1,-1]),
-                np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])),
-                np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0]),
-                6*(np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0])),
-                np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0] / 20),
-                sep="\n",
-            )
-        sys.exit(0)
+        # print(  "Mode 1 ",
+        #         self.inverse_covariance[0,0,-1],
+        #         np.sqrt(self.inverse_covariance[0,0,-1]),
+        #         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])),
+        #         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0]),
+        #         6*(np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0])),
+        #         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0]/ 20),
+        #         sep="\n",
+        #     )
+        # print(  "Mode 2 ",
+        #         self.inverse_covariance[0,1,-1],
+        #         np.sqrt(self.inverse_covariance[0,1,-1]),
+        #         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])),
+        #         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0]),
+        #         6*(np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0])),
+        #         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0] / 20),
+        #         sep="\n",
+        #     )
         # self.self.inverse_covariance -= self.const.cschANP * data.circulant_eigvals
         self.standard_deviation = np.sqrt(1. / self.inverse_covariance[self.sample_sources, ...])
         self.sample_means = np.zeros(self.size['BNP'], dtype=F64)
@@ -399,13 +402,16 @@ class BoxData:
     # instance of the ModelVibronic class
     # holds all parameters associated with the model
     vib = None
-    path_model_vib = ""
+    path_vib_model = ""
 
     # instance of the ModelSampling class
     # holds all parameters associated with the model
     rho = None
-    path_model_rho = ""
+    path_rho_model = ""
 
+    # it would probably be better to shuffle this json passing black magic into job boss
+    # perhaps job boss modifies the load_json function before calling it?
+    # or maybe one of the optional paramters to load_json is the replacement symbol which by default is a colon?
 
     # we need to use SOME symbol(semicolon for example)
     # to allow the string to be treated as a SINGLE environment variable
@@ -437,8 +443,8 @@ class BoxData:
                 # "rho_states" : self.rho_states,
                 "block_size" : self.block_size,
                 "delta_beta" : self.delta_beta,
-                "path_model_vib" : self.path_model_vib,
-                "path_model_rho" : self.path_model_rho,
+                "path_vib_model" : self.path_vib_model,
+                "path_rho_model" : self.path_rho_model,
                 "id_data" : self.id_data,
                 "id_rho" : self.id_rho,
                 "beta" : self.beta,
@@ -467,8 +473,8 @@ class BoxData:
         # self.rho_states = params["rho_states"]
         self.block_size = params["block_size"]
         self.delta_beta = params["delta_beta"]
-        self.path_model_vib = params["path_model_vib"]
-        self.path_model_rho = params["path_model_rho"]
+        self.path_vib_model = params["path_vib_model"]
+        self.path_rho_model = params["path_rho_model"]
         self.id_data = params["id_data"]
         self.id_rho = params["id_rho"]
 
@@ -516,12 +522,12 @@ class BoxData:
     def initialize_models(self):
         """"""
         self.vib = ModelVibronic(self)
-        self.vib.load_model(self.path_model_vib)
+        self.vib.load_model(self.path_vib_model)
         self.vib.precompute(self)
 
         self.rho = ModelSampling(self)
-        # print(self.path_model_rho)
-        self.rho.load_model(self.path_model_rho)
+        # print(self.path_rho_model)
+        self.rho.load_model(self.path_rho_model)
         self.rho.precompute(self)
         return
 
@@ -590,11 +596,11 @@ class BoxDataPM(BoxData):
     def initialize_models(self):
         """"""
         self.vib = ModelVibronicPM(self)
-        self.vib.load_model(self.path_model_vib)
+        self.vib.load_model(self.path_vib_model)
         self.vib.precompute(self)
 
         self.rho = ModelSampling(self)
-        self.rho.load_model(self.path_model_rho)
+        self.rho.load_model(self.path_rho_model)
         self.rho.precompute(self)
         return
 
@@ -614,16 +620,11 @@ class BoxDataPM(BoxData):
 
 class BoxResult:
     """use this to pass results back and forth between methods"""
-    # file_prefix = "F{F:d}_A{A:d}_N{N:d}_X{{X:.0E}}_P{P:d}_T{T:d}"
-    # file_prefix = "F{F:d}_A{A:d}_N{N:d}_X{X:d}_P{P:d}_T{T:d}"
 
     id_job = None
 
     template_name = (   "D{id_data:d}_"
                         "R{id_rho:d}_"
-                        # "A{number_of_states:d}_"
-                        # "N{number_of_modes:d}_"
-                        # "X{number_of_samples:d}_"
                         "P{number_of_beads:d}_"
                         "T{temperature:.2f}"
                         )
@@ -783,7 +784,6 @@ def build_o_matrix(data, model):
     csch = model.cschBANP.view()
 
     # compute the omatrix
-    # model.o_matrix = -0.5 * np.sum(coth * (q1**2. + q2**2.) - 2.*csch*q1*q2, axis=2).swapaxes(1,2)
     o_matrix = -0.5 * np.sum(coth * (q1**2. + q2**2.) - 2.*csch*q1*q2, axis=2).swapaxes(1,2)
 
     np.exp(o_matrix, out=o_matrix)
@@ -822,13 +822,13 @@ def diagonalize_coupling_matrix(data):
                                         data.qTensor,
                                         0.5*data.vib.quadratic,
                                         data.qTensor,
-                                        # optimize='optimal'
+                                        # optimize='optimal',  # not clear if this is faster
                                         )
     # linear terms
     data.coupling_matrix += np.einsum(  'dbc, abdf->afbc',
                                         data.vib.linear,
                                         data.qTensor,
-                                        # optimize='optimal'
+                                        # optimize='optimal',  # not clear if this is faster
                                         )
     # reference hamiltonian (energy shifts)
     data.coupling_matrix += data.vib.energy[NEW, NEW, :, :]
@@ -881,7 +881,6 @@ def build_numerator(data, vib, outputArray, idx):
 
     # trace over the surfaces
     outputArray[idx] = np.trace(data.numerator, axis1=1, axis2=2)
-
     return
 
 
@@ -1012,70 +1011,79 @@ def block_compute_pm(data, result):
     return
 
 
-def simple_wrapper(id_data, id_rho):
+def simple_wrapper(id_data, id_rho=0):
     """Just do simple expval(Z) calculation"""
-    samples = int(1e4)
-    Bsize = int(1e1)
+    np.random.seed(232942) # pick our seed
+    samples = int(1e2)
+    Bsize = int(1e2)
 
     # load the relevant data
     data = BoxData()
     data.id_data = id_data
+    # data.id_rho = 0
+
+    files = file_structure.FileStructure('/work/ngraymon/pimc/', id_data, id_rho)
+    data.path_vib_model = files.path_vib_model
+    data.path_rho_model = files.path_rho_model
+
     data.states = 2
     data.modes = 2
+
     data.samples = samples
     data.beads = 1000
     data.temperature = 300.0
     data.blocks = samples // Bsize
     data.block_size = Bsize
 
-    path_data = '/work/ngraymon/pimc/data_set_{:d}/'.format(id_data)
-    data.path_model_rho = path_data + 'rho_{:0}/parameters/sampling_model.json'.format(id_rho)
-    data.path_model_vib = path_data + 'parameters/coupled_model.json'
-
     # setup empty tensors, models, and constants
     data.preprocess()
 
     # store results here
     results = BoxResult(data=data)
-    results.path_root = path_data + 'rho_3/results/'
+    results.path_root = files.path_rho_results
 
     block_compute(data, results)
     return
 
 
-def plus_minus_wrapper(di):
-    np.random.seed(232942) # pick our seed
+def plus_minus_wrapper(id_data, id_rho=0):
     """Calculate all the possible temp +/- approaches"""
+    np.random.seed(232942) # pick our seed
     samples = int(1e2)
     Bsize = int(1e2)
+
     delta_beta = constants.delta_beta
 
     # load the relevant data
     data = BoxDataPM(delta_beta)
-    data.id_data = di
-    data.id_rho = 0
+    data.id_data = id_data
+    # data.id_rho = 0
+
+    files = file_structure.FileStructure('/work/ngraymon/pimc/', id_data, id_rho)
+    data.path_vib_model = files.path_vib_model
+    data.path_rho_model = files.path_rho_model
+
     data.states = 3
     data.modes = 6
+
     data.samples = samples
     data.beads = 20
     data.temperature = 300.00
     data.blocks = samples // Bsize
     data.block_size = Bsize
 
-    path_data = '/work/ngraymon/pimc/data_set_{:d}/'.format(data.id_data)
-    data.path_model_rho = path_data + 'rho_{:d}/parameters/sampling_model.json'.format(data.id_rho)
-    data.path_model_vib = path_data + 'parameters/coupled_model.json'
-
     # setup empty tensors, models, and constants
     data.preprocess()
 
     # store results here
     results = BoxResultPM(data=data)
-    results.path_root = path_data + 'rho_{:d}/results/'.format(data.id_rho)
+    results.path_root = files.path_rho_results
 
     # block_compute(data, results)
     block_compute_pm(data, results)
     return
+
+
 
 
 if (__name__ == "__main__"):
