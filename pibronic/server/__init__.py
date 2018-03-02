@@ -1,4 +1,13 @@
+"""
+Scripts related to communicating with server
+=====================
 
-def main():
-    """Entry point for the application script"""
-    print("Call your main application code here")
+
+"""
+
+# let's copy numpy's style for the moment
+from . import job_boss
+from . import postprocessing
+
+
+__all__ = ['job_boss', 'postprocessing']

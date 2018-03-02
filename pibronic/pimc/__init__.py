@@ -1,5 +1,12 @@
-__all__ = ["minimal"]
+"""
+Scripts that run the PIMC code
+=====================
 
-def main():
-    """Entry point for the application script"""
-    print("Call your main application code here")
+
+"""
+
+# let's copy numpy's style for the moment
+from . import minimal
+
+
+__all__ = ['minimal']

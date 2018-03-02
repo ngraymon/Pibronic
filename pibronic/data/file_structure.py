@@ -1,5 +1,8 @@
-# file_structure.py
-# help refer to directory structure
+"""
+Bookkeeping provided by FileStucture class
+
+keeps directory structure consistant over the many modules if changes need to be made
+"""
 
 # system imports
 import sys
@@ -24,7 +27,6 @@ list_sub_dirs = [
 
 class FileStructure:
     """handles creation and verification of default file structure storing data from/to jobs"""
-
     template_vib = "data_set_{:d}/"
     template_rho = template_vib + "rho_{:d}/"
     template_vib_params = template_vib + "parameters/"
@@ -45,6 +47,7 @@ class FileStructure:
     template_sos_suffix = "sos_B{B:d}.json"
 
     def __init__(self, path_root, id_data, id_rho=0):
+        """x"""
         assert(type(path_root) == str)
         self.id_rho = id_rho
         self.id_data = id_data

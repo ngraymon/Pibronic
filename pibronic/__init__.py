@@ -1,8 +1,18 @@
+"""
+Pibronic
+=========
+"""
 
-__all__ = ["pimc", "data", "server", "plotting"]
-
+# let's copy numpy's style for the moment
 from . import pimc
+from . import data
+from . import server
+from . import plotting
+from . import electronic_structure
+from . import helper
+from . import log_conf
+from . import constants
+from . import everything
 
-# def main():
-#     """Entry point for the application script"""
-#     print("Call your main application code here")
+
+__all__ = ['pimc', 'data', 'server', 'plotting', 'electronic_structure', 'constants', 'everything', 'log_conf', 'helper']
