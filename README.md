@@ -27,7 +27,7 @@ To do list:
 - second pass on posprocessing
 - link postprocessing to jackknife
 - clean up server job submission scripts
-- add
+- use everything as a model test
 
 
 Long term goals:
