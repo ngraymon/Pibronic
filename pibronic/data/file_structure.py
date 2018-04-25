@@ -77,7 +77,7 @@ class FileStructure:
         self.jackknife_suffix = self.template_jackknife_suffix
 
         self.dir_list = [a for a in dir(self) if a.startswith('path_')]
-        print(self.dir_list, '\n\n')
+        # print(self.dir_list, '\n\n')
         # self.dir_list = [self.path_data, self.path_es]
         # self.dir_list.extend([self.path_data + x for x in list_sub_dirs])
         # self.dir_list.extend([self.path_rho + x for x in list_sub_dirs])

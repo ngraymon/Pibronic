@@ -1,0 +1,22 @@
+     0              ! units in eV
+     2              ! Number of electronic states
+     2              ! Number of symmetric normal modes 
+     0              ! Number of non-A1 normal modes 
+   500              ! Number of Lanczos iterations 
+   0   0
+    0.02    0.04
+
+
+   0.100
+   3.000
+ auto
+
+*vibron
+ short_title=cp
+ refine_coupling=on
+ cubic=on
+ quartic=on
+*solve_coupling 
+ purify_couplings=on
+*end
+
