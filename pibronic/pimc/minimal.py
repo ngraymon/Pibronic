@@ -1,7 +1,7 @@
 # minimal.py
 # system imports
 import itertools as it
-# import cProfile
+import cProfile
 import json
 import time
 import sys
@@ -24,8 +24,9 @@ from ..server import job_boss
 
 float_tolerance = 1e-23
 
-np.random.seed() # random
+np.random.seed()# random
 # np.random.seed(232942) # pick our seed
+
 
 class TemperatureDependentClass:
     """store temperture dependent constants here"""
@@ -65,7 +66,7 @@ class ModelClass:
     """information describing a quantum mechanical system"""
     states = 0
     modes = 0
-    omega  = None
+    omega = None
     energy = None
     linear = None
     quadratic = None
@@ -79,23 +80,22 @@ class ModelClass:
         self.mode_range = range(modes)
         return
 
-
     def load_model(self, filePath):
         # I think this fails if the list elements are multidimensional numpy arrays
         # carefully check this
         if None in map(type, [self.omega, self.energy, self.linear, self.quadratic]):
-            (   self.energy,
-                self.omega,
-                self.linear,
-                self.quadratic,
-            ) =  vIO.load_model_from_JSON(filePath)
+            (self.energy,
+             self.omega,
+             self.linear,
+             self.quadratic,
+             ) = vIO.load_model_from_JSON(filePath)
         else:
             vIO.load_model_from_JSON(filePath,
-                energies=self.energy,
-                frequencies=self.omega,
-                linear_couplings=self.linear,
-                quadratic_couplings=self.quadratic,
-                )
+                                     energies=self.energy,
+                                     frequencies=self.omega,
+                                     linear_couplings=self.linear,
+                                     quadratic_couplings=self.quadratic,
+                                     )
         return
 
 
@@ -119,23 +119,20 @@ class ModelVibronic(ModelClass):
         self.state_shift = np.zeros(self.size['AN'], dtype=F64)
         return
 
-
     def compute_linear_displacement(self, data):
         """compute the energy shift equivalent to a linear displacement"""
         for a in range(data.states):
-            self.delta_weight[a] = -0.5 * (self.linear[:,a,a]**2. / self.omega).sum(axis=0)
+            self.delta_weight[a] = -0.5 * (self.linear[:, a, a]**2. / self.omega).sum(axis=0)
         return
-
 
     def compute_weight_for_each_state(self, modified_energy):
         """these are the weights for the oscillators associated with each state"""
-        self.state_weight = -self.beta * (modified_energy + self.delta_weight )
+        self.state_weight = -self.beta * (modified_energy + self.delta_weight)
         self.state_weight = np.exp(self.state_weight)
-        self.state_weight /= 2. * np.prod( np.sinh( (self.beta * self.omega) / 2.) )
+        self.state_weight /= 2. * np.prod(np.sinh((self.beta * self.omega) / 2.))
         # normalize the weights
         self.state_weight /= self.state_weight.sum()
         return
-
 
     def optimize_energy(self):
         """ shift the energy to reduce the order of the raw partition function value """
@@ -151,12 +148,10 @@ class ModelVibronic(ModelClass):
 
         return
 
-
     def initialize_TDP_object(self):
         """creates the TemperatureDependentClass object"""
         self.const = TemperatureDependentClass(self, self.tau)
         return
-
 
     def finish_folding_in_terms(self, data):
         """ set the terms we 'folded in' to zero """
@@ -169,7 +164,6 @@ class ModelVibronic(ModelClass):
             # zero energy
             self.energy[a, a] = 0.0
         return
-
 
     def precompute(self, data):
         """precompute some constants"""
@@ -202,7 +196,6 @@ class ModelVibronicPM(ModelVibronic):
         self.delta_beta = data.delta_beta
         return
 
-
     def initialize_TDP_object(self):
         """creates the TemperatureDependentClass object"""
 
@@ -211,7 +204,6 @@ class ModelVibronicPM(ModelVibronic):
         self.const_plus = TemperatureDependentClass(self, self.tau_plus)
         self.const_minus = TemperatureDependentClass(self, self.tau_minus)
         return
-
 
     # precompute some constants
     def precompute(self, data):
@@ -234,7 +226,6 @@ class ModelSampling(ModelClass):
         self.tau = data.tau
         self.beta = data.beta
         return
-
 
     def load_model(self, filePath):
         _, newStates = vIO.get_nmode_nsurf_from_sampling_modelff(filePath)
@@ -262,7 +253,6 @@ class ModelSampling(ModelClass):
         vIO.load_sample_from_JSON(filePath, self.energy, self.omega, self.linear, self.quadratic)
         return
 
-
     def draw_sample(self, sample_view):
         # collective co-ordinate samples
         self.cc_samples = np.random.normal(
@@ -272,12 +262,10 @@ class ModelSampling(ModelClass):
                                     )
         return
 
-
     def compute_linear_displacement(self):
         """compute the energy shift equivalent to a linear displacement"""
         self.delta_weight = -0.5 * (self.linear**2. / self.omega[:, NEW]).sum(axis=0)
         return
-
 
     def compute_weight_for_each_state(self):
         """these are the weights for the oscillators associated with each state"""
@@ -286,7 +274,6 @@ class ModelSampling(ModelClass):
         # normalize the weights
         self.state_weight /= self.state_weight.sum()
         return
-
 
     def optimize_energy(self):
         """ shift the energy to reduce the order of the raw partition function value """
@@ -302,12 +289,10 @@ class ModelSampling(ModelClass):
 
         return
 
-
     def initialize_TDP_object(self):
         """creates the TemperatureDependentClass object"""
         self.const = TemperatureDependentClass(self, self.tau)
         return
-
 
     def finish_folding_in_terms(self):
         """ set the terms we 'folded in' to zero """
@@ -318,14 +303,13 @@ class ModelSampling(ModelClass):
             self.linear[:, a] = 0.0
         return
 
-
     def compute_sampling_constants(self, data):
 
-         # generate random surfaces to draw samples from
-        self.sample_sources = np.random.choice( range(self.states),
-                                                size=self.size['X'],
-                                                p=self.state_weight
-                                                )
+        # generate random surfaces to draw samples from
+        self.sample_sources = np.random.choice(range(self.states),
+                                               size=self.size['X'],
+                                               p=self.state_weight
+                                               )
 
         # the ordered offsets for multiple surfaces
         self.sample_shift = self.state_shift[self.sample_sources, :]
@@ -335,7 +319,7 @@ class ModelSampling(ModelClass):
         # inverse_covariance_matrix = 2. * self.const.coth[..., NEW] - self.const.csch[..., NEW] * data.circulant_eigvals[NEW, NEW, ...]
 
         self.inverse_covariance = (2. * self.const.cothANP
-                                    - self.const.cschANP * data.circulant_eigvals)
+                                   - self.const.cschANP * data.circulant_eigvals)
         # print(data.circulant_eigvects.T)
         # print(  "Mode 1 ",
         #         self.inverse_covariance[0,0,-1],
@@ -359,7 +343,6 @@ class ModelSampling(ModelClass):
         self.standard_deviation = np.sqrt(1. / self.inverse_covariance[self.sample_sources, ...])
         self.sample_means = np.zeros(self.size['BNP'], dtype=F64)
         return
-
 
     # precompute some constants
     def precompute(self, data):
@@ -427,32 +410,30 @@ class BoxData:
         json_obj = json.dumps(params, separators=cls._SEPARATORS)
         return json_obj
 
-
     def encode_self(self, params=None):
         """encodes a json_obj with member values or given params"""
-        log.debug("Encoding data to JSON".format(path_file))
+        log.debug("Encoding data to JSON".format(path_full))
 
         if params is None:
             params = {
-                "number_of_samples" : self.samples,
-                "number_of_blocks" : self.blocks,
-                "number_of_states" : self.states,
-                "number_of_beads" : self.beads,
-                "number_of_modes" : self.modes,
-                "temperature" : self.temperature,
-                # "rho_states" : self.rho_states,
-                "block_size" : self.block_size,
-                "delta_beta" : self.delta_beta,
-                "path_vib_model" : self.path_vib_model,
-                "path_rho_model" : self.path_rho_model,
-                "id_data" : self.id_data,
-                "id_rho" : self.id_rho,
-                "beta" : self.beta,
-                "tau" : self.tau,
+                "number_of_samples": self.samples,
+                "number_of_blocks": self.blocks,
+                "number_of_states": self.states,
+                "number_of_beads": self.beads,
+                "number_of_modes": self.modes,
+                "temperature": self.temperature,
+                # "rho_states": self.rho_states,
+                "block_size": self.block_size,
+                "delta_beta": self.delta_beta,
+                "path_vib_model": self.path_vib_model,
+                "path_rho_model": self.path_rho_model,
+                "id_data": self.id_data,
+                "id_rho": self.id_rho,
+                "beta": self.beta,
+                "tau": self.tau,
             }
 
         return self.json_encode(params)
-
 
     def load_json(self, json_obj):
         """decodes the json_obj and sets member parameters"""
@@ -489,27 +470,24 @@ class BoxData:
         else:
             self.tau = self.beta / self.beads
 
-
-        for k,v in params.items():
+        for k, v in params.items():
             print(type(v), k, v)
 
         return
-
 
     def draw_sample(self, sample_view):
         """"""
         self.rho.draw_sample(sample_view)
         return
 
-
     def transform_sampled_coordinates(self, sample_view):
         """transform from collective co-ordinates to bead dependent co-ordinates"""
         # self.qTensor = np.broadcast_to(np.einsum('ab,ijb->ija', self.circulant_eigvects, self.cc_samples), self.size['XANP'])
         # self.qTensor = np.einsum('ab,ijb->ija', self.circulant_eigvects, self.cc_samples)[:, NEW, :, :]
         # self.qTensor = np.einsum('ab,ijb->ija', self.circulant_eigvects, self.cc_samples)[:, NEW, ...]
-        self.qTensor[:] = np.einsum(   'ab,ijb->ija',
-                                        self.circulant_eigvects,
-                                        self.rho.cc_samples,
+        self.qTensor[:] = np.einsum('ab,ijb->ija',
+                                    self.circulant_eigvects,
+                                    self.rho.cc_samples,
                                     )[:, NEW, ...]
 
         # remove sample dependent normal mode displacement (from sampling model)
@@ -517,7 +495,6 @@ class BoxData:
         # add surface dependent normal mode displacement (from vibronic model)
         self.qTensor -= self.vib.state_shift[NEW, :, :, NEW]
         return
-
 
     def initialize_models(self):
         """"""
@@ -531,21 +508,20 @@ class BoxData:
         self.rho.precompute(self)
         return
 
-
     def preprocess(self):
         """"""
         # for readability and clarity we use these letters
-        self.param_dict = { 'X' : self.samples,
-                            'A' : self.states,
-                            'N' : self.modes,
-                            'P' : self.beads,
-                            'B' : self.block_size, }
+        self.param_dict = {'X': self.samples,
+                           'A': self.states,
+                           'N': self.modes,
+                           'P': self.beads,
+                           'B': self.block_size, }
 
-        self.size_list = [  'X','P','N','A','B',
-                            'BP', 'AN', 'NA', 'AA',
-                            'BNP', 'BPA', 'BAA',
-                            'NAA', 'NNA', 'ANP',
-                            'BANP', 'BPAA', 'NNAA', 'BPAN', ]
+        self.size_list = ['X', 'P', 'N', 'A', 'B',
+                          'BP', 'AN', 'NA', 'AA',
+                          'BNP', 'BPA', 'BAA',
+                          'NAA', 'NNA', 'ANP',
+                          'BANP', 'BPAA', 'NNAA', 'BPAN', ]
 
         # construct 'size' tuples
         self.size = {}
@@ -567,13 +543,13 @@ class BoxData:
         self.numerator = np.zeros(self.size['BAA'])
 
         # construct the circulant matrix
-        assert(self.beads >= 3) # hard check
-        defining_vector = [0,1] + [0]*(self.beads-3) + [1]
+        assert(self.beads >= 3)  # hard check
+        defining_vector = [0, 1] + [0]*(self.beads-3) + [1]
         self.circulant_matrix = scipy.linalg.circulant(defining_vector)
 
-        (   self.circulant_eigvals,
-            self.circulant_eigvects
-            ) = np.linalg.eigh(self.circulant_matrix, UPLO='L')
+        (self.circulant_eigvals,
+         self.circulant_eigvects
+         ) = np.linalg.eigh(self.circulant_matrix, UPLO='L')
 
         self.initialize_models()
         return
@@ -592,7 +568,6 @@ class BoxDataPM(BoxData):
         super().__init__()
         return
 
-
     def initialize_models(self):
         """"""
         self.vib = ModelVibronicPM(self)
@@ -603,7 +578,6 @@ class BoxDataPM(BoxData):
         self.rho.load_model(self.path_rho_model)
         self.rho.precompute(self)
         return
-
 
     def preprocess(self):
         """"""
@@ -623,12 +597,11 @@ class BoxResult:
 
     id_job = None
 
-    template_name = (   "D{id_data:d}_"
-                        "R{id_rho:d}_"
-                        "P{number_of_beads:d}_"
-                        "T{temperature:.2f}"
-                        )
-
+    template_name = ("D{id_data:d}_"
+                     "R{id_rho:d}_"
+                     "P{number_of_beads:d}_"
+                     "T{temperature:.2f}"
+                     )
 
     def __init__(self, data=None, X=None):
         if data is not None:
@@ -648,7 +621,6 @@ class BoxResult:
         self.scaled_rho = np.empty(self.samples, dtype=F64)
         return
 
-
     def save_results(self, number_of_samples):
         if self.id_job is not None:
             self.template_name += "_J{:s}".format(self.id_job)
@@ -660,23 +632,22 @@ class BoxResult:
         print(data_filename)
 
         # save raw data points
-        np.savez(   data_filename,
-                    s_rho=self.scaled_rho,
-                    s_g=self.scaled_g,
-                    # s_g=self.scaled_g[result_view],
-                    # s_rho=self.scaled_rho[result_view],
-                )
+        np.savez(data_filename,
+                 s_rho=self.scaled_rho,
+                 s_g=self.scaled_g,
+                 # s_g=self.scaled_g[result_view],
+                 # s_rho=self.scaled_rho[result_view],
+                 )
         return
 
+    def load_results(self, path_full):
 
-    def load_results(self, file_path):
-
-        with np.load(file_path) as data:
+        with np.load(path_full) as data:
             key_list = ["s_rho", "s_g"]
             for k in key_list:
                 if k not in data.keys():
                     s = "Expected key ({:s}) not present in result file\n{:s}\n"
-                    raise AssertionError(s.foramt(k, file_path))
+                    raise AssertionError(s.foramt(k, path_full))
 
             self.scaled_g = data["s_g"]
             self.scaled_rho = data["s_rho"]
@@ -692,7 +663,6 @@ class BoxResultPM(BoxResult):
         self.scaled_gofr_minus = np.empty(self.samples, dtype=F64)
         return
 
-
     def save_results(self, number_of_samples):
         if self.id_job is not None:
             self.template_name += "_J{:s}".format(self.id_job)
@@ -703,23 +673,22 @@ class BoxResultPM(BoxResult):
         print(data_filename)
 
         # save raw data points
-        np.savez(   data_filename,
-                    s_rho=self.scaled_rho,
-                    s_g=self.scaled_g,
-                    s_gP=self.scaled_gofr_plus,
-                    s_gM=self.scaled_gofr_minus,
-                )
+        np.savez(data_filename,
+                 s_rho=self.scaled_rho,
+                 s_g=self.scaled_g,
+                 s_gP=self.scaled_gofr_plus,
+                 s_gM=self.scaled_gofr_minus,
+                 )
         return
 
+    def load_results(self, path_full):
 
-    def load_results(self, file_path):
-
-        with np.load(file_path) as data:
+        with np.load(path_full) as data:
             key_list = ["s_rho", "s_g", "s_gP", "s_gM"]
             for k in key_list:
                 if k not in data.keys():
                     s = "Expected key ({:s}) not present in result file\n{:s}\n"
-                    raise AssertionError(s.foramt(k, file_path))
+                    raise AssertionError(s.foramt(k, path_full))
 
             self.scaled_rho = data["s_rho"]
             self.scaled_g = data["s_g"]
@@ -741,7 +710,7 @@ def pos_sym_assert(tensor):
     # alternatively we can try to compute choleskys decomposition
     try:
         np.linalg.choleskys(tensor)
-    except LinAlgError as e:
+    except np.linalg.LinAlgError as e:
         s = "The Covariance matrix is not symmetric positive-semidefinite"
         raise AssertionError(s)
 
@@ -765,8 +734,8 @@ def un_scale_o_matricies(scalingFactor, model_one, model_two):
 def build_scaling_factors(S12, model_one, model_two):
     """Calculates the individual and combined scaling factors for both provided models"""
     # compute the individual scaling factors
-    model_one.omatrix_scaling[:] = np.amax(model_one.omatrix, axis=(2,3))
-    model_two.omatrix_scaling[:] = np.amax(model_two.omatrix, axis=(2,3))
+    model_one.omatrix_scaling[:] = np.amax(model_one.omatrix, axis=(2, 3))
+    model_two.omatrix_scaling[:] = np.amax(model_two.omatrix, axis=(2, 3))
 
     # compute the combined scaling factor
     S12[:] = np.maximum(model_one.omatrix_scaling, model_two.omatrix_scaling)
@@ -784,22 +753,22 @@ def build_o_matrix(data, model):
     csch = model.cschBANP.view()
 
     # compute the omatrix
-    o_matrix = -0.5 * np.sum(coth * (q1**2. + q2**2.) - 2.*csch*q1*q2, axis=2).swapaxes(1,2)
+    o_matrix = -0.5 * np.sum(coth * (q1**2. + q2**2.) - 2.*csch*q1*q2, axis=2).swapaxes(1, 2)
 
     np.exp(o_matrix, out=o_matrix)
 
     for a in range(data.states):
-        model.omatrix[:,:,a,a] = o_matrix[:,:,a]
+        model.omatrix[:, :, a, a] = o_matrix[:, :, a]
 
     temp_states = model.omatrix.shape[2]
     # asserts that the tensor is diagonal along axis (2,3)
-    for a,b in it.product(range(temp_states),range(temp_states)):
+    for a, b in it.product(range(temp_states), range(temp_states)):
         if a == b:
             continue
-        assert(np.all(model.omatrix[:,:,a,b] == 0.0))
+        assert(np.all(model.omatrix[:, :, a, b] == 0.0))
 
     # this only works because omatrix is filled with zeros already
-    model.omatrix *= model.omatrix_prefactor[...,NEW]
+    model.omatrix *= model.omatrix_prefactor[..., NEW]
     return
 
 
@@ -825,11 +794,11 @@ def diagonalize_coupling_matrix(data):
                                         # optimize='optimal',  # not clear if this is faster
                                         )
     # linear terms
-    data.coupling_matrix += np.einsum(  'dbc, abdf->afbc',
-                                        data.vib.linear,
-                                        data.qTensor,
-                                        # optimize='optimal',  # not clear if this is faster
-                                        )
+    data.coupling_matrix += np.einsum('dbc, abdf->afbc',
+                                      data.vib.linear,
+                                      data.qTensor,
+                                      # optimize='optimal',  # not clear if this is faster
+                                      )
     # reference hamiltonian (energy shifts)
     data.coupling_matrix += data.vib.energy[NEW, NEW, :, :]
 
@@ -838,11 +807,11 @@ def diagonalize_coupling_matrix(data):
     # ------------------------------------------------------------------------
 
     # check that the coupling matrix is symmetric in surfaces
-    assert(np.allclose(data.coupling_matrix.transpose(0,1,3,2), data.coupling_matrix))
+    assert(np.allclose(data.coupling_matrix.transpose(0, 1, 3, 2), data.coupling_matrix))
 
-    (   data.coupling_eigvals,
-        data.coupling_eigvects
-        ) = np.linalg.eigh(data.coupling_matrix, UPLO='L')
+    (data.coupling_eigvals,
+     data.coupling_eigvects
+     ) = np.linalg.eigh(data.coupling_matrix, UPLO='L')
     return
 
 
@@ -850,23 +819,22 @@ def build_numerator(data, vib, outputArray, idx):
     """Calculates the numerator and saves it to the outputArray"""
 
     # build the M matrix
-    np.einsum(  'abcd, abd, abed->abce',
-                data.coupling_eigvects,
-                np.exp(-data.tau*data.coupling_eigvals),
-                data.coupling_eigvects,
-                out=data.M_matrix,
-                optimize='optimal'
-                )
+    np.einsum('abcd, abd, abed->abce',
+              data.coupling_eigvects,
+              np.exp(-data.tau*data.coupling_eigvals),
+              data.coupling_eigvects,
+              out=data.M_matrix,
+              optimize='optimal'
+              )
 
     # data.numerator = np.broadcast_to(   np.identity(data.states),
     #                                     data.size['BAA']
     #                                     )
 
-
     # reset numerator 'storage' to be identity(in the AA dimension)
     data.numerator = np.empty(data.size['BAA'], dtype=F64)
     for b in range(data.block_size):
-        data.numerator[b,:,:] = np.identity(data.states)
+        data.numerator[b, :, :] = np.identity(data.states)
 
     for b in range(data.block_size):
         for p in range(data.beads):
@@ -877,7 +845,6 @@ def build_numerator(data, vib, outputArray, idx):
             # this is even faster
             data.numerator[b, ...].dot(vib.omatrix[b, p, :, :], out=data.numerator[b, :, :])
             data.numerator[b, ...].dot(data.M_matrix[b, p, ...], out=data.numerator[b, :, :])
-
 
     # trace over the surfaces
     outputArray[idx] = np.trace(data.numerator, axis1=1, axis2=2)
@@ -984,18 +951,15 @@ def block_compute_pm(data, result):
         diagonalize_coupling_matrix(data)
         build_numerator(data, vib.const, y_g, sample_view)
 
-
         # Plus
         build_o_matrix(data, vib.const_plus)
         vib.const_plus.omatrix /= S12[..., NEW, NEW]
         build_numerator(data, vib.const_plus, y_gp, sample_view)
 
-
         # Minus
         build_o_matrix(data, vib.const_minus)
         vib.const_minus.omatrix /= S12[..., NEW, NEW]
         build_numerator(data, vib.const_minus, y_gm, sample_view)
-
 
         # periodically save results to file
         # if (block_index + 1) in block_index_list:
@@ -1013,14 +977,14 @@ def block_compute_pm(data, result):
 
 def simple_wrapper(id_data, id_rho=0):
     """Just do simple expval(Z) calculation"""
-    np.random.seed(232942) # pick our seed
+    np.random.seed(232942)  # pick our seed
     samples = int(1e2)
     Bsize = int(1e2)
 
     # load the relevant data
     data = BoxData()
     data.id_data = id_data
-    # data.id_rho = 0
+    data.id_rho = id_rho
 
     files = file_structure.FileStructure('/work/ngraymon/pimc/', id_data, id_rho)
     data.path_vib_model = files.path_vib_model
@@ -1048,7 +1012,7 @@ def simple_wrapper(id_data, id_rho=0):
 
 def plus_minus_wrapper(id_data, id_rho=0):
     """Calculate all the possible temp +/- approaches"""
-    np.random.seed(232942) # pick our seed
+    np.random.seed(232942)  # pick our seed
     samples = int(1e2)
     Bsize = int(1e2)
 
@@ -1082,8 +1046,6 @@ def plus_minus_wrapper(id_data, id_rho=0):
     # block_compute(data, results)
     block_compute_pm(data, results)
     return
-
-
 
 
 if (__name__ == "__main__"):

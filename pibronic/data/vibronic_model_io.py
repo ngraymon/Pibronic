@@ -15,7 +15,7 @@ import sys
 import os
 
 # third party imports
-import fortranformat as ff # Fortran format for VIBRON
+import fortranformat as ff  # Fortran format for VIBRON
 import numpy as np
 from numpy import newaxis as NEW
 from numpy import float64 as F64
@@ -26,6 +26,7 @@ from ..log_conf import log
 from .. import constants
 from .. import helper
 from . import file_structure
+
 
 def checkOS():
     """define OS dependent paths to files"""
@@ -49,6 +50,7 @@ def checkOS():
     else:
         raise OSError("not linux or OSX, problem with filestructure")
     return
+
 
 # Print Precision!
 np.set_printoptions(precision=8, suppress=True)
@@ -77,6 +79,7 @@ list_sub_dirs = [
     "plots/",
     ]
 
+
 def pretty_print_model(id_model, unitsOfeV=False):
     """one method of printing the models in a human readable format"""
     checkOS()
@@ -89,7 +92,6 @@ def pretty_print_model(id_model, unitsOfeV=False):
     numModes = N
     States = range(numStates)
     Modes = range(numModes)
-
 
     # formatting
     a_labels = ['a%d' % a for a in range(1, A+1)]
@@ -117,30 +119,30 @@ def pretty_print_model(id_model, unitsOfeV=False):
         omega[i] *= conversionFactor
         omega[i] = str(omega[i])
 
-    for a,b in it.product(States, States):
+    for a, b in it.product(States, States):
         energy[a][b] *= conversionFactor
         energy[a][b] = str(energy[a][b])
 
-    for a,b,i in it.product(States, States, Modes):
+    for a, b, i in it.product(States, States, Modes):
         linear[i][a][b] *= conversionFactor
         linear[i][a][b] = str(linear[i][a][b])
 
-    for a,b,i,j in it.product(States, States, Modes, Modes):
+    for a, b, i, j in it.product(States, States, Modes, Modes):
         quadratic[i][j][a][b] *= conversionFactor
         quadratic[i][j][a][b] = str(quadratic[i][j][a][b])
 
     # load the data into xarray's DataArrays
-    omegaArray = dArr(  omega,
-                        coords=[i_labels],
-                        dims=['mode i'],
-                        name="Frequencies"
-                        )
+    omegaArray = dArr(omega,
+                      coords=[i_labels],
+                      dims=['mode i'],
+                      name="Frequencies"
+                      )
 
-    energyArray = dArr( energy,
-                        coords=[a_labels, b_labels],
-                        dims=['surface a', 'surface b'],
-                        name="Energies"
-                        )
+    energyArray = dArr(energy,
+                       coords=[a_labels, b_labels],
+                       dims=['surface a', 'surface b'],
+                       name="Energies"
+                       )
 
     linArray = dArr(linear,
                     coords=[i_labels, a_labels, b_labels],
@@ -148,43 +150,44 @@ def pretty_print_model(id_model, unitsOfeV=False):
                     name="linear terms"
                     )
 
-    quadArray = dArr(   quadratic,
-                        coords=[i_labels, j_labels, a_labels, b_labels],
-                        dims=['mode i', 'mode j ', 'surface a', 'surface b'],
-                        name="quadratic terms"
-                        )
+    quadArray = dArr(quadratic,
+                     coords=[i_labels, j_labels, a_labels, b_labels],
+                     dims=['mode i', 'mode j ', 'surface a', 'surface b'],
+                     name="quadratic terms"
+                     )
 
     # print the data, relying on panda's DataArrays
     # to printin a human legible manner
-    print(  omegaArray.to_dataframe(),
-            energyArray.to_dataframe(),
-            linArray.to_dataframe(),
-            quadArray.to_dataframe(),
-            sep="\n")
+    print(omegaArray.to_dataframe(),
+          energyArray.to_dataframe(),
+          linArray.to_dataframe(),
+          quadArray.to_dataframe(),
+          sep="\n")
 
     return
 
 # ------------------------------------------------------------------------
 # ### these six functions are filestructure agnostic ####
 
-def parse_model_params(file_path):
+
+def parse_model_params(path_full):
     """this one could probably be removed? parses model_parameters_source.txt"""
     # does the file exist?
-    helper.verify_file_exists(file_path)
+    helper.verify_file_exists(path_full)
 
     parameter_dictionary = {
         "number_of_surfaces": None,
-        "number_of_modes"   : None,
-        "energy_range"      : None,
-        "frequency_range"   : None,
-        "quadratic_scaling" : None,
-        "linear_scaling"    : None,
-        "temperature_list"  : None,
-        "sample_list"       : None,
-        "bead_list"         : None,
+        "number_of_modes": None,
+        "energy_range": None,
+        "frequency_range": None,
+        "quadratic_scaling": None,
+        "linear_scaling": None,
+        "temperature_list": None,
+        "sample_list": None,
+        "bead_list": None,
         }
 
-    with open(file_path, 'r') as source_file:
+    with open(path_full, 'r') as source_file:
         while not source_file.readline() == "":
             header = source_file.readline().strip()
             data = source_file.readline().strip()
@@ -204,19 +207,17 @@ def parse_model_params(file_path):
                 or header == "sample_list"
                 or header == "bead_list"
                 ):
-                parameter_dictionary[header] = np.fromstring(data,
-                    sep=',').astype(int)
+                parameter_dictionary[header] = np.fromstring(data, sep=',').astype(int)
 
             elif(  header == "frequency_range"
                 or header == "energy_range"
                 ):
-                parameter_dictionary[header] = np.fromstring(data,
-                    dtype=np.float64, sep=',')
+                parameter_dictionary[header] = np.fromstring(data, dtype=F64, sep=',')
             else:
                 raise ValueError("header {:} is not valid\n"
-                    "Check that your model_parameters_source.txt"
-                    "has the correct formatting".format(header)
-                    )
+                                 "Check that your model_parameters_source.txt"
+                                 "has the correct formatting".format(header)
+                                 )
     return parameter_dictionary
 
 
@@ -225,13 +226,13 @@ def generate_vibronic_model_data(paramDict=None):
     if paramDict is None:
         # default values
         paramDict = {
-                    'frequency_range' : [0.02, 0.04],
-                    'energy_range' : [0.0, 2.0],
-                    'quadratic_scaling' : 0.08,
-                    'linear_scaling' : 0.04,
-                    'nonadiabatic' : True,
-                    'numStates' : 2,
-                    'numModes' : 3,
+                    'frequency_range': [0.02, 0.04],
+                    'energy_range': [0.0, 2.0],
+                    'quadratic_scaling': 0.08,
+                    'linear_scaling': 0.04,
+                    'nonadiabatic': True,
+                    'numStates': 2,
+                    'numModes': 3,
                     }
 
     # withdraw input values
@@ -240,18 +241,17 @@ def generate_vibronic_model_data(paramDict=None):
     numModes = paramDict['numModes']
 
     # ranges
-    States  = range(numStates)
-    Modes   = range(numModes)
+    States = range(numStates)
+    Modes = range(numModes)
 
     # for readability and clarity we use these letters
     size = {
-            'N' : (numModes),
-            'A' : (numStates),
-            'AA' : (numStates, numStates),
-            'NAA' : (numModes, numStates, numStates),
-            'NNAA' : (numModes, numModes, numStates, numStates),
+            'N': (numModes),
+            'A': (numStates),
+            'AA': (numStates, numStates),
+            'NAA': (numModes, numStates, numStates),
+            'NNAA': (numModes, numModes, numStates, numStates),
             }
-
 
     # data
     omega = np.zeros(size['N'])
@@ -264,8 +264,8 @@ def generate_vibronic_model_data(paramDict=None):
     minE, maxE = paramDict['energy_range']
 
     # generate omega
-    omega[:] = np.linspace( minFreq, maxFreq,
-                            num=numModes, endpoint=True, dtype=F64)
+    omega[:] = np.linspace(minFreq, maxFreq,
+                           num=numModes, endpoint=True, dtype=F64)
 
     # generate energy
     energy[:] = Uniform(minE, maxE, size['AA'])
@@ -292,7 +292,6 @@ def generate_vibronic_model_data(paramDict=None):
             quadratic[i, j, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
             quadratic[j, i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
 
-
     # if we are building a harmonic model
     # then zero out all off-diagonal entries
     if not nonadiabatic:
@@ -304,7 +303,6 @@ def generate_vibronic_model_data(paramDict=None):
         # quadratic terms
         for i, j in it.product(Modes, Modes):
             quadratic[i, j, ...] = np.diag(np.diag(quadratic[i, j, ...]))
-
 
     # check for symmetry in surfaces
     assert(np.allclose(energy, energy.transpose(1,0)))
@@ -323,16 +321,15 @@ def read_model_h_file(path_file_h):
     # declare the arrays used to store the model's paramters
     # all numbers have units of electron volts
     excitation_energies = None
-    frequencies         = None
-    linear_couplings    = None
+    frequencies = None
+    linear_couplings = None
     quadratic_couplings = None
 
     # the frequencies with units of wavenumbers
-    wavenumber_freq     = None
+    wavenumber_freq = None
 
     helper.verify_file_exists(path_file_h)
     helper.verify_file_exists(path_file_params)
-
 
     def get_number_of_electronic_states(file):
         """"""
@@ -351,7 +348,6 @@ def read_model_h_file(path_file_h):
             raise Exception(s.format(path_file_h, targetString))
 
         return number_of_electronic_states
-
 
     def get_number_of_normal_modes(file):
         """"""
@@ -384,7 +380,6 @@ def read_model_h_file(path_file_h):
 
         return number_of_normal_modes, number_of_symmetric_modes
 
-
     def extract_normal_mode_frequencies(file, frequency_array, symmetric_modes):
         """store output in frequency_array"""
         # skip headers
@@ -405,7 +400,6 @@ def read_model_h_file(path_file_h):
         log.debug(frequency_array)
         return
 
-
     # set the number of normal modes and electronic surfaces
     # store the normal mode frequencies
     with open(path_file_params, "r") as source_file:
@@ -421,16 +415,16 @@ def read_model_h_file(path_file_h):
         # for readability and clarity we use these letters
         global size
         size = {
-                'N' : (numModes),
-                'AA' : (numStates, numStates),
-                'NAA' : (numModes, numStates, numStates),
-                'NNAA' : (numModes, numModes, numStates, numStates),
+                'N': (numModes),
+                'AA': (numStates, numStates),
+                'NAA': (numModes, numStates, numStates),
+                'NNAA': (numModes, numModes, numStates, numStates),
                 }
 
         # Initialize Variables
-        frequencies         = np.zeros(size['N'])
+        frequencies = np.zeros(size['N'])
         excitation_energies = np.zeros(size['AA'])
-        linear_couplings    = np.zeros(size['NAA'])
+        linear_couplings = np.zeros(size['NAA'])
         quadratic_couplings = np.zeros(size['NNAA'])
 
         extract_normal_mode_frequencies(source_file, frequencies, numSymmetricModes)
@@ -440,11 +434,10 @@ def read_model_h_file(path_file_h):
         log.debug(wavenumber_freq)
         #
 
-
     def extract_energies(path, memmap, energies):
         """a"""
         # find the begining and ending of the important region
-        memmap.seek(0) # start looking from the begining of the file
+        memmap.seek(0)  # start looking from the begining of the file
         beginString = 'Reference Hamiltonian'
         begin = helper.find_string_in_file(memmap, path, beginString)
         endString = 'Gradients of heff along normal modes'
@@ -467,11 +460,10 @@ def read_model_h_file(path_file_h):
         # print(energies)
         return
 
-
     def extract_linear_couplings(path, memmap, frequencies, coupling_terms):
         """frequencies need to be provided in wavenumbers"""
         # find the begining and ending of the important region
-        memmap.seek(0) # start looking from the begining of the file
+        memmap.seek(0)  # start looking from the begining of the file
         beginString = 'Gradients of heff along normal modes'
         begin = helper.find_string_in_file(memmap, path, beginString)
         endString = 'Diagonal second order corrections of heff'
@@ -486,9 +478,9 @@ def read_model_h_file(path_file_h):
             # error handling
             if next_block == -1:
                 s = ("Frequency {:f} in wavenumber_freq did not match any "
-                    "frequencies in file {:s} while parsing the "
-                    "{:s} region."
-                    )
+                     "frequencies in file {:s} while parsing the "
+                     "{:s} region."
+                     )
                 raise Exception(s.format(w, path, beginString))
             # go there
             memmap.seek(next_block)
@@ -501,11 +493,10 @@ def read_model_h_file(path_file_h):
             # print(coupling_terms[idx])
         return
 
-
     def extract_quadratic_couplings(path, memmap, frequencies, coupling_terms):
         """frequencies need to be provided in wavenumbers"""
         # find the begining and ending of the important region
-        memmap.seek(0) # start looking from the begining of the file
+        memmap.seek(0)  # start looking from the begining of the file
         beginString = 'Diagonal second order corrections of heff'
         begin = helper.find_string_in_file(memmap, path, beginString)
         endString = 'Off-diagonal second order corrections heff'
@@ -520,9 +511,9 @@ def read_model_h_file(path_file_h):
             # error handling
             if next_block == -1:
                 s = ("Frequency {:f} in wavenumber_freq did not match any "
-                    "frequencies in file {:s} while parsing the "
-                    "{:s} region."
-                    )
+                     "frequencies in file {:s} while parsing the "
+                     "{:s} region."
+                     )
                 raise Exception(s.format(w, path, beginString))
             # go there
             memmap.seek(next_block)
@@ -535,11 +526,10 @@ def read_model_h_file(path_file_h):
             # print(coupling_terms[idx, idx])
         return
 
-
     def extract_offdiag_quadratic_couplings(path, memmap, coupling_terms):
         """frequencies need to be provided in wavenumbers"""
         # find the begining and ending of the important region
-        memmap.seek(0) # start looking from the begining of the file
+        memmap.seek(0)  # start looking from the begining of the file
         beginString = 'Off-diagonal second order corrections heff'
         begin = helper.find_string_in_file(memmap, path, beginString)
         endString = 'Diagonal Cubic corrections of heff'
@@ -555,9 +545,9 @@ def read_model_h_file(path_file_h):
                 # error handling
                 if next_block == -1:
                     s = ("Frequency {:f} in wavenumber_freq did not "
-                        "match any frequencies in file {:s} "
-                        "while parsing the {:s} region."
-                        )
+                         "match any frequencies in file {:s} "
+                         "while parsing the {:s} region."
+                         )
                     raise Exception(s.format(w, path, beginString))
 
                 # find the next block of quadratic coupling terms
@@ -565,9 +555,9 @@ def read_model_h_file(path_file_h):
                 # error handling
                 if next_block == -1:
                     s = ("Frequency {:f} in wavenumber_freq did not "
-                        "match any frequencies in file {:s} "
-                        "while parsing the {:s} region."
-                        )
+                         "match any frequencies in file {:s} "
+                         "while parsing the {:s} region."
+                         )
                     raise Exception(s.format(w, path, beginString))
 
                 # go there
@@ -582,16 +572,13 @@ def read_model_h_file(path_file_h):
                 # print(coupling_terms[idx1, idx2])
         return
 
-
     def extract_cubic_couplings(path, memmap, coupling_terms):
         """not implemented at this time"""
         return
 
-
     def extract_quartic_couplings(path, memmap, coupling_terms):
         """not implemented at this time"""
         return
-
 
     # store the energy offsets, and all the coupling terms
     with open(path_file_h, "r+b") as source_file:
@@ -681,7 +668,7 @@ def read_model_auto_file(filename):
     # we can either grab the frequencies from the ref_freq_data, or the parent hessian
     if(False):
     # the frequency given here is in cm-1
-        frequencies[:] = np.asarray(ff.FortranRecordReader('(A31, 12F8.2)').read(next(f_iter))[1:], dtype=np.float64)
+        frequencies[:] = np.asarray(ff.FortranRecordReader('(A31, 12F8.2)').read(next(f_iter))[1:], dtype=F64)
     else:
         next(f_iter)
 
@@ -772,20 +759,22 @@ def read_model_auto_file(filename):
     return nel, nmode, excitation_energies, frequencies, linear_couplings, quadratic_couplings
 
 
-def save_model_to_JSON(path_file, energies, frequencies, linear_couplings, quadratic_couplings):
-    log.debug("Saving model to {:s}".format(path_file))
-    target_file = open(path_file, mode='w', encoding='UTF8')
+def save_model_to_JSON(path_full, energies, frequencies, linear_couplings, quadratic_couplings):
+    log.debug("Saving model to {:s}".format(path_full))
+    target_file = open(path_full, mode='w', encoding='UTF8')
     output_dictionary = {
-        "number of modes"    : frequencies.shape[0],
-        "number of surfaces" : energies.shape[0],
-        "energies"           : energies.tolist(),
-        "frequencies"        : frequencies.tolist(),
-        "linear coupling"    : linear_couplings.tolist(),
-        "quadratic coupling" : quadratic_couplings.tolist(),
+        "number of modes":    frequencies.shape[0],
+        "number of surfaces": energies.shape[0],
+        "energies":           energies.tolist(),
+        "frequencies":        frequencies.tolist(),
+        "linear coupling":    linear_couplings.tolist(),
+        "quadratic coupling": quadratic_couplings.tolist(),
     }
     target_file.write(json.dumps(output_dictionary))
+    target_file.close()
     return
 # ------------------------------------------------------------------------
+
 
 def root_directories_exists(path_root, id_data, id_rho=0):
     path_data = (path_root + dir_vib).format(id_data)
@@ -815,36 +804,31 @@ def make_rho_directories(path_root, id_rho):
     return
 
 
-def load_model_from_JSON(path_file, energies=None,frequencies=None, linear_couplings=None, quadratic_couplings=None):
-    """if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values"""
-    log.debug("Loading model {:s}".format(path_file))
+def load_model_from_JSON(path_full, energies=None,frequencies=None, linear_couplings=None, quadratic_couplings=None):
+    """if only a path to the file is provided, arrays
+    are returned othwerise provided arrays are filled with appropriate values"""
+    log.debug("Loading model {:s}".format(path_full))
     # open the JSON file
-    target_file = open(path_file, mode='r', encoding='UTF8')
+    target_file = open(path_full, mode='r', encoding='UTF8')
     input_dictionary = json.loads(target_file.read())
+    target_file.close()
     nmode = int(input_dictionary["number of modes"])
-    nel   = int(input_dictionary["number of surfaces"])
+    nel = int(input_dictionary["number of surfaces"])
 
     # no arrays were provided so return newly created
     # arrays after filling them with the approriate values
     if frequencies is None:
-        energies    = np.empty((nel, nel),
-            dtype=np.float64)
-        energies[:] = np.array(input_dictionary["energies"],
-            dtype=np.float64)
+        energies = np.empty((nel, nel), dtype=F64)
+        energies[:] = np.array(input_dictionary["energies"], dtype=F64)
 
-        frequencies    = np.empty((nmode,),
-            dtype=np.float64)
-        frequencies[:] = np.array(input_dictionary["frequencies"],
-            dtype=np.float64)
+        frequencies = np.empty((nmode,), dtype=F64)
+        frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
 
-        linear_couplings    = np.empty((nmode, nel, nel),
-            dtype=np.float64)
-        linear_couplings[:] = np.array(input_dictionary["linear coupling"],
-            dtype=np.float64)
+        linear_couplings = np.empty((nmode, nel, nel), dtype=F64)
+        linear_couplings[:] = np.array(input_dictionary["linear coupling"], dtype=F64)
 
-        quadratic_couplings    = np.empty((nmode, nmode, nel, nel),
-            dtype=np.float64)
-        quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"], dtype=np.float64)
+        quadratic_couplings = np.empty((nmode, nmode, nel, nel), dtype=F64)
+        quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"], dtype=F64)
 
         return energies, frequencies, linear_couplings, quadratic_couplings
 
@@ -855,46 +839,41 @@ def load_model_from_JSON(path_file, energies=None,frequencies=None, linear_coupl
         assert(linear_couplings.shape == (nmode, nel, nel))
         assert(quadratic_couplings.shape == (nmode, nmode, nel, nel))
 
-        energies[:] = np.array(input_dictionary["energies"],
-            dtype=np.float64)
-        frequencies[:] = np.array(input_dictionary["frequencies"],
-            dtype=np.float64)
-        linear_couplings[:] = np.array(input_dictionary["linear coupling"],
-            dtype=np.float64)
-        quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"], dtype=np.float64)
+        energies[:] = np.array(input_dictionary["energies"], dtype=F64)
+        frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
+        linear_couplings[:] = np.array(input_dictionary["linear coupling"], dtype=F64)
+        quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"], dtype=F64)
 
     return
 
 
-def load_sample_from_JSON(path_file, energies=None, frequencies=None, linear_couplings=None, quadratic_couplings=None):
-    """"""
+def load_sample_from_JSON(path_full, energies=None, frequencies=None, linear_couplings=None, quadratic_couplings=None):
+    """x"""
 
-    log.debug("Loading rho model {:s}".format(path_file))
+    log.debug("Loading rho model {:s}".format(path_full))
     # open the JSON file
-    target_file = open(path_file, mode='r', encoding='UTF8')
+    with open(path_full, mode='r', encoding='UTF8') as target_file:
+        input_dictionary = json.loads(target_file.read())
+    target_file = open(path_full, mode='r', encoding='UTF8')
     input_dictionary = json.loads(target_file.read())
+    target_file.close()
     nmode = int(input_dictionary["number of modes"])
-    nel   = int(input_dictionary["number of surfaces"])
-    # print(nmode, nel)
+    nel = int(input_dictionary["number of surfaces"])
 
     # no arrays were provided so return newly created
     # arrays after filling them with the approriate values
     if frequencies is None:
-        energies    = np.empty((nel), dtype=np.float64)
-        energies[:] = np.diag(np.array(input_dictionary["energies"],
-            dtype=np.float64))
+        energies = np.empty((nel), dtype=F64)
+        energies[:] = np.diag(np.array(input_dictionary["energies"], dtype=F64))
 
-        frequencies    = np.empty((nmode), dtype=np.float64)
-        frequencies[:] = np.array(input_dictionary["frequencies"],
-            dtype=np.float64)
+        frequencies = np.empty((nmode), dtype=F64)
+        frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
 
-        linear_couplings    = np.empty((nmode, nel), dtype=np.float64)
-        linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear coupling"],
-            dtype=np.float64), axis1=1, axis2=2)
+        linear_couplings = np.empty((nmode, nel), dtype=F64)
+        linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear coupling"], dtype=F64), axis1=1, axis2=2)
 
-        quadratic_couplings    = np.empty((nmode, nmode, nel), dtype=np.float64)
-        quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic coupling"],
-            dtype=np.float64), axis1=2, axis2=3)
+        quadratic_couplings = np.empty((nmode, nmode, nel), dtype=F64)
+        quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic coupling"], dtype=F64), axis1=2, axis2=3)
 
         return energies, frequencies, linear_couplings, quadratic_couplings
 
@@ -902,28 +881,24 @@ def load_sample_from_JSON(path_file, energies=None, frequencies=None, linear_cou
     else:
         # HACK
         print("HACKY BS - ")
+
+        # ===================== DEPRECIATED =================================== #
+        # ==== this code is only needed if the input sample model is still in the old format
+        # ==== it will be eventually removed
         # assert(energies.shape == (nel,))
         # assert(frequencies.shape == (nmode,))
         # assert(linear_couplings.shape == (nmode, nel))
         # assert(quadratic_couplings.shape == (nmode, nmode, nel))
+        # energies[:] = np.diag(np.array(input_dictionary["energies"], dtype=F64))
+        # frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
+        # linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear coupling"], dtype=F64), axis1=1, axis2=2)
+        # quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic coupling"], dtype=F64), axis1=2, axis2=3)
+        # ===================== DEPRECIATED =================================== #
 
-        energies[:] = np.diag(np.array(input_dictionary["energies"],
-            dtype=np.float64))
-        frequencies[:] = np.array(input_dictionary["frequencies"],
-            dtype=np.float64)
-        linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear coupling"],
-            dtype=np.float64), axis1=1, axis2=2)
-        quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic coupling"],
-            dtype=np.float64), axis1=2, axis2=3)
-
-        # energies[:] = np.array(input_dictionary["energies"],
-        #     dtype=np.float64)
-        # frequencies[:] = np.array(input_dictionary["frequencies"],
-        #     dtype=np.float64)
-        # linear_couplings[:] = np.array(input_dictionary["linear coupling"],
-        #     dtype=np.float64)
-        # quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"],
-        #     dtype=np.float64)
+        energies[:] = np.array(input_dictionary["energies"], dtype=F64)
+        frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
+        linear_couplings[:] = np.array(input_dictionary["linear coupling"], dtype=F64)
+        quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"], dtype=F64)
     return
 
 
@@ -933,26 +908,25 @@ def setup_input_params(directory_path, new_directory=False):
     print("Preparing the {} directory\nIt is {} that I am a new directory".format(directory_path, new_directory))
 
     # some default file paths
-    path_params  = directory_path + "parameters/"
+    path_params = directory_path + "parameters/"
     path_results = directory_path + "results/"
-    path_output  = directory_path + "execution_output/"
-    path_plots   = directory_path + "plots/"
-    path_rho_params  = directory_path + "rho_0/" + "parameters/"
+    path_output = directory_path + "execution_output/"
+    path_plots = directory_path + "plots/"
+    path_rho_params = directory_path + "rho_0/" + "parameters/"
     path_rho_results = directory_path + "rho_0/" + "results/"
-    path_rho_output  = directory_path + "rho_0/" + "execution_output/"
-    path_rho_plots   = directory_path + "rho_0/" + "plots/"
+    path_rho_output = directory_path + "rho_0/" + "execution_output/"
+    path_rho_plots = directory_path + "rho_0/" + "plots/"
     json_filename = "coupled_model.json"
 
     # where we store the input parameters
     division_quadratic_term = None
-    division_linear_term    = None
-    frequency_range         = None
-    number_of_surfaces      = None
-    number_of_modes         = None
-    temperature_list        = None
-    sample_list             = None
-    bead_list               = None
-
+    division_linear_term = None
+    frequency_range = None
+    number_of_surfaces = None
+    number_of_modes = None
+    temperature_list = None
+    sample_list = None
+    bead_list = None
 
     def create_dirs(dir_path):
         os.makedirs(path_params,  exist_ok=True)
@@ -983,13 +957,12 @@ def setup_input_params(directory_path, new_directory=False):
             print("Proceedeing to only overwrite the JSON parameter file\n")
 
     # copy the model_parameters_source.txt file to the new directory
-    #shutil.copy(filename_source, path_params + filename_source[2:])
+    # shutil.copy(filename_source, path_params + filename_source[2:])
 
     generating_test_data = False
 
     if(generating_test_data):
-        energies, frequencies, linear_terms, quadratic_terms = generate_vibronic_model_data(source_file="./model_parameters_source.txt"
-            , nonadiabatic=True)
+        energies, frequencies, linear_terms, quadratic_terms = generate_vibronic_model_data(source_file="./model_parameters_source.txt", nonadiabatic=True)
     else:
         # nsurf, nmode, energies, frequencies, linear_terms, quadratic_terms = read_model_auto_file("./vibron_data/cp.auto")
         path = '/home/ngraymon/chem740/work_dir/scripting/ammonia/ammonia_vibron'
@@ -1003,24 +976,24 @@ def get_nmode_nsurf_from_coupled_model(id_model):
     checkOS()
     directory_path = (path_default_root + dir_vib + "parameters/").format(id_model)
 
-    json_filename  = "coupled_model.json"
-    file_path = directory_path + json_filename
+    json_filename = "coupled_model.json"
+    path_full = directory_path + json_filename
 
-    target_file = open(file_path, mode='r', encoding='UTF8')
-    input_dictionary = json.loads(target_file.read())
+    with open(path_full, mode='r', encoding='UTF8') as target_file:
+        input_dictionary = json.loads(target_file.read())
 
-    number_of_surfaces        = input_dictionary["number of surfaces"]
-    number_of_modes           = input_dictionary["number of modes"]
+    number_of_modes = input_dictionary["number of modes"]
+    number_of_surfaces = input_dictionary["number of surfaces"]
     return number_of_modes, number_of_surfaces
 
 
-def get_nmode_nsurf_from_coupled_modelff(file_path):
+def get_nmode_nsurf_from_coupled_modelff(path_full):
     """find nmodes and nsurfs for sampling_model.json files by using a filepath"""
-    target_file = open(file_path, mode='r', encoding='UTF8')
-    input_dictionary = json.loads(target_file.read())
+    with open(path_full, mode='r', encoding='UTF8') as target_file:
+        input_dictionary = json.loads(target_file.read())
 
-    number_of_surfaces        = input_dictionary["number of surfaces"]
-    number_of_modes           = input_dictionary["number of modes"]
+    number_of_modes = input_dictionary["number of modes"]
+    number_of_surfaces = input_dictionary["number of surfaces"]
     return number_of_modes, number_of_surfaces
 
 
@@ -1029,24 +1002,24 @@ def get_nmode_nsurf_from_sampling_model(id_model, id_rho):
     checkOS()
     directory_path = (path_default_root + dir_vib + dir_rho + "parameters/").format(id_model, id_rho)
 
-    json_filename  = "sampling_model.json"
-    file_path = directory_path + json_filename
+    json_filename = "sampling_model.json"
+    path_full = directory_path + json_filename
 
-    target_file = open(file_path, mode='r', encoding='UTF8')
-    input_dictionary = json.loads(target_file.read())
+    with open(path_full, mode='r', encoding='UTF8') as target_file:
+        input_dictionary = json.loads(target_file.read())
 
-    number_of_surfaces        = input_dictionary["number of surfaces"]
-    number_of_modes           = input_dictionary["number of modes"]
+    number_of_modes = input_dictionary["number of modes"]
+    number_of_surfaces = input_dictionary["number of surfaces"]
     return number_of_modes, number_of_surfaces
 
 
-def get_nmode_nsurf_from_sampling_modelff(file_path):
+def get_nmode_nsurf_from_sampling_modelff(path_full):
     """find nmodes and nsurfs for sampling_model.json files by using a filepath"""
-    target_file = open(file_path, mode='r', encoding='UTF8')
-    input_dictionary = json.loads(target_file.read())
+    with open(path_full, mode='r', encoding='UTF8') as target_file:
+        input_dictionary = json.loads(target_file.read())
 
-    number_of_surfaces        = input_dictionary["number of surfaces"]
-    number_of_modes           = input_dictionary["number of modes"]
+    number_of_modes = input_dictionary["number of modes"]
+    number_of_surfaces = input_dictionary["number of surfaces"]
     return number_of_modes, number_of_surfaces
 
 
@@ -1103,8 +1076,8 @@ def create_new_execution_directory(path_root=None, id_data=None):
     DIR_MAX = int(1e6)
     DIR_RANGE = range(1, DIR_MAX)
 
-    #DIR_ARRAY = np.core.defchararray.add(np.full(shape=DIR_MAX, fill_value="data_set_", dtype=string_), np.arange(start=1, stop=DIR_MAX), dtype=string_)
-    #print(DIR_ARRAY)
+    # DIR_ARRAY = np.core.defchararray.add(np.full(shape=DIR_MAX, fill_value="data_set_", dtype=string_), np.arange(start=1, stop=DIR_MAX), dtype=string_)
+    # print(DIR_ARRAY)
 
     if path_root is None and id_data is None:
         counter = it.count(1)
@@ -1118,17 +1091,17 @@ def create_new_execution_directory(path_root=None, id_data=None):
                 setup_input_params(new_directory, new_directory=True)
                 break
         else:
-            raise Exception(    "Okay... we had issues, you used up the 1e6 possible "
-                                "data set names?????"
+            raise Exception("Okay... we had issues, you used up the 1e6 possible "
+                            "data set names?????"
                             )
 
     elif path_root is None:
         full_path = (path_default_root + dir_vib).format(id_data)
 
         if os.path.isdir(full_path):
-            print(  "We discovered a previous execution at {:}, "
-                    "do you wish to proceed? (Y/N)".format(full_path)
-                    )
+            print("We discovered a previous execution at {:}, "
+                  "do you wish to proceed? (Y/N)".format(full_path)
+                  )
             choice = input().lower()
             if choice in set(["yes", "y", "ye"]):
                 setup_input_params(full_path)
@@ -1141,13 +1114,12 @@ def create_new_execution_directory(path_root=None, id_data=None):
         print("Successfully created model params at:\n{:}".format(full_path))
         return
 
-
     else:
         full_path = (path_root + dir_vib).format(id_data)
         if os.path.isdir(full_path):
-            print(  "We discovered a previous execution at {:}, "
-                    "do you wish to proceed? (Y/N)".format(full_path)
-                    )
+            print("We discovered a previous execution at {:}, "
+                  "do you wish to proceed? (Y/N)".format(full_path)
+                  )
             choice = input().lower()
             if choice in set(["yes", "y", "ye"]):
                 setup_input_params(full_path)
@@ -1166,7 +1138,7 @@ def verify_execution_directory_exists(id_data, path_root=None):
     checkOS()
 
     # assume default
-    if path_root == None:
+    if path_root is None:
         path_root = path_default_root
 
     files = file_structure.FileStructure(path_root, id_data)
