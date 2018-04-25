@@ -3,11 +3,12 @@
 
 # system imports
 import unittest
+import filecmp
 
 # third party imports
 import numpy as np
-import pibronic
 import pibronic.data.file_structure as fs
+import pibronic.data.vibronic_model_io as vIO
 import pibronic.pimc.minimal as pm
 
 # local imports
@@ -22,6 +23,24 @@ class TestDataSet0Rho0(unittest.TestCase):
         self.samples = int(1e1)
         self.block_size = int(1e1)
         self.test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
+        self.molecule_name = "fake"
+
+    def test_reading_vibronic_model(self):
+        # create the file_structure obj
+        files = fs.FileStructure(self.test_path, self.id_data)
+        # create the path to the vibronic model file
+        path_full = files.path_es + self.molecule_name + "_vibron.h"
+        # extract the model from *_vibron.h and store in json format
+        path_model_coupled = vIO.create_coupling_from_h_file(path_full)
+        filecmp.cmp(path_model_coupled, files.path_vib_params + "coupled_model_reference.json")
+
+        # Create the harmonic version
+        path_model_harmonic = vIO.create_harmonic_model(files)
+        filecmp.cmp(path_model_coupled, files.path_vib_params + "harmonic_model_reference.json")
+        # Create the sampling model
+        path_model_sampling = vIO.create_basic_sampling_model(files)
+        filecmp.cmp(path_model_coupled, files.path_vib_params + "sampling_model_reference.json")
+        return
 
     def test_load(self):
         # load the relevant data

@@ -26,45 +26,45 @@ from .pimc import minimal
 import pibronic.input_files
 
 
-#--------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 # REFERENCE DATA
 
 
 model_dict = {
-    0   :   ("acetonitrile", 200),
-    1   :   ("ammonia", 201),
-    2   :   ("boron_trifluoride", 202),
-    3   :   ("formaldehyde", 203),
-    4   :   ("methane", 204),
-    5   :   ("formamide", 205),
-    6   :   ("formic_acid", 206),
-    7   :   ("hydrogen_peroxide", 207),
-    8   :   ("water", 208),
-    9   :   ("pyridine", 209),
-    10  :   ("furan", 210),
-    11  :   ("trichloroethylene", 211),
-    12  :   ("chloroethylene", 212),
-    13  :   ("acrolein", 213),
-    14  :   ("acrylonitrile", 214),
-    15  :   ("cis_12_dichloroethylene", 215),
-    16  :   ("trans_12_dichloroethylene", 216),
-    17  :   ("11_dichloroethylene", 217),
-    # 18  :   ("", 218),
-    # 19  :   ("", 219),
-    # 20  :   ("", 220),
-    # 21  :   ("", 221),
+    0:    ("acetonitrile", 200),
+    1:    ("ammonia", 201),
+    2:    ("boron_trifluoride", 202),
+    3:    ("formaldehyde", 203),
+    4:    ("methane", 204),
+    5:    ("formamide", 205),
+    6:    ("formic_acid", 206),
+    7:    ("hydrogen_peroxide", 207),
+    8:    ("water", 208),
+    9:    ("pyridine", 209),
+    10:   ("furan", 210),
+    11:   ("trichloroethylene", 211),
+    12:   ("chloroethylene", 212),
+    13:   ("acrolein", 213),
+    14:   ("acrylonitrile", 214),
+    15:   ("cis_12_dichloroethylene", 215),
+    16:   ("trans_12_dichloroethylene", 216),
+    17:   ("11_dichloroethylene", 217),
+    # 18:   ("", 218),
+    # 19:   ("", 219),
+    # 20:   ("", 220),
+    # 21:   ("", 221),
     }
 
 
-def copyInput(file_name):
+def copyInput(FS, file_name):
     """x"""
     path_root = os.path.abspath(pibronic.input_files.__file__)
 
     src_params = path_root + file_name + "_params.txt"
-    src_zmat   = path_root + file_name + "_zmat.txt"
+    src_zmat = path_root + file_name + "_zmat.txt"
 
-    dst_params = files.path_es + file_name + "_params.txt"
-    dst_zmat   = files.path_es + file_name + "_zmat.txt"
+    dst_params = FS.path_es + file_name + "_params.txt"
+    dst_zmat = FS.path_es + file_name + "_zmat.txt"
 
     shutil.copyfile(src_params, dst_params)
     shutil.copyfile(src_zmat, dst_zmat)
@@ -77,18 +77,18 @@ def generate_analytical_results(id_data, id_rho, temperature_list):
     """generate analytical results using julia"""
 
     # need a check to see if analytical results exist
-    return # hacks for now
+    return  # hacks for now
 
     for T in temperature_list:
         # this should also be generalized
         command = "python3 ~/pibronic/pibronic/julia_wrapper.py {:d} {:d} {:.2f}\n"
         # should replace this with a function call that isn't dependent on our server
         sshProcess = subprocess.Popen(["ssh", "-t", "dev002"],
-                                universal_newlines=True,
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                )
+                                      universal_newlines=True,
+                                      stdin=subprocess.PIPE,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
+                                      )
 
         sshProcess.stdin.write(command.format(id_data, id_rho, T))
         sshProcess.stdin.close()
@@ -105,9 +105,9 @@ def execute(file_path, id_model):
     molecule_tuple = model_dict[id_model]
     molecule_name = molecule_tuple[0]
     id_data = molecule_tuple[1]
-    id_rho = 0 # for now we just do the simple option
+    id_rho = 0  # for now we just do the simple option
 
-    #----------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
     # CREATE THE DIRECTORIES
 
     files = file_structure.FileStructure('/work/ngraymon/pimc/', id_data)
@@ -116,11 +116,11 @@ def execute(file_path, id_model):
     else:
         log.info("directories already exist")
 
-    #----------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
     # COPY THE INPUT FILES
-    copyInput(molecule_name)
+    copyInput(files, molecule_name)
 
-    #----------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
     # CREATE THE VIBRONIC MODEL
 
     path_result = files.path_es + molecule_name + "_vibron.h"
@@ -132,7 +132,7 @@ def execute(file_path, id_model):
     else:
         log.flow("Vibronic model already calculated at: {:s}".format(path_result))
 
-    #----------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
     # PREPARE INPUT FOR PIMC CALCULATION
 
     # extract the model from *_vibron.h and store in json format
@@ -148,26 +148,26 @@ def execute(file_path, id_model):
     # path_model_sampling = files.path_data + "rho_0/parameters/sampling_model.json"
     # shutil.copyfile(path_model_harmonic, path_model_sampling)
 
-    temperature_list = [250.,275.,300.,325.,350.]
-    bead_list =  [10,20,30,40,50,60,70,80,90,100,]
+    temperature_list = [250., 275., 300., 325., 350.]
+    bead_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, ]
 
     generate_analytical_results(id_data, id_rho, temperature_list)
     log.flow("Finished preparing input for PIMC calculation")
-    #----------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
     # SUBMIT PIMC JOBS
 
     modes_data, states_data = vIO.get_nmode_nsurf_from_coupled_model(id_data)
 
     # this is the minimum amount of data needed to run an execution
     parameter_dictionary = {
-        "number_of_samples" : int(1e6),
-        "number_of_states" : states_data,
-        "number_of_modes" : modes_data,
-        "bead_list" : bead_list,
-        "temperature_list" : temperature_list,
-        "delta_beta" : constants.delta_beta,
-        "id_data" : id_data,
-        "id_rho" : id_rho,
+        "number_of_samples": int(1e6),
+        "number_of_states": states_data,
+        "number_of_modes": modes_data,
+        "bead_list": bead_list,
+        "temperature_list": temperature_list,
+        "delta_beta": constants.delta_beta,
+        "id_data": id_data,
+        "id_rho": id_rho,
     }
 
     # create an execution object
@@ -175,36 +175,30 @@ def execute(file_path, id_model):
 
     engine.submit_jobs()
 
-
     log.flow("Finished PIMC calculation")
-    #----------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
     # RUN JACKKNIFE ON RESULTS TO GENERATE THERMO FILES
 
     # not fully integrated into tool chain yet
 
     log.flow("Finished running Jackknife calculations")
-    #----------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
     # Plot results!
 
     # not fully integrated into tool chain yet
 
     log.flow("Finished plotting Z")
-    #----------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
     # All done!
-
 
     return
 
 
 # shows docstring if --help is the second argument
 if (__name__ == '__main__'):
-    assert(len(sys.argv) == 2) # make sure we provide an arg
+    assert(len(sys.argv) == 2)  # make sure we provide an arg
 
     if sys.argv[1] == '--help':
         print(__doc__)
 
     execute(int(sys.argv[1]))
-
-
-
-

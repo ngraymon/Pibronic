@@ -594,15 +594,15 @@ def read_model_h_file(path_file_h):
 
     # duplicate the lower triangle values into the upper triangle
     # the couplings are a symmetric matrix
-    for a,b in it.product(States, States):
-        quadratic_couplings[:,:,a,b] += np.tril(quadratic_couplings[:,:,a,b], k=-1).T
+    for a, b in it.product(States, States):
+        quadratic_couplings[:, :, a, b] += np.tril(quadratic_couplings[:, :, a, b], k=-1).T
 
     # check for symmetry in surfaces
-    assert(np.allclose(excitation_energies, excitation_energies.transpose(1,0)))
-    assert(np.allclose(linear_couplings, linear_couplings.transpose(0,2,1)))
-    assert(np.allclose(quadratic_couplings, quadratic_couplings.transpose(0,1,3,2)))
+    assert(np.allclose(excitation_energies, excitation_energies.transpose(1, 0)))
+    assert(np.allclose(linear_couplings, linear_couplings.transpose(0, 2, 1)))
+    assert(np.allclose(quadratic_couplings, quadratic_couplings.transpose(0, 1, 3, 2)))
     # check for symmetry in modes
-    assert(np.allclose(quadratic_couplings, quadratic_couplings.transpose(1,0,2,3)))
+    assert(np.allclose(quadratic_couplings, quadratic_couplings.transpose(1, 0, 2, 3)))
 
     # and we are done
     return numStates, numModes, excitation_energies, frequencies, linear_couplings, quadratic_couplings
@@ -639,7 +639,7 @@ def read_model_auto_file(filename):
 
     # first lets strip out all the blank lines and lines like ------
     lines = [line.rstrip() for line in file_object.readlines() if ((len(line.strip()) != 0) and ("--------" not in line.strip()))]
-    f_iter = iter(lines) # make an iterator
+    f_iter = iter(lines)  # make an iterator
 
     # =====
     # Title
@@ -656,18 +656,15 @@ def read_model_auto_file(filename):
     num_irreps = ff.FortranRecordReader('(A36, i4)').read(next(f_iter))[1]   # number of vibrational irreps
     nmodes = ff.FortranRecordReader('(A30, i4)').read(next(f_iter))[1]       # read the total number of modes per symmetry
 
-
     # Initialize Variables
     excitation_energies = np.zeros((nel, nel))
     frequencies         = np.zeros((nmode))
     linear_couplings    = np.zeros((nmode, nel, nel))
     quadratic_couplings = np.zeros((nmode, nmode, nel, nel))
 
-
-
     # we can either grab the frequencies from the ref_freq_data, or the parent hessian
     if(False):
-    # the frequency given here is in cm-1
+        # the frequency given here is in cm-1
         frequencies[:] = np.asarray(ff.FortranRecordReader('(A31, 12F8.2)').read(next(f_iter))[1:], dtype=F64)
     else:
         next(f_iter)
@@ -715,7 +712,7 @@ def read_model_auto_file(filename):
     title_header.read(next(f_iter))
     gradient_header = ff.FortranRecordReader('(t3, A15, i4, A15, F10.2)')
     for i in mode_range:
-        gradient_header.read(next(f_iter)) # should 'read in' the header
+        gradient_header.read(next(f_iter))  # should 'read in' the header
         for a in el_range:
             linear_couplings[i, a, :] = energy_header.read(next(f_iter))
 
@@ -737,7 +734,7 @@ def read_model_auto_file(filename):
     title_header.read(next(f_iter))
     for i in mode_range:
         for j in range(i):
-            next(f_iter) # 'reading in' the first line/title
+            next(f_iter)  # 'reading in' the first line/title
             for a in el_range:
                 quadratic_couplings[i, j, a, :] = energy_header.read(next(f_iter))
 
@@ -880,7 +877,7 @@ def load_sample_from_JSON(path_full, energies=None, frequencies=None, linear_cou
     # arrays were provided so fill them with the appropriate values
     else:
         # HACK
-        print("HACKY BS - ")
+        # print("HACKY BS - ")
 
         # ===================== DEPRECIATED =================================== #
         # ==== this code is only needed if the input sample model is still in the old format
@@ -1025,7 +1022,7 @@ def get_nmode_nsurf_from_sampling_modelff(path_full):
 
 def remove_coupling_from_model(path_source, path_destination):
     """reads in a model and sets all the coupling parameters to zero"""
-    checkOS()
+    # checkOS()
 
     e, w, l, q = load_model_from_JSON(path_source)
     numModes = w.shape[0]
@@ -1041,23 +1038,24 @@ def remove_coupling_from_model(path_source, path_destination):
     return
 
 
-def create_harmonic_model(id_model):
+def create_harmonic_model(FS):
     """wrapper function to refresh harmonic model"""
-    checkOS()
-    source = (path_default_root + dir_vib + "parameters/coupled_model.json").format(id_model)
-    dest = (path_default_root + dir_vib + "parameters/harmonic_model.json").format(id_model)
+    # checkOS()
+    source = FS.path_vib_params + "coupled_model.json"
+    dest = FS.path_vib_params + "harmonic_model.json"
+    # source = (FS.path_default_root + dir_vib + "parameters/coupled_model.json").format(id_model)
+    # dest = (FS.path_default_root + dir_vib + "parameters/harmonic_model.json").format(id_model)
     remove_coupling_from_model(source, dest)
     s = "Created harmonic model {:s} by removing coupling from {:s}"
     log.debug(s.format(dest, source))
     return dest
 
 
-def create_basic_sampling_model(id_model, id_rho):
+def create_basic_sampling_model(FS):
     """wrapper function to make the simplest sampling model"""
-    checkOS()
-    source = create_harmonic_model(id_model)
-    dest = path_default_root + dir_vib + dir_rho + "parameters/sampling_model.json"
-    dest = dest.format(id_model, id_rho)
+    # checkOS()
+    source = create_harmonic_model(FS)
+    dest = FS.path_rho_params + "sampling_model.json"
 
     shutil.copyfile(source, dest)
 

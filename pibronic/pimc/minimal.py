@@ -629,7 +629,7 @@ class BoxResult:
 
         data_filename = os.path.join(self.path_root, self.template_name)
         data_filename += "_data_points"
-        print(data_filename)
+        # print(data_filename)
 
         # save raw data points
         np.savez(data_filename,

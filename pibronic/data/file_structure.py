@@ -47,6 +47,7 @@ class FileStructure:
 
     @classmethod
     def from_boxdata(cls, path_root, data):
+        """constructor wrapper that takes a data object from minimal.py"""
         return cls(path_root, data.id_data, data.id_rho)
 
     def __init__(self, path_root, id_data, id_rho=0):
