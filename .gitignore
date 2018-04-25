@@ -1,6 +1,7 @@
 # Project specific
 
-test/test_models/**/*.npz # Ignore output files from running tests
+# Ignore output files from running tests
+test/test_models/**/*.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
