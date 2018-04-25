@@ -1,5 +1,5 @@
 # Project specific
-tests/
+test/test_models/**/*.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
