@@ -86,6 +86,7 @@ class FileStructure:
         # possibly rename the sampling and coupled paths?
         # they are paths but shouldn't be in the dir_list
         self.path_vib_model = self.path_vib_params + "coupled_model.json"
+        self.path_har_model = self.path_vib_params + "harmonic_model.json"
         self.path_rho_model = self.path_rho_params + "sampling_model.json"
 
         # if not self.directories_exist():
