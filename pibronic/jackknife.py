@@ -28,20 +28,20 @@ assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
 assert(sys.argv[2].isnumeric() and int(sys.argv[1]) >= 0)
 
 dir_workspace = "/work/ngraymon/pimc/"
-id_data   = int(sys.argv[1])
-dir_data  = "data_set_{:d}/".format(id_data)
-id_rho    = int(sys.argv[2])
-dir_rho   = "rho_{:d}/".format(id_rho)
+id_data = int(sys.argv[1])
+dir_data = "data_set_{:d}/".format(id_data)
+id_rho = int(sys.argv[2])
+dir_rho = "rho_{:d}/".format(id_rho)
 
 directory_path = dir_workspace + dir_data
 sampling_path = directory_path + dir_rho
 assert(os.path.exists(sampling_path))
 
 # some default file paths
-path_sos     = directory_path + "parameters/"
-path_params  = sampling_path + "parameters/"
+path_sos = directory_path + "parameters/"
+path_params = sampling_path + "parameters/"
 path_results = sampling_path + "results/"
-path_plots   = sampling_path + "plots/"
+path_plots = sampling_path + "plots/"
 
 # read in the model parameters from the coupled and sampling models
 number_of_modes, number_of_surfaces = vIO.get_nmode_nsurf_from_coupled_model(id_data)
@@ -55,6 +55,7 @@ rho_modes, rho_surfs = vIO.get_nmode_nsurf_from_sampling_model(id_data, id_rho)
 filePrefix = "F{F:d}_A{A:d}_N{N:d}_".format(F=id_data, A=number_of_surfaces, N=number_of_modes)
 fileSuffix = "X{X:d}_P{P:d}_T{T:d}_data_points.npz"
 sosSuffix = "sos_B{B:d}.json"
+
 
 def retrive_file_list():
     """find a list of all files that might be used in jackknife"""
@@ -78,7 +79,7 @@ def extract_parameters(pimcList, coupledList, samplingList):
 
     # note that the way these splits are coded
     # will pose problems if the naming scheme for sos is changed in the future
-    valuesDictionary = {"beads":0, "samples":0, "basis_fxns":0, "temperatures":0}
+    valuesDictionary = {"beads": 0, "samples": 0, "basis_fxns": 0, "temperatures": 0}
 
     cL = map(lambda path: int(path.split("_B")[1].split(".json")[0]), coupledList)
     sL = map(lambda path: int(path.split("_B")[1].split(".json")[0]), samplingList)
@@ -87,7 +88,6 @@ def extract_parameters(pimcList, coupledList, samplingList):
     valuesDictionary["basis_fxns"] = list(set(cL) & set(sL))
     valuesDictionary["basis_fxns"].sort()
     # print(valuesDictionary["basis_fxns"])
-
 
     # parse file paths to find shared temperature values
     # for now we will leave this partially undeveloped
@@ -119,7 +119,6 @@ def load_data(X, P, B, T, pimc_results, rhoArgs):
     data_points_path = path_results + filePrefix
     data_points_path += fileSuffix.format(X=X, P=P, T=T)
     sos_path = path_params + sosSuffix.format(B=B)
-
 
     pimc_results.load_results(file_path)
 
@@ -243,8 +242,6 @@ def calculate_alpha_terms(data, constants, Uho):
     y_rho, y_rhop, yp_rhop, y_rhom, ym_rhom, y_g, y_gp, yp_gp, y_gm, ym_gm, ap, am = data
     # rho, g, y_gp, y_gm, yp_rhop, ym_rhom, ap, am,  = data
 
-    
-
     # the current alpha method
     # # Precalculate the 3 terms we will use
     ratio = y_g / y_rho
@@ -265,7 +262,6 @@ def calculate_alpha_terms(data, constants, Uho):
     # print((pr - mr) / (2. * delta_beta))
     # print((np.mean(y_rhom / y_rho) - np.mean(y_rhop / y_rho)) / (2. * delta_beta))
     # print(Uho)
-
 
     # print(np.mean(ratio) * Uho)
     # print(np.mean(ratio) * Uho * 2. * delta_beta)
@@ -330,11 +326,11 @@ def calculate_alpha_jackknife_terms(terms, constants):
     # jk_RD /= (X - 1)
 
     # now build the first and second symmetric derivative
-    jk_sym_d1 =  jk_LN * LD
+    jk_sym_d1 = jk_LN * LD
     jk_sym_d1 -= jk_RN * RD
     jk_sym_d1 /= (2. * delta_beta)  # constant factor
     #
-    jk_sym_d2 =  jk_LN * LD
+    jk_sym_d2 = jk_LN * LD
     jk_sym_d2 -= 2. * jk_ratio
     jk_sym_d2 += jk_RN * RD
     jk_sym_d2 /= pow(delta_beta, 2)  # constant factor
@@ -354,17 +350,17 @@ def calculate_fourth_terms(data, constants):
     # # Precalculate the 3 terms we will use
     ratio = y_g / y_rho
 
-    LN = y_gp  / y_rho
+    LN = y_gp / y_rho
     LD = y_rhop / y_rho
-    RN = y_gm  / y_rho
+    RN = y_gm / y_rho
     RD = y_rhom / y_rho
 
-    first_symmetric_derivative =  np.mean(LN) / np.mean(LD)
+    first_symmetric_derivative = np.mean(LN) / np.mean(LD)
     first_symmetric_derivative -= np.mean(RN) / np.mean(RD)
     first_symmetric_derivative /= (2. * delta_beta)  # constant factor
     # print(first_symmetric_derivative)
 
-    second_symmetric_derivative =  np.mean(LN) / np.mean(LD)
+    second_symmetric_derivative = np.mean(LN) / np.mean(LD)
     second_symmetric_derivative -= 2. * np.mean(ratio)
     second_symmetric_derivative += np.mean(RN) / np.mean(RD)
     second_symmetric_derivative /= pow(delta_beta, 2)  # constant factor
@@ -409,11 +405,11 @@ def calculate_fourth_jackknife_terms(terms, constants):
     jk_RD /= (X - 1)
 
     # now build the first and second symmetric derivative
-    jk_sym_d1 =  jk_LN / jk_LD
+    jk_sym_d1 = jk_LN / jk_LD
     jk_sym_d1 -= jk_RN / jk_RD
     jk_sym_d1 /= (2. * delta_beta)  # constant factor
     #
-    jk_sym_d2 =  jk_LN / jk_LD
+    jk_sym_d2 = jk_LN / jk_LD
     jk_sym_d2 -= 2. * jk_ratio
     jk_sym_d2 += jk_RN / jk_RD
     jk_sym_d2 /= pow(delta_beta, 2)  # constant factor
@@ -467,7 +463,7 @@ def estimate_property(terms, constants):
     # Energy
     E = -1. * np.mean(sym1) / np.mean(g_r)
     # error
-    E_err = np.zeros_like(E) # can't be measured
+    E_err = np.zeros_like(E)  # can't be measured
     # this is just a lower bound on my error bars
     # E_err = np.std(sym1 / g_r, ddof=0)
     # E_err /= np.sqrt(X - 1) # remember that this is necessary!
@@ -477,7 +473,7 @@ def estimate_property(terms, constants):
     Cv -= pow(E, 2.)
     Cv /= kB * pow(T, 2.)
     # error
-    Cv_err = np.zeros_like(Cv) # can't be measured
+    Cv_err = np.zeros_like(Cv)  # can't be measured
     # this is just a lower bound on my error bars
     # old_Cv_err = np.std(old_Cv_err, ddof=0)
     # old_Cv_err /= np.sqrt(X - 1) # remember that this is necessary!
@@ -555,7 +551,6 @@ def main(X, P, T, B):
     y_gm = pimcData["y_gm"]
     yp_gp = pimcData["yp_gp"]
     ym_gm = pimcData["ym_gm"]
-
 
     # # # Begin to calculate properties
     # input data
@@ -638,7 +633,7 @@ def main(X, P, T, B):
     if False:
         fstr = "%-18.18s"+"%-+34.30E"
         # save the data to the thermo file
-        X=[ # Partition Function
+        X = [  # Partition Function
             fstr % ("Zf/Zh", ret["Z"]),
             fstr % ("Zf/Zh error", ret["Z error"]),
             "",
@@ -685,44 +680,44 @@ def main(X, P, T, B):
         fstr = "%-+34.30E"
         # save the data to the thermo file
         np.savetxt(output_path,
-            X=[ # Partition Function
-                ret["Z"],
-                ret["Z error"],
-                # Energy!
-                ret["E"],
-                ret["E error"],
-                JK_ret["E"],
-                JK_ret["E error"],
-                ret_diff["E"],
-                ret_diff["E error"],
-                JK_ret_diff["E"],
-                JK_ret_diff["E error"],
-                ret_alpha["E"],
-                ret_alpha["E error"],
-                JK_ret_alpha["E"],
-                JK_ret_alpha["E error"],
-                ret_fourth["E"],
-                ret_fourth["E error"],
-                JK_ret_fourth["E"],
-                JK_ret_fourth["E error"],
-                # Heat capacity
-                ret["Cv"],
-                ret["Cv error"],
-                JK_ret["Cv"],
-                JK_ret["Cv error"],
-                ret_diff["Cv"],
-                ret_diff["Cv error"],
-                JK_ret_diff["Cv"],
-                JK_ret_diff["Cv error"],
-                ret_alpha["Cv"],
-                ret_alpha["Cv error"],
-                JK_ret_alpha["Cv"],
-                JK_ret_alpha["Cv error"],
-                ret_fourth["Cv"],
-                ret_fourth["Cv error"],
-                JK_ret_fourth["Cv"],
-                JK_ret_fourth["Cv error"],
-            ], fmt=fstr)
+                   X=[  # Partition Function
+                        ret["Z"],
+                        ret["Z error"],
+                        # Energy!
+                        ret["E"],
+                        ret["E error"],
+                        JK_ret["E"],
+                        JK_ret["E error"],
+                        ret_diff["E"],
+                        ret_diff["E error"],
+                        JK_ret_diff["E"],
+                        JK_ret_diff["E error"],
+                        ret_alpha["E"],
+                        ret_alpha["E error"],
+                        JK_ret_alpha["E"],
+                        JK_ret_alpha["E error"],
+                        ret_fourth["E"],
+                        ret_fourth["E error"],
+                        JK_ret_fourth["E"],
+                        JK_ret_fourth["E error"],
+                        # Heat capacity
+                        ret["Cv"],
+                        ret["Cv error"],
+                        JK_ret["Cv"],
+                        JK_ret["Cv error"],
+                        ret_diff["Cv"],
+                        ret_diff["Cv error"],
+                        JK_ret_diff["Cv"],
+                        JK_ret_diff["Cv error"],
+                        ret_alpha["Cv"],
+                        ret_alpha["Cv error"],
+                        JK_ret_alpha["Cv"],
+                        JK_ret_alpha["Cv error"],
+                        ret_fourth["Cv"],
+                        ret_fourth["Cv error"],
+                        JK_ret_fourth["Cv"],
+                        JK_ret_fourth["Cv error"],
+                    ], fmt=fstr)
     return
 
 
@@ -736,9 +731,8 @@ if (__name__ == "__main__"):
 
     # would be nice to have some feedback about what values there are and what are missing
 
-
     # manually select specific values from those available
-    pimc_restriction = range(12, 101, 1) # at least 12 beads before we plot
+    pimc_restriction = range(12, 101, 1)  # at least 12 beads before we plot
     # pick the highest number of samples
     sample_restriction = arg_dict["samples"][-1]
     # pick the highest number of basis functions
@@ -759,16 +753,14 @@ if (__name__ == "__main__"):
     #         for T in arg_dict["temperatures"]:
     #             for B in arg_dict["basis_fxns"]:
     #                 arg_list.append((X, P, T, B))
-    arg_list = [(X, P, T, B)                    \
-                    for X in arg_dict["samples"]
-                    for P in arg_dict["pimc_beads"]
-                    for T in arg_dict["temperatures"]
-                    for B in arg_dict["basis_fxns"]
+    arg_list = [(X, P, T, B)
+                for X in arg_dict["samples"]
+                for P in arg_dict["pimc_beads"]
+                for T in arg_dict["temperatures"]
+                for B in arg_dict["basis_fxns"]
                 ]
 
-
     arg_iterator = iter(arg_list)
-
 
     block_size = 10
 
@@ -776,5 +768,3 @@ if (__name__ == "__main__"):
         p.starmap(main, arg_list)
 
     print("Finished")
-
-

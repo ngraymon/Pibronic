@@ -10,56 +10,15 @@ import filecmp
 import numpy as np
 import pibronic.data.file_structure as fs
 import pibronic.data.vibronic_model_io as vIO
-import pibronic.pimc.minimal as pm
-
-# local imports
-
-# unittests can have subTests - which is pretty cool
-# def test_should_all_be_even(self):
-#     for n in (0, 4, -2, 11):
-#         with self.subTest(n=n):
-#             self.assertTrue(is_even(n))
-
-# class TestDataSet0Rho0(unittest.TestCase):
-#     def setUp(self):
-#         self.test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
-#         self.molecule_name = "fake"
-#         self.id_data = 0
-#         self.id_rho = 0
-#         return
-
-
-# class TestDataSet0Rho1(unittest.TestCase):
-#     def setUp(self):
-#         self.test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
-#         self.molecule_name = "fake"
-#         self.id_data = 0
-#         self.id_rho = 1
-#         return
-
-
-# class TestDataSet1Rho0(unittest.TestCase):
-#     def setUp(self):
-#         self.test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
-#         self.molecule_name = "fake"
-#         self.id_data = 1
-#         self.id_rho = 0
-#         return
-
-
-# class TestDataSet1Rho1(unittest.TestCase):
-#     def setUp(self):
-#         self.test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
-#         self.molecule_name = "fake"
-#         self.id_data = 1
-#         self.id_rho = 1
-#         return
+import pibronic.pimc.minimal as minimal
+import pibronic.constants
 
 
 class TestProcessingVibronicModel():
 
     test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
 
+    # check both the data set 0 and data set 1
     @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
     def files(self, request):
         return fs.FileStructure(self.test_path, request.param[0], request.param[1])
@@ -77,31 +36,49 @@ class TestProcessingVibronicModel():
         assert samefile
         return
 
+    # only check the data_set_0
+    @pytest.fixture(params=[(0, 0), (0, 1)])
+    def files(self, request):
+        return fs.FileStructure(self.test_path, request.param[0], request.param[1])
+
     # only want to check that the rho 0 sampling models are the same as the harmonic models
-    # def test_creating_basic_sampling_model_from_harmonic_model(files):
-    #     vIO.create_basic_sampling_model(files)
-    #     samefile = filecmp.cmp(files.path_rho_model, files.path_rho_params + "sampling_model_reference.json")
-    #     assert samefile
-    #     return
+    def test_creating_basic_sampling_model_from_harmonic_model(self, files):
+        vIO.create_basic_sampling_model(files)
+        samefile = filecmp.cmp(files.path_rho_model, files.path_rho_params + "sampling_model_reference.json")
+        assert samefile
+        return
 
 
-class TestMinimal():
+class TestMinimalNatively():
     samples = int(1e1)
     block_size = int(1e1)
     np.random.seed(242351)  # pick our seed
 
     test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
 
-    @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
+    def test_create_BoxData_inline(self):
+        data = minimal.BoxData()
+        return
+
+    def test_create_BoxData_from_file(self):
+        return
+
+    def test_create_BoxData_from_jsonData(self):
+        return
+
+    @pytest.fixture(scope="class", params=[(0, 0)])
+    # @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
     def data(self, request):
-        data = pm.BoxData()
+        data = minimal.BoxData()
         data.id_data = request.param[0]
         data.id_rho = request.param[1]
         return data
 
-    def test_load(self, data):
-        # should be able to pass a data object to file_structure
-        files = fs.FileStructure.from_boxdata(self.test_path, data)
+    @pytest.fixture(scope="class")
+    def files(self, data):
+        return fs.FileStructure.from_boxdata(self.test_path, data)
+
+    def test_simple_block_compute(self, files, data):
         data.path_vib_model = files.path_vib_model
         data.path_rho_model = files.path_rho_model
 
@@ -118,11 +95,41 @@ class TestMinimal():
         data.preprocess()
 
         # store results here
-        results = pm.BoxResult(data=data)
+        results = minimal.BoxResult(data=data)
         results.path_root = files.path_rho_results
 
-        pm.block_compute(data, results)
+        minimal.block_compute(data, results)
+        return
 
+    @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
+    def dataPM(self, request):
+        data = minimal.BoxDataPM(pibronic.constants.delta_beta)
+        data.id_data = request.param[0]
+        data.id_rho = request.param[1]
+        return data
+
+    def test_simple_block_compute_pm(self, files, dataPM):
+        dataPM.path_vib_model = files.path_vib_model
+        dataPM.path_rho_model = files.path_rho_model
+
+        # data should be able to figure out the number of states and modes from the file
+        dataPM.states = 2
+        dataPM.modes = 2
+
+        dataPM.samples = self.samples
+        dataPM.beads = 10
+        dataPM.temperature = 300.0
+        dataPM.blocks = self.samples // self.block_size
+        dataPM.block_size = self.block_size
+
+        # setup empty tensors, models, and constants
+        dataPM.preprocess()
+
+        # store results here
+        results = minimal.BoxResultPM(data=dataPM)
+        results.path_root = files.path_rho_results
+
+        minimal.block_compute_pm(dataPM, results)
         return
 
 
@@ -137,7 +144,7 @@ class TestDataSet1Rho0():
         self.test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
 
         # load the relevant data
-        data = pm.BoxData()
+        data = minimal.BoxData()
         data.id_data = self.id_data
         data.id_rho = self.id_rho
 
@@ -159,10 +166,10 @@ class TestDataSet1Rho0():
         data.preprocess()
 
         # store results here
-        results = pm.BoxResult(data=data)
+        results = minimal.BoxResult(data=data)
         results.path_root = files.path_rho_results
 
-        pm.block_compute(data, results)
+        minimal.block_compute(data, results)
 
         return
 

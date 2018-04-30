@@ -402,6 +402,28 @@ class BoxData:
     _COMMA_REPLACEMENT = ";"
     _SEPARATORS = (_COMMA_REPLACEMENT, ':')
 
+    @classmethod  # this feels unnecessary
+    def build(cls, id_data, id_rho):
+        """constructor wrapper"""
+        data = cls()
+        data.id_data = id_data
+        data.id_rho = id_rho
+        return data
+
+    @classmethod
+    def from_json_file(cls, path_full):
+        """constructor wrapper"""
+        with open(path_full, mode='r', encoding='UTF8') as target_file:
+            json_obj = target_file.read()
+        return cls.from_json_object(cls, json_obj)
+
+    @classmethod
+    def from_json_object(cls, json_obj):
+        """constructor wrapper"""
+        data = cls()
+        data.load_json(json_obj)
+        return data
+
     def __init__(self):
         return
 
@@ -435,7 +457,7 @@ class BoxData:
 
         return self.json_encode(params)
 
-    def load_json(self, json_obj):
+    def load_json_object(self, json_obj):
         """decodes the json_obj and sets member parameters"""
         log.debug("Decoding JSON obj")
         json_obj = json_obj.replace(self._COMMA_REPLACEMENT, ",")
@@ -543,7 +565,7 @@ class BoxData:
         self.numerator = np.zeros(self.size['BAA'])
 
         # construct the circulant matrix
-        assert(self.beads >= 3)  # hard check
+        assert self.beads >= 3, "circulant matrix requires 3 or more beads"# hard check
         defining_vector = [0, 1] + [0]*(self.beads-3) + [1]
         self.circulant_matrix = scipy.linalg.circulant(defining_vector)
 
@@ -564,6 +586,10 @@ class BoxDataPM(BoxData):
     tau_minus = 0.0
 
     def __init__(self, delta_beta):
+        # -TODO -
+        # consider removing the requirement of providing a delta_beta
+        # could use a default value from constant module
+        # with the ability to optionally override
         self.delta_beta = delta_beta
         super().__init__()
         return
@@ -627,17 +653,17 @@ class BoxResult:
 
         # result_view = slice(0, number_of_samples)
 
-        data_filename = os.path.join(self.path_root, self.template_name)
-        data_filename += "_data_points"
-        # print(data_filename)
+        path_full = os.path.join(self.path_root, self.template_name)
+        path_full += "_data_points"
 
         # save raw data points
-        np.savez(data_filename,
+        np.savez(path_full,
                  s_rho=self.scaled_rho,
                  s_g=self.scaled_g,
                  # s_g=self.scaled_g[result_view],
                  # s_rho=self.scaled_rho[result_view],
                  )
+        print("BoxResult", path_full)
         return
 
     def load_results(self, path_full):
@@ -668,17 +694,17 @@ class BoxResultPM(BoxResult):
             self.template_name += "_J{:s}".format(self.id_job)
 
         # result_view = slice(0, number_of_samples)
-        data_filename = os.path.join(self.path_root, self.template_name)
-        data_filename += "_data_points"
-        print(data_filename)
+        path_full = os.path.join(self.path_root, self.template_name)
+        path_full += "_data_points"
 
         # save raw data points
-        np.savez(data_filename,
+        np.savez(path_full,
                  s_rho=self.scaled_rho,
                  s_g=self.scaled_g,
                  s_gP=self.scaled_gofr_plus,
                  s_gM=self.scaled_gofr_minus,
                  )
+        print("BoxResultPM", path_full)
         return
 
     def load_results(self, path_full):
@@ -848,6 +874,7 @@ def build_numerator(data, vib, outputArray, idx):
 
     # trace over the surfaces
     outputArray[idx] = np.trace(data.numerator, axis1=1, axis2=2)
+    assert np.all(outputArray[idx] >= 0), "g(R) must always be positive"
     return
 
 
@@ -905,6 +932,9 @@ def block_compute(data, result):
 
 
 def block_compute_pm(data, result):
+
+    assert isinstance(data, BoxDataPM), "incorrect object type"
+    assert isinstance(result, BoxResultPM), "incorrect object type"
 
     np.set_printoptions(suppress=False)
     # for blockIdx, block in enumerate(range(0, block_size*blocks, block_size)):

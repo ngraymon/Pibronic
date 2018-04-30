@@ -12,10 +12,12 @@ import sys
 import numpy as np
 
 # local imports
-from ..log_conf import log
+from . import file_name
+from .. import log_conf
 
 
 # the names of the sub directories
+# TODO - clean this up
 list_sub_dirs = [
     "parameters/",
     "results/",
@@ -37,13 +39,16 @@ class FileStructure:
     template_rho_output = template_rho + "execution_output/"
     template_rho_plots = template_rho + "plots/"
 
-    # template_pimc_suffix = "D{D:d}_R{R:d}_P{P:d}_T{T:.2f}_J*_data_points.npz"
-    # template_jackknife_suffix = "D{D:d}_R{R:d}_P{P:d}_T{T:.2f}_X{X:d}_thermo"
-    # template_sos_suffix = "sos_B{B:d}.json"
-
-    template_pimc_suffix = "P{P:d}_T{T:.2f}_J{J:d}_data_points.npz"
-    template_jackknife_suffix = "P{P:d}_T{T:.2f}_X{X:d}_thermo"
+    # TODO - make sure all the old output files are not needed or have been converted to new file names
+    """
+    template_pimc_suffix = "D{D:d}_R{R:d}_P{P:d}_T{T:.2f}_J*_data_points.npz"
+    template_jackknife_suffix = "D{D:d}_R{R:d}_P{P:d}_T{T:.2f}_X{X:d}_thermo"
     template_sos_suffix = "sos_B{B:d}.json"
+    """
+
+    # template_pimc_suffix = file_name.pimc
+    # template_jackknife_suffix = file_name.jackknife
+    # template_sos_suffix = file_name.sos
 
     @classmethod
     def from_boxdata(cls, path_root, data):
@@ -74,8 +79,15 @@ class FileStructure:
         # self.pimc_suffix = root_suffix + "P{P:d}_T{T:.2f}_J*_data_points.npz"
         # self.jackknife_suffix = root_suffix + "P{P:d}_T{T:.2f}_X{X:d}_thermo"
 
-        self.pimc_suffix = "P{P:d}_T{T:.2f}_J*_data_points.npz"
-        self.jackknife_suffix = self.template_jackknife_suffix
+        self.template_pimc = self.path_rho_results + file_name.pimc
+        self.template_jackknife = self.path_rho_results + file_name.jackknife
+        self.template_sos_rho = self.path_rho_params + file_name.sos
+        self.template_sos_vib = self.path_vib_params + file_name.sos
+
+        # TODO - should we factor this out into the file_name module?
+        # self.template_pimc = file_name.pimc
+        # self.pimc_suffix = "P{P:d}_T{T:.2f}_J*_data_points.npz"
+        # self.jackknife_suffix = self.template_jackknife_suffix
 
         self.dir_list = [a for a in dir(self) if a.startswith('path_')]
         # print(self.dir_list, '\n\n')
@@ -83,11 +95,12 @@ class FileStructure:
         # self.dir_list.extend([self.path_data + x for x in list_sub_dirs])
         # self.dir_list.extend([self.path_rho + x for x in list_sub_dirs])
 
-        # possibly rename the sampling and coupled paths?
-        # they are paths but shouldn't be in the dir_list
-        self.path_vib_model = self.path_vib_params + "coupled_model.json"
-        self.path_har_model = self.path_vib_params + "harmonic_model.json"
-        self.path_rho_model = self.path_rho_params + "sampling_model.json"
+        """ TODO - possibly rename the sampling and coupled paths?
+        they are paths but shouldn't be in the dir_list
+        """
+        self.path_vib_model = self.path_vib_params + file_name.coupled_model
+        self.path_har_model = self.path_vib_params + file_name.harmonic_model
+        self.path_rho_model = self.path_rho_params + file_name.sampling_model
 
         # if not self.directories_exist():
         # self.make_directories()

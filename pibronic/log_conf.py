@@ -19,6 +19,7 @@ logging.LOCK = 5
 logging.addLevelName(logging.FLOW, "FLOW")
 logging.addLevelName(logging.LOCK, "LOCK")
 
+
 class MyLogger(logging.Logger):
     def flow(self, message, *args, **kwargs):
         if self.isEnabledFor(logging.FLOW):
@@ -27,6 +28,7 @@ class MyLogger(logging.Logger):
     def lock(self, message, *args, **kwargs):
         if self.isEnabledFor(logging.LOCK):
             self._log(logging.LOCK, message, args, **kwargs)
+
 
 logging.setLoggerClass(MyLogger)
 log = logging.getLogger(__name__)
@@ -45,6 +47,7 @@ logging.basicConfig(
 # create logger
 module_logger = logging.getLogger()
 
+
 class Auxiliary:
     def __init__(self):
         self.logger = logging.getLogger('spam_application.auxiliary.Auxiliary')
@@ -54,6 +57,7 @@ class Auxiliary:
         self.logger.info('doing something')
         a = 1 + 1
         self.logger.info('done doing something')
+
 
 def some_function():
     module_logger.info('received a call to "some_function"')

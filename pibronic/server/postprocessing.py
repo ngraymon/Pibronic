@@ -1,4 +1,8 @@
-# postprocessing.py
+"""
+Handles all file processing after calculations are run
+
+Provides functions for collating files for statistical analaysis (such as jackknife) and plotting
+"""
 
 # system imports
 import multiprocessing as mp
@@ -21,61 +25,77 @@ from numpy import float64 as F64
 from .. import constants
 # from ..constants import hbar
 from ..log_conf import log
+from ..data import file_name
 from ..data import file_structure
 # from ..server import job_boss
 
-path_root = "/work/ngraymon/pimc/"
-
-file_suffix = (
-                "D{id_data:d}_"
-                "R{id_rho:d}_"
-                "P{number_of_beads:d}_"
-                "T{temperature:.2f}"
-                )
-sos_suffix = "sos_B{basis_size:d}.json"
-
-def retrive_pimc_file_list(files):
-    """find a list of all data files that might used"""
-
-    # retrive pimc files
-    globPath = files.path_rho_results + "D{:d}_*_thermo".format(files.id_data)
-    list_pimc = [file for file in glob.glob(globPath)]
-
-    # retrive coupled files
-    globPath = files.path_vib_params + "sos_B*.json"
-    list_sos_vib = [file for file in glob.glob(globPath)]
-
-    # retrive sampling files
-    globPath = files.path_rho_params + "sos_B*.json"
-    list_sos_rho = [file for file in glob.glob(globPath)]
-
-    return list_pimc, list_sos_vib, list_sos_rho
+# TODO - should these single file functions exist? is there enough need to justify their use?
+# def retrive_a_pimc_file(files):
+#     """verify that a specific pimc file exists and retrives the path to it"""
+#     globPath = FS.path_rho_results + file_name.jackknife(P="*", T="*", X="*")
+#     return glob.glob(globPath)
+# def retrive_a_sos_coupled_file(files):
+#     """verify that a specific sos(coupled) file exists and retrives the path to it"""
+#     globPath = FS.path_vib_params + file_name.sos("*")
+#     return glob.glob(globPath)
+# def retrive_a_sos_sampling_file(files):
+#     """verify that a specific sos(sampling) file exists and retrives the path to it"""
+#     globPath = FS.path_rho_params + file_name.sos("*")
+#     return glob.glob(globPath)
 
 
-def retrive_jackknife_file_list(files):
-    """find a list of all data files that might used"""
+def retrive_pimc_file_list(FS):
+    """return a list of the full path to each pimc file that might be used"""
+    globPath = FS.path_rho_results + file_name.pimc(P="*", T="*", J="*")
+    return [file for file in glob.glob(globPath)]
 
-    # retrive pimc files
-    globPath = files.path_rho_results + "D{:d}_*_data_points.npz".format(files.id_data)
-    list_pimc = [file for file in glob.glob(globPath)]
 
-    # retrive coupled files
-    globPath = files.path_vib_params  + "sos_B*.json"
-    list_sos_vib = [file for file in glob.glob(globPath)]
+def retrive_jackknife_file_list(FS):
+    """return a list of the full path to each jackknife file that might be used"""
+    globPath = FS.path_rho_results + file_name.jackknife(P="*", T="*", X="*")
+    return [file for file in glob.glob(globPath)]
 
-    # retrive sampling files
-    globPath = files.path_rho_params + "sos_B*.json"
-    list_sos_rho = [file for file in glob.glob(globPath)]
+
+def retrive_sos_coupled_file_list(FS, B="*"):
+    """return a list of the full path to each sos(coupled) file that might be used"""
+    globPath = FS.path_vib_params + file_name.sos("*")
+    return [file for file in glob.glob(globPath)]
+
+
+def retrive_sos_sampling_file_list(FS, B="*"):
+    """return a list of the full path to each sos(sampling) file that might be used"""
+    globPath = FS.path_rho_params + file_name.sos("*")
+    return [file for file in glob.glob(globPath)]
+
+
+def retrive_all_file_paths(FS):
+    """return three lists of the full paths to each data file that might be used"""
+
+    list_pimc = retrive_pimc_file_list(FS)
+    list_jackknife = retrive_jackknife_file_list(FS)
+    list_sos_vib = retrive_sos_coupled_file_list(FS)
+    list_sos_rho = retrive_sos_sampling_file_list(FS)
+
+    return list_pimc, list_jackknife, list_sos_vib, list_sos_rho
+
+
+def retrive_file_paths_for_jackknife(FS):
+    """return three lists of the full paths to each data file that might be used"""
+
+    list_pimc = retrive_pimc_file_list(FS)
+    list_sos_vib = retrive_sos_coupled_file_list(FS)
+    list_sos_rho = retrive_sos_sampling_file_list(FS)
 
     return list_pimc, list_sos_vib, list_sos_rho
 
 
 def extract_pimc_parameters(list_pimc, list_coupled, list_sampling):
-    """make a list of all parameters whose dependencies are satisfied"""
+    """make a list of all parameters whose dependencies are satisfied
+    note that this function is tightly tied to the file name
+    """
 
-    # note that the way these splits are coded
-    # will pose problems if the naming scheme for sos is changed in the future
-    value_dict = {"pimc_beads":0, "basis_fxns":0, "temperatures":0}
+    # note that the way these splits are coded will pose problems if the naming scheme for sos is changed in the future
+    value_dict = {"pimc_beads": 0, "basis_fxns": 0, "temperatures": 0}
 
     cL = map(lambda path: int(path.split("_B")[1].split(".json")[0]), list_coupled)
     sL = map(lambda path: int(path.split("_B")[1].split(".json")[0]), list_sampling)
@@ -111,13 +131,13 @@ def extract_pimc_parameters(list_pimc, list_coupled, list_sampling):
     return value_dict
 
 
-
 def extract_jackknife_parameters(list_pimc, list_coupled, list_sampling):
-    """make a list of all parameters whose dependencies are satisfied"""
+    """make a list of all parameters whose dependencies are satisfied
+    note that this function is tightly tied to the file name
+    """
 
-    # note that the way these splits are coded
-    # will pose problems if the naming scheme for sos is changed in the future
-    value_dict = {"pimc_beads":0, "basis_fxns":0, "temperatures":0}
+    # note that the way these splits are coded will pose problems if the naming scheme for sos is changed in the future
+    value_dict = {"pimc_beads": 0, "basis_fxns": 0, "temperatures": 0}
 
     cL = map(lambda path: int(path.split("_B")[1].split(".json")[0]), list_coupled)
     sL = map(lambda path: int(path.split("_B")[1].split(".json")[0]), list_sampling)
@@ -126,7 +146,6 @@ def extract_jackknife_parameters(list_pimc, list_coupled, list_sampling):
     value_dict["basis_fxns"] = list(set(cL) & set(sL))
     value_dict["basis_fxns"].sort()
     log.debug(value_dict["basis_fxns"])
-
 
     # parse file paths to find shared temperature values
     # for now we will leave this partially undeveloped
@@ -154,51 +173,41 @@ def extract_jackknife_parameters(list_pimc, list_coupled, list_sampling):
     return value_dict
 
 
-def load_data(P, B, T, path_root, id_data, id_rho, pimcArgs, rhoArgs):
-    """"""
-    path_root += "data_set_{:d}/rho_{:d}/".format(id_data, id_rho)
-    path_results = path_root + "results/"
-    path_params = path_root + "parameters/"
+def load_data(FS, P, B, T, pimcArgs, rhoArgs):
+    """x"""
 
-    path_data_points = path_results + file_suffix
-    path_data_points = path_data_points.format( id_data=id_data,
-                                                id_rho=id_rho,
-                                                number_of_beads=P,
-                                                temperature=T,
-                                                )
-
-    path_sos = path_params + sos_suffix.format(basis_size=B)
+    path_data_points = FS.template_pimc.format(P=P, T=T, J="*")
+    path_sos = FS.template_sos_rho.format(B=B)
 
     try:
         with np.load(path_data_points, allow_pickle=True) as npz_file:
-            pimc_data["s_g"] = npz_file["s_g"]
-            pimc_data["s_rho"] = npz_file["s_rho"]
+            # TODO - should make a class function in minimal.BoxResult that returns the data
+            # instead of using the specifiers "s_g", etc.
+            # this reduces the number of places in the code that need to be changed
+            pimcArgs["s_g"] = npz_file["s_g"]
+            pimcArgs["s_rho"] = npz_file["s_rho"]
             # plus minus version
             if "s_gP" in npz_file:
-                pimc_data["s_gP"] = npz_file["s_gP"]
-                pimc_data["s_gM"] = npz_file["s_gM"]
+                pimcArgs["s_gP"] = npz_file["s_gP"]
+                pimcArgs["s_gM"] = npz_file["s_gM"]
 
-
+        # TODO - should add stricter testing to make sure that the fraction itself isn't too small or big
         if np.any(pimcArgs["s_rho"] == 0.0):
             raise Exception("zeros in the denominator")
 
         with open(path_sos, "r") as rho_file:
             rho_dict = json.loads(rho_file.read())
-            input_temp_index = rho_dict["temperature"].index(T)
-            # make sure the temperature matches
-            assert(T == rho_dict["temperature"][input_temp_index])
 
-            rhoArgs["Z"] = rho_dict["Z_sampling"][input_temp_index]
-            rhoArgs["E"] = rho_dict["E_sampling"][input_temp_index]
-            rhoArgs["Cv"] = rho_dict["Cv_sampling"][input_temp_index]
-            # print("Zh", rho_dict["Z_ho_analytical"][input_temp_index])
-            # print("Zh+", rho_dict["Z_ho_analytical+beta"][input_temp_index])
+        # TODO - should make a class function in a new module that handles sos stuff ??
+        input_temp_index = rho_dict["temperature"].index(T)
+        # make sure the temperature matches
+        assert(T == rho_dict["temperature"][input_temp_index])
 
-            rhoArgs["alpha_plus"] = rhoArgs["Z"] / rho_dict["Z_sampling+beta"][input_temp_index]
-            rhoArgs["alpha_minus"] = rhoArgs["Z"] / rho_dict["Z_sampling-beta"][input_temp_index]
-            # print(alpha_plus, alpha_minus)
-            # print(E_sampling, Cv_sampling)
-
+        rhoArgs["Z"] = rho_dict["Z_sampling"][input_temp_index]
+        rhoArgs["E"] = rho_dict["E_sampling"][input_temp_index]
+        rhoArgs["Cv"] = rho_dict["Cv_sampling"][input_temp_index]
+        rhoArgs["alpha_plus"] = rhoArgs["Z"] / rho_dict["Z_sampling+beta"][input_temp_index]
+        rhoArgs["alpha_minus"] = rhoArgs["Z"] / rho_dict["Z_sampling-beta"][input_temp_index]
 
     except OSError as err:
         # skip if we cannot obtain all the necessary data
@@ -233,7 +242,6 @@ if (__name__ == "__main__"):
 
     # would be nice to have some feedback about what values there are and what are missing
 
-
     # manually select specific values from those available
     pimc_restriction = range(12, 101, 1) # at least 12 beads before we plot
     # pick the highest number of samples
@@ -256,16 +264,14 @@ if (__name__ == "__main__"):
     #         for T in argDict["temperatures"]:
     #             for B in argDict["basis_fxns"]:
     #                 arg_list.append((X, P, T, B))
-    arg_list = [(X, P, T, B)                    \
-                    for X in argDict["samples"]
-                    for P in argDict["pimc_beads"]
-                    for T in argDict["temperatures"]
-                    for B in argDict["basis_fxns"]
+    arg_list = [(X, P, T, B)
+                for X in argDict["samples"]
+                for P in argDict["pimc_beads"]
+                for T in argDict["temperatures"]
+                for B in argDict["basis_fxns"]
                 ]
 
-
     arg_iterator = iter(arg_list)
-
 
     block_size = 10
 

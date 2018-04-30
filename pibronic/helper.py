@@ -3,13 +3,22 @@
 
 
 import itertools as it
-import mmap
-import sys
+# import mmap
+# import sys
 import os
+
+# -----------------------------------------------------------
+# User convience functions
+# -----------------------------------------------------------
+
+# Should add helper functions that can read the .npz files directly
+# possibly translate them to text or csv for quick analzying
+
 
 # -----------------------------------------------------------
 # MEMORY MAPPED HELPER FUNCTIONS
 # -----------------------------------------------------------
+
 
 # wrapper that raises error if no substr can be found
 # finds the last occurance of a substring in memory mapped file
@@ -65,6 +74,7 @@ def skip_forward_lines(mm, numLines, startIndex):
 # -----------------------------------------------------------
 # HELPER FUNCTIONS
 # -----------------------------------------------------------
+
 
 def verify_file_exists(filePath):
     if not os.path.isfile(filePath):

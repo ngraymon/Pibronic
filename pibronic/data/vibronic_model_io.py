@@ -82,7 +82,7 @@ list_sub_dirs = [
 
 def pretty_print_model(id_model, unitsOfeV=False):
     """one method of printing the models in a human readable format"""
-    checkOS()
+    # checkOS()
     import pandas as pd
     from xarray import DataArray as dArr
 
@@ -970,7 +970,7 @@ def setup_input_params(directory_path, new_directory=False):
 
 def get_nmode_nsurf_from_coupled_model(id_model):
     """find nmodes and nsurfs for coupling_model.json files"""
-    checkOS()
+    # checkOS()
     directory_path = (path_default_root + dir_vib + "parameters/").format(id_model)
 
     json_filename = "coupled_model.json"
@@ -996,7 +996,7 @@ def get_nmode_nsurf_from_coupled_modelff(path_full):
 
 def get_nmode_nsurf_from_sampling_model(id_model, id_rho):
     """find nmodes and nsurfs for sampling_model.json files"""
-    checkOS()
+    # checkOS()
     directory_path = (path_default_root + dir_vib + dir_rho + "parameters/").format(id_model, id_rho)
 
     json_filename = "sampling_model.json"
@@ -1022,7 +1022,7 @@ def get_nmode_nsurf_from_sampling_modelff(path_full):
 
 def remove_coupling_from_model(path_source, path_destination):
     """reads in a model and sets all the coupling parameters to zero"""
-    # checkOS()
+    checkOS()
 
     e, w, l, q = load_model_from_JSON(path_source)
     numModes = w.shape[0]
@@ -1040,7 +1040,7 @@ def remove_coupling_from_model(path_source, path_destination):
 
 def create_harmonic_model(FS):
     """wrapper function to refresh harmonic model"""
-    # checkOS()
+    checkOS()
     source = FS.path_vib_params + "coupled_model.json"
     dest = FS.path_vib_params + "harmonic_model.json"
     # source = (FS.path_default_root + dir_vib + "parameters/coupled_model.json").format(id_model)
@@ -1053,21 +1053,25 @@ def create_harmonic_model(FS):
 
 def create_basic_sampling_model(FS):
     """wrapper function to make the simplest sampling model"""
-    # checkOS()
+    checkOS()
     source = create_harmonic_model(FS)
     dest = FS.path_rho_params + "sampling_model.json"
+
+    if os.path.isfile(dest):
+        s = "Sampling model {:s} already exists!"
+        log.debug(s.format(dest))
 
     shutil.copyfile(source, dest)
 
     s = "Created sampling model {:s} by copying {:s}"
     log.debug(s.format(dest, source))
-    return
+    return dest
 
 
 # this should not be used for the moment
 def create_new_execution_directory(path_root=None, id_data=None):
     """create or overwrite an execution directory"""
-    checkOS()
+    # checkOS()
 
     # data directories are named "data_set_XXX" where XXX can be an integer
     # from 1 to DIR_MAX
@@ -1133,7 +1137,7 @@ def create_new_execution_directory(path_root=None, id_data=None):
 
 def verify_execution_directory_exists(id_data, path_root=None):
     """ if directory structure exists does nothing, creates the file structure otherwise"""
-    checkOS()
+    # checkOS()
 
     # assume default
     if path_root is None:
