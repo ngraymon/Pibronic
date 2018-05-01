@@ -1,6 +1,7 @@
 # minimal.py
 # system imports
 import itertools as it
+from functools import partial
 import cProfile
 import json
 import time
@@ -18,12 +19,16 @@ from ..log_conf import log
 from .. import constants
 from ..constants import hbar
 from ..data import file_structure
+from ..data import file_name  # do we need this?
 from ..data import vibronic_model_io as vIO
 from ..server import job_boss
 
 
 float_tolerance = 1e-23
 
+""" TODO - eventually this should be replaced so that each time a sample is drawn
+a new seed is generated and stored in the results file indexed with the fraction it generated
+"""
 np.random.seed()# random
 # np.random.seed(232942) # pick our seed
 
@@ -623,6 +628,7 @@ class BoxResult:
 
     id_job = None
 
+    # this template name stuff needs to go!!!
     template_name = ("D{id_data:d}_"
                      "R{id_rho:d}_"
                      "P{number_of_beads:d}_"
@@ -631,12 +637,7 @@ class BoxResult:
 
     def __init__(self, data=None, X=None):
         if data is not None:
-            self.template_name = self.template_name.format(
-                                                            id_data=data.id_data,
-                                                            id_rho=data.id_rho,
-                                                            number_of_beads=data.beads,
-                                                            temperature=data.temperature,
-                                                            )
+            self.partial_name = partial(file_name.pimc().format, P=data.beads, T=data.temperature)
             self.samples = data.samples
         elif X is not None:
             self.samples = X
@@ -649,12 +650,20 @@ class BoxResult:
 
     def save_results(self, number_of_samples):
         if self.id_job is not None:
-            self.template_name += "_J{:s}".format(self.id_job)
+            self.name = self.partial_name(J=self.id_job)
+        else:
+            """ TODO - this could be dangerous on the server if a BoxResult object is created
+            but not assigned a job id - need to create a test to prevent this from happening
+            """
+            # should be 0 or the last number + 1
+            self.name = self.partial_name(J=0)
+            if False:  # search for other job id's
+                old_j = 90  # placeholder
+                self.name = self.partial_name(J=old_j+1)
 
         # result_view = slice(0, number_of_samples)
 
-        path_full = os.path.join(self.path_root, self.template_name)
-        path_full += "_data_points"
+        path_full = os.path.join(self.path_root, self.name)
 
         # save raw data points
         np.savez(path_full,
@@ -663,7 +672,6 @@ class BoxResult:
                  # s_g=self.scaled_g[result_view],
                  # s_rho=self.scaled_rho[result_view],
                  )
-        print("BoxResult", path_full)
         return
 
     def load_results(self, path_full):
@@ -691,11 +699,19 @@ class BoxResultPM(BoxResult):
 
     def save_results(self, number_of_samples):
         if self.id_job is not None:
-            self.template_name += "_J{:s}".format(self.id_job)
+            self.name = self.partial_name(J=self.id_job)
+        else:
+            """ TODO - this could be dangerous on the server if a BoxResult object is created
+            but not assigned a job id - need to create a test to prevent this from happening
+            """
+            # should be 0 or the last number + 1
+            self.name = self.partial_name(J=0)
+            if False:  # search for other job id's
+                old_j = 90  # placeholder
+                self.name = self.partial_name(J=old_j+1)
 
         # result_view = slice(0, number_of_samples)
-        path_full = os.path.join(self.path_root, self.template_name)
-        path_full += "_data_points"
+        path_full = os.path.join(self.path_root, self.name)
 
         # save raw data points
         np.savez(path_full,
@@ -704,7 +720,6 @@ class BoxResultPM(BoxResult):
                  s_gP=self.scaled_gofr_plus,
                  s_gM=self.scaled_gofr_minus,
                  )
-        print("BoxResultPM", path_full)
         return
 
     def load_results(self, path_full):

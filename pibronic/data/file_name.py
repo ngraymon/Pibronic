@@ -16,20 +16,46 @@ P - refers the number of beads (int)
 T - refers to the tempearture in Kelvin (float-2 places)
 J - jobnumber, default is zero (int)
 """
-_pimc = "P{{:s}}_T{{:s}}_J{{:s}}_data_points.npz"
-pimc = _pimc.format("{P:d}", "{T:.2f}", "{J:d}")
+_pimc = "P{:s}_T{:s}_J{:s}_data_points.npz"
+
+
+def pimc(P="{P:d}", T="{T:.2f}", J="{J:d}"):
+    """ wrapper function to allow parameterized search for files
+        can pass in any regular expression
+        most commonly will just pass in "*" to search for all files of a given argument
+    """
+    return _pimc.format(P, T, J)
+
+
 """ output of postprocess + jackknife
 P - refers the number of beads (int)
 T - refers to the tempearture in Kelvin (float-2 places)
 X - number of samples used to obtain results inside file (int)
 """
-_jackknife = "P{{:s}}_T{{:s}}_X{{:s}}_thermo"
-jackknife = _jackknife.format("{P:d}", "{T:.2f}", "{X:d}")
+_jackknife = "P{:s}_T{:s}_X{:s}_thermo"
+
+
+def jackknife(P="{P:d}", T="{T:.2f}", X="{X:d}"):
+    """ wrapper function to allow parameterized search for files
+        can pass in any regular expression
+        most commonly will just pass in "*" to search for all files of a given argument
+    """
+    return _jackknife.format(P, T, X)
+
+
 """ output of SOS for coupled model
 B - refers the number of basis functions to obtain results inside file (int)
 """
-_sos = "sos_B{{:s}}.json"
-_sos = _sos.format("{B:d}")
+_sos = "sos_B{:s}.json"
+
+
+def sos(B="{B:d}"):
+    """ wrapper function to allow parameterized search for files
+        can pass in any regular expression
+        most commonly will just pass in "*" to search for all files of a given argument
+    """
+    return _sos.format(B)
+
 
 # TODO - maybe only need one file name for both rho and sos???
 """ output of SOS for model diagonal in electronic states
@@ -59,27 +85,3 @@ sampling_model = "sampling_model.json"
 #     "execution_output/",
 #     "plots/",
 # ]
-
-
-def pimc(P="{P:d}", T="{T:.2f}", J="{J:d}"):
-    """ wrapper function to allow parameterized search for files
-        can pass in any regular expression
-        most commonly will just pass in "*" to search for all files of a given argument
-    """
-    return _pimc.format(P, T, J)
-
-
-def jackknife(P="{P:d}", T="{T:.2f}", X="{X:d}"):
-    """ wrapper function to allow parameterized search for files
-        can pass in any regular expression
-        most commonly will just pass in "*" to search for all files of a given argument
-    """
-    return _jackknife.format(P, T, X)
-
-
-def sos(B="{B:d}"):
-    """ wrapper function to allow parameterized search for files
-        can pass in any regular expression
-        most commonly will just pass in "*" to search for all files of a given argument
-    """
-    return _sos.format(B)

@@ -13,11 +13,18 @@ from setuptools import setup, find_packages, Extension
 from codecs import open
 from os import path
 
-here = path.abspath(path.dirname(__file__))
 
-# Get the long description from the README file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
-    long_description = f.read()
+# use Pandoc magic to convert Markdown to RST for uploading to PyPi
+def read_md(filename):
+    here = path.abspath(path.dirname(__file__))
+    with open(path.join(here, filename), encoding='utf-8') as f:
+        try:
+            from pypandoc import convert_text
+            return convert_text(f.read(), 'rst', format="md")
+        except ImportError:
+            print("warning: pypandoc module not found, could not convert Markdown to RST")
+            return f.read()
+
 
 setup(
     name='pibronic',
@@ -25,10 +32,11 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.0.dev1',
+    version='0.1.1.dev1',
 
     description='Quantum Mechanical Computational Package',
-    long_description=long_description,
+    long_description=read_md('README.md'),
+    # long_description=long_description,
 
     # The project's main homepage.
     url='https://github.com/ngraymon/pibronic',
@@ -66,7 +74,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='path_integral quantum_mechanics chemistry',
+    keywords='path_integral_monte_carlo quantum_mechanics chemistry vibronic',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().

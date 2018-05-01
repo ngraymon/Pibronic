@@ -79,10 +79,10 @@ class FileStructure:
         # self.pimc_suffix = root_suffix + "P{P:d}_T{T:.2f}_J*_data_points.npz"
         # self.jackknife_suffix = root_suffix + "P{P:d}_T{T:.2f}_X{X:d}_thermo"
 
-        self.template_pimc = self.path_rho_results + file_name.pimc
-        self.template_jackknife = self.path_rho_results + file_name.jackknife
-        self.template_sos_rho = self.path_rho_params + file_name.sos
-        self.template_sos_vib = self.path_vib_params + file_name.sos
+        self.template_pimc = self.path_rho_results + file_name.pimc()
+        self.template_jackknife = self.path_rho_results + file_name.jackknife()
+        self.template_sos_rho = self.path_rho_params + file_name.sos()
+        self.template_sos_vib = self.path_vib_params + file_name.sos()
 
         # TODO - should we factor this out into the file_name module?
         # self.template_pimc = file_name.pimc

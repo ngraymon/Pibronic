@@ -131,6 +131,7 @@ def extract_pimc_parameters(list_pimc, list_coupled, list_sampling):
     return value_dict
 
 
+# I believe this function is decommissioned for the time being
 def extract_jackknife_parameters(list_pimc, list_coupled, list_sampling):
     """make a list of all parameters whose dependencies are satisfied
     note that this function is tightly tied to the file name
@@ -235,7 +236,7 @@ def load_data(FS, P, B, T, pimcArgs, rhoArgs):
 if (__name__ == "__main__"):
 
     # catalogue available files
-    pimcList, coupledList, samplingList = retrive_file_list()
+    pimcList, coupledList, samplingList = retrive_file_paths_for_jackknife()
 
     # find shared values
     argDict = extract_parameters(pimcList, coupledList, samplingList)

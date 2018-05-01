@@ -20,14 +20,17 @@ Currently undergoing refactoring, specifically file I/O and fileStructure
 Ancillary code will be uploading in the near future
 The main PIMC simulation code is provided in minimal.py
 
-To do list:
-- prune vibronic_model_io
-- introduce FileStructure
-- integrate FileStructure with electronic_structure
-- second pass on posprocessing
+In Progress:
 - link postprocessing to jackknife
+- increase coverage of tests
+
+To do list:
+- refresh jackknife
+- inject file_name and file_structure into older modules
+- prune vibronic_model_io
+- integrate FileStructure with electronic_structure
+- third pass on posprocessing
 - clean up server job submission scripts
-- use everything as a model test
 
 
 Long term goals:

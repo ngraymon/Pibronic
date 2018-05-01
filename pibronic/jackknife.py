@@ -18,6 +18,7 @@ import numpy as np
 
 # local imports
 from .data import vibronic_model_io as vIO
+from .data import postprocessing as pp
 from .pimc.minimal import BoxResult, BoxResultPM
 from . import constants
 from .constants import hbar
@@ -724,10 +725,10 @@ def main(X, P, T, B):
 if (__name__ == "__main__"):
 
     # catalogue available files
-    pimcList, coupledList, samplingList = retrive_file_list()
+    pimcList, coupledList, samplingList = pp.retrive_file_paths_for_jackknife()
 
     # find shared values
-    arg_dict = extract_parameters(pimcList, coupledList, samplingList)
+    arg_dict = pp.extract_jackknife_parameters(pimcList, coupledList, samplingList)
 
     # would be nice to have some feedback about what values there are and what are missing
 
@@ -738,7 +739,7 @@ if (__name__ == "__main__"):
     # pick the highest number of basis functions
     basis_restriction = arg_dict["basis_fxns"][-1]
     # temperature is currently fixed at 300K
-    temperature_restriction = np.array([300])
+    temperature_restriction = np.array([300.00])
 
     # intersect returns sorted, unique values that are in both of the input arrays
     arg_dict["temperatures"] = np.intersect1d(arg_dict["temperatures"], temperature_restriction)

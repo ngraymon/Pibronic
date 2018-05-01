@@ -101,24 +101,34 @@ class TestMinimalNatively():
         minimal.block_compute(data, results)
         return
 
-    @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
+    # @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
+    @pytest.fixture(scope="class", params=[(0, 0)])
     def dataPM(self, request):
         data = minimal.BoxDataPM(pibronic.constants.delta_beta)
         data.id_data = request.param[0]
         data.id_rho = request.param[1]
         return data
 
-    def test_simple_block_compute_pm(self, files, dataPM):
-        dataPM.path_vib_model = files.path_vib_model
-        dataPM.path_rho_model = files.path_rho_model
+    @pytest.fixture(scope="class")
+    def filesPM(self, dataPM):
+        return fs.FileStructure.from_boxdata(self.test_path, dataPM)
+
+    # this creates 10 different output files for this test case
+    @pytest.fixture(scope="class", params=range(1, 11))
+    def job_id(self, request):
+        return request.param
+
+    def test_simple_block_compute_pm(self, filesPM, dataPM, job_id):
+        dataPM.path_vib_model = filesPM.path_vib_model
+        dataPM.path_rho_model = filesPM.path_rho_model
 
         # data should be able to figure out the number of states and modes from the file
         dataPM.states = 2
         dataPM.modes = 2
 
         dataPM.samples = self.samples
-        dataPM.beads = 10
-        dataPM.temperature = 300.0
+        dataPM.beads = 12
+        dataPM.temperature = 300.00
         dataPM.blocks = self.samples // self.block_size
         dataPM.block_size = self.block_size
 
@@ -127,7 +137,8 @@ class TestMinimalNatively():
 
         # store results here
         results = minimal.BoxResultPM(data=dataPM)
-        results.path_root = files.path_rho_results
+        results.path_root = filesPM.path_rho_results
+        results.id_job = job_id
 
         minimal.block_compute_pm(dataPM, results)
         return
