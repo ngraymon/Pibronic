@@ -628,13 +628,6 @@ class BoxResult:
 
     id_job = None
 
-    # this template name stuff needs to go!!!
-    template_name = ("D{id_data:d}_"
-                     "R{id_rho:d}_"
-                     "P{number_of_beads:d}_"
-                     "T{temperature:.2f}"
-                     )
-
     def __init__(self, data=None, X=None):
         if data is not None:
             self.partial_name = partial(file_name.pimc().format, P=data.beads, T=data.temperature)
@@ -644,6 +637,7 @@ class BoxResult:
         else:
             raise AssertionError("data or X must be provided to BoxResult __init__")
 
+        # TODO - need better handling of cases where X is not provided
         self.scaled_g = np.empty(self.samples, dtype=F64)
         self.scaled_rho = np.empty(self.samples, dtype=F64)
         return
@@ -693,6 +687,7 @@ class BoxResultPM(BoxResult):
     """plus minus version of BoxResult"""
     def __init__(self, data=None, X=None):
         super().__init__(data, X)
+        # TODO - need better handling of cases where X is not provided
         self.scaled_gofr_plus = np.empty(self.samples, dtype=F64)
         self.scaled_gofr_minus = np.empty(self.samples, dtype=F64)
         return

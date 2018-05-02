@@ -24,38 +24,39 @@ from . import constants
 from .constants import hbar
 
 
-assert(len(sys.argv) == 3)
-assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
-assert(sys.argv[2].isnumeric() and int(sys.argv[1]) >= 0)
+# these assume we call the module as a script
+# assert(len(sys.argv) == 3)
+# assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
+# assert(sys.argv[2].isnumeric() and int(sys.argv[1]) >= 0)
 
-dir_workspace = "/work/ngraymon/pimc/"
-id_data = int(sys.argv[1])
-dir_data = "data_set_{:d}/".format(id_data)
-id_rho = int(sys.argv[2])
-dir_rho = "rho_{:d}/".format(id_rho)
+# dir_workspace = "/work/ngraymon/pimc/"
+# id_data = int(sys.argv[1])
+# dir_data = "data_set_{:d}/".format(id_data)
+# id_rho = int(sys.argv[2])
+# dir_rho = "rho_{:d}/".format(id_rho)
 
-directory_path = dir_workspace + dir_data
-sampling_path = directory_path + dir_rho
-assert(os.path.exists(sampling_path))
+# directory_path = dir_workspace + dir_data
+# sampling_path = directory_path + dir_rho
+# assert(os.path.exists(sampling_path))
 
 # some default file paths
-path_sos = directory_path + "parameters/"
-path_params = sampling_path + "parameters/"
-path_results = sampling_path + "results/"
-path_plots = sampling_path + "plots/"
+# path_sos = directory_path + "parameters/"
+# path_params = sampling_path + "parameters/"
+# path_results = sampling_path + "results/"
+# path_plots = sampling_path + "plots/"
 
-# read in the model parameters from the coupled and sampling models
-number_of_modes, number_of_surfaces = vIO.get_nmode_nsurf_from_coupled_model(id_data)
-rho_modes, rho_surfs = vIO.get_nmode_nsurf_from_sampling_model(id_data, id_rho)
+# # read in the model parameters from the coupled and sampling models
+# number_of_modes, number_of_surfaces = vIO.get_nmode_nsurf_from_coupled_model(id_data)
+# rho_modes, rho_surfs = vIO.get_nmode_nsurf_from_sampling_model(id_data, id_rho)
 
 # FILE_ROOT  =  "F{:d}".format(id_data)           + \
 #                 "_A{:d}".format(number_of_surfaces) + \
 #                 "_N{:d}".format(number_of_modes)    + \
 #                 "_X{:d}_P{:d}_T{:d}"
 
-filePrefix = "F{F:d}_A{A:d}_N{N:d}_".format(F=id_data, A=number_of_surfaces, N=number_of_modes)
-fileSuffix = "X{X:d}_P{P:d}_T{T:d}_data_points.npz"
-sosSuffix = "sos_B{B:d}.json"
+# filePrefix = "F{F:d}_A{A:d}_N{N:d}_".format(F=id_data, A=number_of_surfaces, N=number_of_modes)
+# fileSuffix = "X{X:d}_P{P:d}_T{T:d}_data_points.npz"
+# sosSuffix = "sos_B{B:d}.json"
 
 
 def retrive_file_list():
@@ -719,6 +720,249 @@ def main(X, P, T, B):
                         JK_ret_fourth["Cv"],
                         JK_ret_fourth["Cv error"],
                     ], fmt=fstr)
+    return
+
+
+def calculate_estimators_and_variance(FS):
+
+    # catalogue available files
+    pimcList, coupledList, samplingList = pp.retrive_file_paths_for_jackknife(FS)
+
+    # find shared values
+    arg_dict = pp.extract_jackknife_parameters(pimcList, coupledList, samplingList)
+
+    # would be nice to have some feedback about what values there are and what are missing
+
+    # manually select specific values from those available
+    pimc_restriction = range(12, 101, 1)  # at least 12 beads before we plot
+    # pick number of samples?
+    # would be useful to have some restriciton on the total number of samples?
+    # pick the highest number of basis functions
+    basis_restriction = arg_dict["basis_fxns"][-1]
+    # temperature is currently fixed at 300K
+    temperature_restriction = np.array([300.00])
+
+    # intersect returns sorted, unique values that are in both of the input arrays
+    arg_dict["temperatures"] = np.intersect1d(arg_dict["temperatures"], temperature_restriction)
+    arg_dict["pimc_beads"] = np.intersect1d(arg_dict["pimc_beads"], pimc_restriction)
+    arg_dict["basis_fxns"] = np.intersect1d(arg_dict["basis_fxns"], basis_restriction)
+    # would be useful to have some restriciton on the total number of samples?
+
+    # create a list of arguments for multiprocessing pool
+    # arg_list = []
+    # for X in arg_dict["samples"]:
+    #     for P in arg_dict["pimc_beads"]:
+    #         for T in arg_dict["temperatures"]:
+    #             for B in arg_dict["basis_fxns"]:
+    #                 arg_list.append((X, P, T, B))
+    arg_list = [(P, T, B)
+                for P in arg_dict["pimc_beads"]
+                for T in arg_dict["temperatures"]
+                for B in arg_dict["basis_fxns"]
+                ]
+
+    arg_iterator = iter(arg_list)
+
+    block_size = 10
+    return
+
+    # for later
+    def preform_jackknife(P, T, B):
+        # TODO - we should scan all the files and memory map the header to figure out how many sample points each file has to calculate the total X
+        pimc_results = BoxResultPM(X)
+        rhoData = {}
+
+        load_data(X, P, B, T, pimc_results, rhoData)
+
+        Z_sampling = rhoData["Z"]
+        E_sampling = rhoData["E"]
+        Cv_sampling = rhoData["Cv"]
+        alpha_plus = rhoData["alpha_plus"]
+        alpha_minus = rhoData["alpha_minus"]
+
+        y_rho = pimc_results.y_rho
+        y_g = pimc_results.y_g
+        y_rhop = pimc_results.y_rhop
+        y_rhom = pimc_results.y_rhom
+        yp_rhop = pimc_results.yp_rhop
+        ym_rhom = pimc_results.ym_rhom
+        y_gp = pimc_results.y_gp
+        y_gm = pimc_results.y_gm
+        yp_gp = pimc_results.yp_gp
+        ym_gm = pimc_results.ym_gm
+
+        # # # Begin to calculate properties
+        # input data
+        data = [y_rho, y_g, y_gp, y_gm]    #
+        data_diff = [y_rho, y_rhop, yp_rhop, y_rhom, ym_rhom,
+                     y_g, y_gp, yp_gp, y_gm, ym_gm]
+        #
+        data_alpha = data_diff + [alpha_plus, alpha_minus]
+        #
+        data_fourth = data_alpha
+        # data_fourth = data_diff + [alpha_plus, alpha_minus, Z_sampling]
+        #
+        # constants = [X, P, T, DELTA_BETA, constants.boltzman]
+        constants = [X, P, T, constants.delta_beta, constants.boltzman]
+
+        # Precalculate
+        terms = calculate_property_terms(data, constants)
+        # g_r, sym1, sym2 = terms
+        terms_diff = calculate_difference_terms(data_diff, constants)
+        # g_r, sym1, sym2 = terms_diff
+        terms_alpha = calculate_alpha_terms(data_alpha, constants, E_sampling)
+        # print(terms_alpha, "\n\n")
+        # g_r, sym1, sym2 = terms_delta
+        terms_fourth = calculate_fourth_terms(data_fourth, constants)
+        # print(terms_fourth, "\n\n")
+        # g_r, sym1, sym2 = terms_fourth
+
+        assert(np.allclose(terms[0], terms_diff[0]))
+        assert(np.allclose(terms[0], terms_alpha[0]))
+        assert(np.allclose(terms[0], terms_fourth[0]))
+
+        # Calculate the jackknife terms
+        JK_terms = calculate_jackknife_terms(terms, constants)
+        # jk_f, jk_sym1, jk_sym2 = JK_terms
+        JK_terms_diff = calculate_jackknife_terms(terms_diff, constants)
+        # jk_f, jk_sym1, jk_sym2 = JK_terms_diff
+        JK_terms_alpha = calculate_alpha_jackknife_terms(terms_alpha, constants)
+        # jk_f, jk_sym1, jk_sym2 = JK_terms_alpha
+        JK_terms_fourth = calculate_fourth_jackknife_terms(terms_fourth, constants)
+        # jk_f, jk_sym1, jk_sym2 = JK_terms_fourth
+
+        # calculate <exp> s.t. (H = <exp>)
+        ret = estimate_property(terms, constants)
+        # Z, Z_err, E, E_err, Cv, Cv_Err = ret
+        JK_ret = estimate_jackknife(JK_terms, constants, ret)
+        # E, E_err, Cv, Cv_Err = JK_ret
+
+        # calculate <exp> s.t. (H = <exp> + ho)
+        ret_diff = estimate_property(terms_diff, constants)
+        # Z, Z_err, E, E_err, Cv, Cv_Err = ret_diff
+        JK_ret_diff = estimate_jackknife(JK_terms_diff, constants, ret_diff)
+        # E, E_err, Cv, Cv_Err = JK_ret_diff
+
+        # calculate <exp> s.t. (H = <exp> + ho)
+        ret_alpha = estimate_property(terms_alpha, constants)
+        # Z, Z_err, E, E_err, Cv, Cv_Err = ret_alpha
+        JK_ret_alpha = estimate_jackknife(JK_terms_alpha, constants, ret_alpha)
+        # E, E_err, Cv, Cv_Err = JK_ret_diff
+
+        # calculate <exp> s.t. (H = <exp> + ho)
+        ret_fourth = estimate_property(terms_fourth, constants)
+        # Z, Z_err, E, E_err, Cv, Cv_Err = ret_fourth
+        JK_ret_fourth = estimate_jackknife(JK_terms_fourth, constants, ret_fourth)
+        # E, E_err, Cv, Cv_Err = JK_ret_fourth
+
+        # Remember that we need to handle the difference terms specially
+        postprocess_difference(ret_diff, E_sampling, Cv_sampling)
+        postprocess_difference(JK_ret_diff, E_sampling, Cv_sampling)
+        postprocess_difference(ret_alpha, E_sampling, Cv_sampling)
+        postprocess_difference(JK_ret_alpha, E_sampling, Cv_sampling)
+        postprocess_difference(ret_fourth, E_sampling, Cv_sampling)
+        postprocess_difference(JK_ret_fourth, E_sampling, Cv_sampling)
+
+        # print(ret_alpha, "\n\n")
+        # print(ret_fourth, "\n\n")
+
+        output_path = path_results + filePrefix
+        output_path += "X{X:d}_P{P:d}_T{T:d}_thermo".format(X=X, P=P, T=T)
+        # # # Write output to file
+        if False:
+            fstr = "%-18.18s"+"%-+34.30E"
+            # save the data to the thermo file
+            X = [  # Partition Function
+                fstr % ("Zf/Zh", ret["Z"]),
+                fstr % ("Zf/Zh error", ret["Z error"]),
+                "",
+                # Energy!
+                fstr % ("Orig E no JK", ret["E"]),
+                fstr % ("Error", ret["E error"]),
+                fstr % ("Orig E with JK", JK_ret["E"]),
+                fstr % ("Error", JK_ret["E error"]),
+                fstr % ("Diff E no JK", ret_diff["E"]),
+                fstr % ("Error", ret_diff["E error"]),
+                fstr % ("Diff E with JK", ret_diff["E"]),
+                fstr % ("Error", JK_ret_diff["E error"]),
+                fstr % ("Alpha E no JK", ret_alpha["E"]),
+                fstr % ("Error", ret_alpha["E error"]),
+                fstr % ("Alpha E with JK", JK_ret_alpha["E"]),
+                fstr % ("Error", JK_ret_alpha["E error"]),
+                fstr % ("Fourth E no JK", ret_fourth["E"]),
+                fstr % ("Error", ret_fourth["E error"]),
+                fstr % ("Fourth E with JK", JK_ret_fourth["E"]),
+                fstr % ("Error", JK_ret_fourth["E error"]),
+                "",
+                # Heat capacity
+                fstr % ("Orig Cv no JK", ret["Cv"]),
+                fstr % ("Error", ret["Cv error"]),
+                fstr % ("Orig Cv with JK", JK_ret["Cv"]),
+                fstr % ("Error", JK_ret["Cv error"]),
+                fstr % ("Diff Cv no JK", ret_diff["Cv"]),
+                fstr % ("Error", ret_diff["Cv error"]),
+                fstr % ("Diff Cv with JK", JK_ret_diff["Cv"]),
+                fstr % ("Error", JK_ret_diff["Cv error"]),
+                fstr % ("Alpha Cv no JK", ret_alpha["Cv"]),
+                fstr % ("Error", ret_alpha["Cv error"]),
+                fstr % ("Alpha Cv with JK", JK_ret_alpha["Cv"]),
+                fstr % ("Error", JK_ret_alpha["Cv error"]),
+                fstr % ("Fourth Cv no JK", ret_fourth["Cv"]),
+                fstr % ("Error", ret_fourth["Cv error"]),
+                fstr % ("Fourth Cv with JK", JK_ret_fourth["Cv"]),
+                fstr % ("Error", JK_ret_fourth["Cv error"]),
+            ]
+            for a in X:
+                print(a)
+            # np.savetxt(output_path, X, fmt="%s")
+        else:
+            fstr = "%-+34.30E"
+            # save the data to the thermo file
+            np.savetxt(output_path,
+                       X=[  # Partition Function
+                            ret["Z"],
+                            ret["Z error"],
+                            # Energy!
+                            ret["E"],
+                            ret["E error"],
+                            JK_ret["E"],
+                            JK_ret["E error"],
+                            ret_diff["E"],
+                            ret_diff["E error"],
+                            JK_ret_diff["E"],
+                            JK_ret_diff["E error"],
+                            ret_alpha["E"],
+                            ret_alpha["E error"],
+                            JK_ret_alpha["E"],
+                            JK_ret_alpha["E error"],
+                            ret_fourth["E"],
+                            ret_fourth["E error"],
+                            JK_ret_fourth["E"],
+                            JK_ret_fourth["E error"],
+                            # Heat capacity
+                            ret["Cv"],
+                            ret["Cv error"],
+                            JK_ret["Cv"],
+                            JK_ret["Cv error"],
+                            ret_diff["Cv"],
+                            ret_diff["Cv error"],
+                            JK_ret_diff["Cv"],
+                            JK_ret_diff["Cv error"],
+                            ret_alpha["Cv"],
+                            ret_alpha["Cv error"],
+                            JK_ret_alpha["Cv"],
+                            JK_ret_alpha["Cv error"],
+                            ret_fourth["Cv"],
+                            ret_fourth["Cv error"],
+                            JK_ret_fourth["Cv"],
+                            JK_ret_fourth["Cv error"],
+                        ], fmt=fstr)
+        return
+
+    with mp.Pool(block_size) as p:
+        p.starmap(preform_jackknife, arg_list)
+
+    print("Finished")
     return
 
 

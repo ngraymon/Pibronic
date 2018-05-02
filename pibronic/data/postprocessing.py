@@ -88,7 +88,7 @@ def retrive_file_paths_for_jackknife(FS):
 
     return list_pimc, list_sos_vib, list_sos_rho
 
-
+# I believe this function is decommissioned for the time being
 def extract_pimc_parameters(list_pimc, list_coupled, list_sampling):
     """make a list of all parameters whose dependencies are satisfied
     note that this function is tightly tied to the file name
@@ -120,7 +120,7 @@ def extract_pimc_parameters(list_pimc, list_coupled, list_sampling):
     log.debug(value_dict["samples"])
 
     # parse file paths to find pimc bead values
-    pL = map(lambda path: int(path.split("_P")[1].split("_T")[0]), list_pimc)
+    pL = map(lambda path: int(path.split("/P")[1].split("_T")[0]), list_pimc)
     value_dict["pimc_beads"] = []
     for p in pL:
         if p not in value_dict["pimc_beads"]:
@@ -131,7 +131,6 @@ def extract_pimc_parameters(list_pimc, list_coupled, list_sampling):
     return value_dict
 
 
-# I believe this function is decommissioned for the time being
 def extract_jackknife_parameters(list_pimc, list_coupled, list_sampling):
     """make a list of all parameters whose dependencies are satisfied
     note that this function is tightly tied to the file name
@@ -163,7 +162,7 @@ def extract_jackknife_parameters(list_pimc, list_coupled, list_sampling):
     # log.debug(value_dict["samples"])
 
     # parse file paths to find pimc bead values
-    pL = map(lambda path: int(path.split("_P")[1].split("_T")[0]), list_pimc)
+    pL = map(lambda path: int(path.split("results/P")[1].split("_T")[0]), list_pimc)
     value_dict["pimc_beads"] = []
     for p in pL:
         if p not in value_dict["pimc_beads"]:

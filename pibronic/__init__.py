@@ -13,6 +13,7 @@ from . import helper
 from . import log_conf
 from . import constants
 from . import everything
+from . import jackknife
 
 
-__all__ = ['pimc', 'data', 'server', 'plotting', 'electronic_structure', 'constants', 'everything', 'log_conf', 'helper']
+__all__ = ['pimc', 'data', 'server', 'plotting', 'electronic_structure', 'constants', 'everything', 'log_conf', 'helper', 'jackknife']

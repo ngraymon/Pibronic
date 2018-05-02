@@ -19,10 +19,16 @@ import os
 # MEMORY MAPPED HELPER FUNCTIONS
 # -----------------------------------------------------------
 
+def readlines(mmFile, number_of_lines):
+    """if we need to skip mulitple lines"""
+    for x in range(0, number_of_lines):
+        mmFile.readline()
 
-# wrapper that raises error if no substr can be found
-# finds the last occurance of a substring in memory mapped file
+
 def find_string_in_file(mmFile, filePath, targetString):
+    """wrapper that raises error if no substr can be found
+    finds the last occurance of a substring in memory mapped file
+    """
     location = mmFile.find(targetString.encode(encoding="utf-8"))
 
     if location == -1:
@@ -33,9 +39,9 @@ def find_string_in_file(mmFile, filePath, targetString):
     return location
 
 
-# wrapper that raises error if no substr can be found
-# finds the last occurance of a substring in memory mapped file
 def rfind_string_in_file(mmFile, filePath, targetString):
+    """wrapper that raises error if no substr can be found
+    finds the last occurance of a substring in memory mapped file"""
     location = mmFile.rfind(targetString.encode(encoding="utf-8"))
 
     if location == -1:
@@ -46,9 +52,9 @@ def rfind_string_in_file(mmFile, filePath, targetString):
     return location
 
 
-# gives the byte location numLines lines before
-# the given byte location startIndex
 def skip_back_lines(mm, numLines, startIndex):
+    """gives the byte location numLines lines before
+    the given byte location startIndex"""
     '''Factored out to simplify handling of n and offset'''
     for placeHolder in it.repeat(None, numLines):
         tempstartIndex = mm.rfind(b'\n', 0, startIndex)
@@ -59,9 +65,9 @@ def skip_back_lines(mm, numLines, startIndex):
     return startIndex
 
 
-# gives the byte location numLines lines after
-# the given byte location startIndex
 def skip_forward_lines(mm, numLines, startIndex):
+    """gives the byte location numLines lines after
+    the given byte location startIndex"""
     '''Factored out to simplify handling of n and offset'''
     for placeHolder in it.repeat(None, numLines):
         tempstartIndex = mm.find(b'\n', startIndex + 1)
@@ -77,6 +83,7 @@ def skip_forward_lines(mm, numLines, startIndex):
 
 
 def verify_file_exists(filePath):
+    """x"""
     if not os.path.isfile(filePath):
         s = "The provided path {:s} does not appear to be a file, or it does not exist"
         raise FileNotFoundError(s.format(filePath))

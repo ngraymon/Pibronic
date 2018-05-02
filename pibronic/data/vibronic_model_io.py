@@ -20,6 +20,7 @@ import numpy as np
 from numpy import newaxis as NEW
 from numpy import float64 as F64
 from numpy.random import uniform as Uniform
+import parse
 
 # local imports
 from ..log_conf import log
@@ -166,10 +167,8 @@ def pretty_print_model(id_model, unitsOfeV=False):
 
     return
 
-# ------------------------------------------------------------------------
-# ### these six functions are filestructure agnostic ####
 
-
+# this function should probably be removed - no longer needed
 def parse_model_params(path_full):
     """this one could probably be removed? parses model_parameters_source.txt"""
     # does the file exist?
@@ -312,6 +311,15 @@ def generate_vibronic_model_data(paramDict=None):
     assert(np.allclose(quadratic, quadratic.transpose(1,0,2,3)))
 
     return energy, omega, linear, quadratic
+    # and we are done
+    return_dict = {"number of modes": numModes,
+                   "number of surfaces": numStates,
+                   "energies": energy,
+                   "frequencies": omega,
+                   "linear couplings": linear,
+                   "quadratic couplings": quadratic,
+                   }
+    return return_dict
 
 
 def read_model_h_file(path_file_h):
@@ -460,7 +468,7 @@ def read_model_h_file(path_file_h):
         # print(energies)
         return
 
-    def extract_linear_couplings(path, memmap, frequencies, coupling_terms):
+    def extract_linear_couplings(path, memmap, coupling_terms):
         """frequencies need to be provided in wavenumbers"""
         # find the begining and ending of the important region
         memmap.seek(0)  # start looking from the begining of the file
@@ -493,7 +501,7 @@ def read_model_h_file(path_file_h):
             # print(coupling_terms[idx])
         return
 
-    def extract_quadratic_couplings(path, memmap, frequencies, coupling_terms):
+    def extract_quadratic_couplings(path, memmap, coupling_terms):
         """frequencies need to be provided in wavenumbers"""
         # find the begining and ending of the important region
         memmap.seek(0)  # start looking from the begining of the file
@@ -605,17 +613,414 @@ def read_model_h_file(path_file_h):
     assert(np.allclose(quadratic_couplings, quadratic_couplings.transpose(1, 0, 2, 3)))
 
     # and we are done
-    return numStates, numModes, excitation_energies, frequencies, linear_couplings, quadratic_couplings
+    return_dict = {"number of modes": numModes,
+                   "number of surfaces": numStates,
+                   "energies": excitation_energies,
+                   "frequencies": frequencies,
+                   "linear couplings": linear_couplings,
+                   "quadratic couplings": quadratic_couplings,
+                   }
+    return return_dict
 
 
-def create_coupling_from_h_file(path_file_h):
+def read_model_op_file(path_file_op):
+    """ reads/parses molecule_vibron.op file"""
+
+    # declare the arrays used to store the model's paramters
+    # all numbers have units of electron volts
+    excitation_energies = None
+    frequencies = None
+    linear_couplings = None
+    quadratic_couplings = None
+    cubic_couplings = None
+    quartic_couplings = None
+
+    global numStates, numModes, States, Modes, size
+    # we will overwrite these default values
+    numStates = numModes = States = Modes = size = 0
+
+    helper.verify_file_exists(path_file_op)
+
+    def extract_energies(path, memmap):
+        """x"""
+        # find the begining and ending of the important region
+        memmap.seek(0)  # start looking from the begining of the file
+        beginString = 'Electronic Hamitonian'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Electronic transition moments'
+        end = helper.find_string_in_file(memmap, path, endString)
+
+        # go to the begining of that region
+        memmap.seek(begin)
+
+        # skip the header
+        helper.readlines(memmap, 3)
+
+        # read all the relevant data
+        byteData = memmap.read(end - memmap.tell())
+        stringData = byteData.decode(encoding="utf-8")
+        lines = [line for line in stringData.strip().splitlines() if "#" not in line and line is not ""]
+
+        # set the parameters
+        global numStates, States
+        numStates = len(lines)
+        States = range(numStates)
+
+        # save the reference hamiltonian into the energies array
+        energies = np.zeros((numStates, numStates))
+        for a in States:
+            list_of_words = lines[a].split()
+            assert list_of_words[0] == f"EH_s{a+1:02}_s{a+1:02}"  # this is a formatted string literal (new in python3.6)
+            assert list_of_words[-1] == "ev"
+            energies[a, a] = list_of_words[2]
+        return energies
+
+    def extract_normal_mode_frequencies(path, memmap):
+        """store output in frequency_array"""
+        # find the begining and ending of the important region
+        memmap.seek(0)  # start looking from the begining of the file
+        beginString = 'Frequencies'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Zeropoint energy'
+        end = helper.find_string_in_file(memmap, path, endString)
+
+        # go to the begining of that region
+        memmap.seek(begin)
+
+        # skip headers
+        helper.readlines(memmap, 2)
+
+        # read all the relevant data
+        byteData = memmap.read(end - memmap.tell())
+        stringData = byteData.decode(encoding="utf-8")
+        lines = [line for line in stringData.strip().splitlines() if "#" not in line and line is not ""]
+
+        # set the parameters
+        global numModes, Modes
+        numModes = len(lines)
+        Modes = range(numModes)
+
+        # extract the numbers and save them in the frequencies array
+        frequencies = np.zeros(numModes)
+        for j in Modes:
+            list_of_words = lines[j].split()
+            assert list_of_words[0] == f"w{j+1:02}"  # this is a formatted string literal (new in python3.6)
+            assert list_of_words[-1] == "ev"
+            frequencies[j] = list_of_words[2]
+        return frequencies
+
+    def extract_linear_couplings(path, memmap, coupling_terms):
+        """x"""
+        # find the begining and ending of the important region
+        memmap.seek(0)  # start looking from the begining of the file
+        beginString = 'Linear Coupling Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Diagonal Quadratic Coupling Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+
+        # go to the begining of that region
+        memmap.seek(begin)
+
+        # skip headers
+        helper.readlines(memmap, 2)
+
+        # read all the relevant data
+        byteData = memmap.read(end - memmap.tell())
+        stringData = byteData.decode(encoding="utf-8")
+        stringData = stringData.strip().replace('=', '').replace(', ev', '')
+        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
+
+        p = parse.compile("C1_s{a1:d}_s{a2:d}_v{j:d}")
+
+        for line in lines:
+            r = p.parse(line[0])
+            index_tuple = (r['j']-1, r['a1']-1, r['a2']-1)
+            coupling_terms[index_tuple] = line[1]
+        # done
+        return
+
+    def extract_quadratic_couplings(path, memmap, coupling_terms):
+        """x"""
+        # find the begining and ending of the important region
+        memmap.seek(0)  # start looking from the begining of the file
+        beginString = 'Diagonal Quadratic Coupling Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Cubic Coupling Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+
+        # go to the begining of that region
+        memmap.seek(begin)
+
+        # skip headers
+        helper.readlines(memmap, 2)
+
+        # read all the relevant data
+        byteData = memmap.read(end - memmap.tell())
+        stringData = byteData.decode(encoding="utf-8")
+        stringData = stringData.strip().replace('=', '').replace(', ev', '')
+        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
+
+        p = parse.compile("C2_s{a1:d}s{a2:d}_v{j1:d}v{j2:d}")
+
+        for line in lines:
+            r = p.parse(line[0])
+            index_tuple = (r['j1']-1, r['j2']-1, r['a1']-1, r['a2']-1)
+            coupling_terms[index_tuple] = line[1]
+        # done
+        return
+
+    def extract_cubic_couplings(path, memmap, coupling_terms):
+        """x"""
+        # find the begining and ending of the important region
+        memmap.seek(0)  # start looking from the begining of the file
+        beginString = 'Cubic Coupling Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Quartic Coupling Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+
+        # go to the begining of that region
+        memmap.seek(begin)
+
+        # skip headers
+        helper.readlines(memmap, 2)
+
+        # read all the relevant data
+        byteData = memmap.read(end - memmap.tell())
+        stringData = byteData.decode(encoding="utf-8")
+        stringData = stringData.strip().replace('=', '').replace(', ev', '')
+        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
+
+        p = parse.compile("C3_s{a1:d}_s{a2:d}_v{j:d}")
+
+        for line in lines:
+            r = p.parse(line[0])
+            index_tuple = (r['j']-1, r['j']-1, r['j']-1, r['a1']-1, r['a2']-1)
+            coupling_terms[index_tuple] = line[1]
+        # done
+        return
+
+    def extract_bicubic_couplings(path, memmap, coupling_terms):
+        """x"""
+        # find the begining and ending of the important region
+        memmap.seek(0)  # start looking from the begining of the file
+        beginString = 'Bi-Cubic Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Bi-Quartic Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+
+        # go to the begining of that region
+        memmap.seek(begin)
+
+        # skip headers
+        helper.readlines(memmap, 2)
+
+        # read all the relevant data
+        byteData = memmap.read(end - memmap.tell())
+        stringData = byteData.decode(encoding="utf-8")
+        stringData = stringData.strip().replace('=', '').replace(', ev', '')
+        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
+
+        p = parse.compile("B3_s{a1:d}s{a2:d}_v{j1:d}v{j2:d}")
+
+        for line in lines:
+            r = p.parse(line[0])
+            # need to confirm this?
+            index_tuple = (r['j1']-1, r['j2']-1, r['j2']-1, r['a1']-1, r['a2']-1)
+            coupling_terms[index_tuple] = line[1]
+        # done
+        return
+
+    def extract_quartic_couplings(path, memmap, coupling_terms):
+        """x"""
+        # find the begining and ending of the important region
+        memmap.seek(0)  # start looking from the begining of the file
+        beginString = 'Quartic Coupling Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Bi-Cubic Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+
+        # go to the begining of that region
+        memmap.seek(begin)
+
+        # skip headers
+        helper.readlines(memmap, 2)
+
+        # read all the relevant data
+        byteData = memmap.read(end - memmap.tell())
+        stringData = byteData.decode(encoding="utf-8")
+        stringData = stringData.strip().replace('=', '').replace(', ev', '')
+        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
+
+        p = parse.compile("C4_s{a1:d}_s{a2:d}_v{j:d}")
+
+        for line in lines:
+            r = p.parse(line[0])
+            index_tuple = (r['j']-1, r['j']-1, r['j']-1, r['j']-1, r['a1']-1, r['a2']-1)
+            coupling_terms[index_tuple] = line[1]
+        # done
+        return
+
+    def extract_biquartic_couplings(path, memmap, coupling_terms):
+        """x"""
+        # find the begining and ending of the important region
+        memmap.seek(0)  # start looking from the begining of the file
+        beginString = 'Bi-Quartic Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'end-parameter-section'
+        end = helper.find_string_in_file(memmap, path, endString)
+
+        # go to the begining of that region
+        memmap.seek(begin)
+
+        # skip headers
+        helper.readlines(memmap, 2)
+
+        # read all the relevant data
+        byteData = memmap.read(end - memmap.tell())
+        stringData = byteData.decode(encoding="utf-8")
+        stringData = stringData.strip().replace('=', '').replace(', ev', '')
+        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
+
+        list_B4 = filter(lambda item: item[0].startswith("B4"), lines)
+        pB4 = parse.compile("B4_s{a1:d}s{a2:d}_v{j1:d}v{j2:d}")
+
+        list_A4 = filter(lambda item: item[0].startswith("A4"), lines)
+        pA4 = parse.compile("A4_s{a1:d}s{a2:d}_v{j1:d}v{j2:d}")
+
+        for line in list_B4:
+            r = pB4.parse(line[0])
+            index_tuple = (r['j1']-1, r['j2']-1, r['j2']-1, r['j2']-1, r['a1']-1, r['a2']-1)
+            coupling_terms[index_tuple] = line[1]
+
+        for line in list_A4:
+            r = pA4.parse(line[0])
+            index_tuple = (r['j1']-1, r['j1']-1, r['j2']-1, r['j2']-1, r['a1']-1, r['a2']-1)
+            coupling_terms[index_tuple] = line[1]
+        # done
+        return
+
+    # store the energy offsets, and all the coupling terms
+    with open(path_file_op, "r+b") as source_file:
+
+        # access the file using memory map for efficiency
+        with mmap.mmap(source_file.fileno(), 0, prot=mmap.PROT_READ) as mm:
+
+            frequencies = extract_normal_mode_frequencies(path_file_op, mm)
+            excitation_energies = extract_energies(path_file_op, mm)
+
+            # for readability and clarity we use these letters
+            A = numStates
+            N = numModes
+            size = {
+                    'N': (N),
+                    'AA': (A, A),
+                    'NAA': (N, A, A),
+                    'NNAA': (N, N, A, A),
+                    'NNNAA': (N, N, N, A, A),
+                    'NNNNAA': (N, N, N, N, A, A),
+                    }
+            # size = {
+            #         'N': (numModes),
+            #         'AA': (numStates, numStates),
+            #         'NAA': (numModes, numStates, numStates),
+            #         'NNAA': (numModes, numModes, numStates, numStates),
+            #         'NNNAA': (numModes, numModes, numModes, numStates, numStates),
+            #         'NNNNAA': (numModes, numModes, numModes, numModes, numStates, numStates),
+            #         }
+
+            # Assert/Initialize array sizes
+            assert frequencies.shape[0] == size['N'], "Incorrect array dimensions"
+            assert excitation_energies.shape == size['AA'], "Incorrect array dimensions"
+
+            # predefine these arrays now that we know the values of N and A are
+            linear_couplings = np.zeros(size['NAA'])
+            quadratic_couplings = np.zeros(size['NNAA'])
+            cubic_couplings = np.zeros(size['NNNAA'])
+            quartic_couplings = np.zeros(size['NNNNAA'])
+
+            # read in the rest of the parameters
+            extract_linear_couplings(path_file_op, mm, linear_couplings)
+            extract_quadratic_couplings(path_file_op, mm, quadratic_couplings)
+            extract_cubic_couplings(path_file_op, mm, cubic_couplings)
+            extract_quartic_couplings(path_file_op, mm, quartic_couplings)
+            extract_bicubic_couplings(path_file_op, mm, cubic_couplings)
+            extract_biquartic_couplings(path_file_op, mm, quartic_couplings)
+
+    # duplicate the lower triangle values into the upper triangle
+
+    # the couplings are a symmetric matrix
+    for a, b in it.product(States, States):
+        linear_couplings[:, a, b] += linear_couplings[:, b, a]
+        quadratic_couplings[:, :, a, b] += np.tril(quadratic_couplings[:, :, a, b], k=-1).T
+        quadratic_couplings[:, :, a, b] += quadratic_couplings[:, :, b, a]
+        # are these two correct?
+        cubic_couplings[:, :, :, a, b] += np.tril(cubic_couplings[:, :, :, a, b], k=-1).T
+        cubic_couplings[:, :, :, a, b] += cubic_couplings[:, :, :, b, a]
+        quartic_couplings[:, :, :, :, a, b] += np.tril(quartic_couplings[:, :, :, :, a, b], k=-1).T
+        quartic_couplings[:, :, :, :, a, b] += quartic_couplings[:, :, :, :, b, a]
+
+    # check for symmetry in surfaces
+    assert np.allclose(excitation_energies, excitation_energies.transpose(1, 0))
+    assert np.allclose(linear_couplings, linear_couplings.transpose(0, 2, 1))
+    assert np.allclose(quadratic_couplings, quadratic_couplings.transpose(0, 1, 3, 2))
+    assert np.allclose(cubic_couplings, cubic_couplings.transpose(0, 1, 2, 4, 3))
+    assert np.allclose(quartic_couplings, quartic_couplings.transpose(0, 1, 2, 3, 5, 4))
+
+    # check for symmetry in modes
+    assert np.allclose(quadratic_couplings, quadratic_couplings.transpose(1, 0, 2, 3))
+    # either (q^3) or (q, q^2)
+    assert np.allclose(cubic_couplings, cubic_couplings.transpose(0, 2, 1, 3, 4))
+    # either (q, q^3) or (q^2, q^2)
+    assert np.allclose(quartic_couplings, quartic_couplings.transpose(0, 1, 3, 2, 4, 5))
+
+    # and we are done
+    return_dict = {"number of modes": numModes,
+                   "number of surfaces": numStates,
+                   "energies": excitation_energies,
+                   "frequencies": frequencies,
+                   "linear couplings": linear_couplings,
+                   "quadratic couplings": quadratic_couplings,
+                   "cubic couplings": cubic_couplings,
+                   "quartic couplings": quartic_couplings,
+                   }
+    return return_dict
+
+
+def create_coupling_from_h_file(FS, path_file_h):
     """assumes that the path_file_h is in electronic_structure"""
-    path_file_coupling = os.path.join(Path(path_file_h).parents[1], "parameters/")
-    path_file_coupling += "coupled_model.json"
-    A, N, E, w, l, q = read_model_h_file(path_file_h)
-    save_model_to_JSON(path_file_coupling, E, w, l, q)
-    log.debug("Created \n{:s}\nfrom\n{:s}\n".format(path_file_coupling, path_file_h))
-    return path_file_coupling
+    # A, N, E, w, l, q = read_model_h_file(path_file_h)
+    model_dict = read_model_h_file(path_file_h)
+    save_model_to_JSON(FS.path_vib_model, **model_dict)
+    log.debug("Created \n{:s}\nfrom\n{:s}\n".format(FS.path_vib_model, path_file_h))
+    return FS.path_vib_model
+
+
+def create_coupling_from_op_file(FS, path_file_op):
+    """assumes that the path_file_op is in electronic_structure"""
+    # A, N, E, w, l, q = read_model_h_file(path_file_op)
+    model_dict = read_model_op_file(path_file_op)
+    save_model_to_JSON(FS.path_vib_model, **model_dict)
+    log.debug("Created \n{:s}\nfrom\n{:s}\n".format(FS.path_vib_model, path_file_op))
+    return FS.path_vib_model
+
+
+def create_coupling_from_op_hyperlink(FS, url):
+    """assumes that the path_file_op is in electronic_structure"""
+    import urllib
+
+    request = urllib.request.Request(url)
+    try:
+        response = urllib.request.urlopen(request)
+        # response is now a string you can search through containing the page's html
+        # A, N, E, w, l, q = read_model_h_file(path_file_op)
+        # args = read_model_op_file(path_file_op)  # need to make a choice about the function here
+        args = []
+        save_model_to_JSON(FS.path_vib_model, args)
+        log.debug("Created \n{:s}\nfrom\n{:s}\n".format(FS.path_vib_model, url))
+        return FS.path_vib_model
+    except:
+        # The url wasn't valid
+        raise Exception("Incorrect https link {:s}".format(url))
 
 
 def read_model_auto_file(filename):
@@ -756,19 +1161,37 @@ def read_model_auto_file(filename):
     return nel, nmode, excitation_energies, frequencies, linear_couplings, quadratic_couplings
 
 
-def save_model_to_JSON(path_full, energies, frequencies, linear_couplings, quadratic_couplings):
+def save_model_to_JSON(path_full, **kwargs):
+    """x"""
+
+    # base case
+    assert "number of modes" in kwargs, "need the number of modes"
+    assert "number of surfaces" in kwargs, "need the number of surfaces"
+    assert "energies" in kwargs, "no energies provided"
+    assert "frequencies" in kwargs, "no frequencies provided"
+    assert kwargs["energies"].shape[0] == kwargs["number of surfaces"], "energies have incorrect shape"
+    assert kwargs["frequencies"].shape[0] == kwargs["number of modes"], "frequencies have incorrect shape"
+
     log.debug("Saving model to {:s}".format(path_full))
-    target_file = open(path_full, mode='w', encoding='UTF8')
-    output_dictionary = {
-        "number of modes":    frequencies.shape[0],
-        "number of surfaces": energies.shape[0],
-        "energies":           energies.tolist(),
-        "frequencies":        frequencies.tolist(),
-        "linear coupling":    linear_couplings.tolist(),
-        "quadratic coupling": quadratic_couplings.tolist(),
-    }
-    target_file.write(json.dumps(output_dictionary))
-    target_file.close()
+
+    # convert each numpy array to a list
+    for key, value in kwargs.items():
+        if isinstance(value, (np.ndarray, np.generic)):
+            kwargs[key] = value.tolist()
+
+    # the old way involved passing in each parameter as nonkeyword argument
+    # output_dictionary = {
+    #     "number of modes":     N,
+    #     "number of surfaces":  A,
+    #     "energies":            kwargs["energies"].tolist(),
+    #     "frequencies":         kwargs["frequencies"].tolist(),
+    #     "linear couplings":    kwargs["linear_couplings"].tolist(),
+    #     "quadratic couplings": kwargs["quadratic_couplings"].tolist(),
+    # }
+
+    with open(path_full, mode='w', encoding='UTF8') as target_file:
+        target_file.write(json.dumps(kwargs))
+
     return
 # ------------------------------------------------------------------------
 
@@ -801,6 +1224,7 @@ def make_rho_directories(path_root, id_rho):
     return
 
 
+# TODO - this currently does not support loading models with more than quadratic coupling
 def load_model_from_JSON(path_full, energies=None,frequencies=None, linear_couplings=None, quadratic_couplings=None):
     """if only a path to the file is provided, arrays
     are returned othwerise provided arrays are filled with appropriate values"""
@@ -844,6 +1268,7 @@ def load_model_from_JSON(path_full, energies=None,frequencies=None, linear_coupl
     return
 
 
+# TODO - this currently does not support loading models with more than quadratic coupling
 def load_sample_from_JSON(path_full, energies=None, frequencies=None, linear_couplings=None, quadratic_couplings=None):
     """x"""
 
