@@ -29,6 +29,7 @@ from .. import helper
 from . import file_structure
 
 
+# this function should most likely be removed
 def checkOS():
     """define OS dependent paths to files"""
     global kernel, path_default_root, dir_workspace

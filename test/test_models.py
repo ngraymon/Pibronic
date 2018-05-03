@@ -22,7 +22,7 @@ class TestProcessingVibronicModel():
     test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
 
     # check both the data set 0 and data set 1
-    @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
+    @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])
     def files(self, request):
         return fs.FileStructure(self.test_path, request.param[0], request.param[1])
 

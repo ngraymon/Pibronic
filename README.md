@@ -37,5 +37,6 @@ Long term goals:
 - clean up jackknife
 - provide model systems
 - generate test date for fixed rng seeds
+- travis.ci + appveyor + shields.io?
 
 ----
