@@ -29,3 +29,9 @@ delta_beta = 2.0e-4
 
 # convert wavenumbers to electronVolts and back
 wavenumber_per_eV = 8065.6
+
+
+def beta(temperature):
+    """returns a value of beta for a given temperature in Kelvin"""
+    val = 1. / (temperature * boltzman)
+    return val

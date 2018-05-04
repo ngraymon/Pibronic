@@ -85,22 +85,31 @@ class ModelClass:
         self.mode_range = range(modes)
         return
 
-    def load_model(self, filePath):
+    @classmethod
+    def from_json_file(cls, path):
+        """constructor wrapper"""
+        with open(path, mode='r', encoding='UTF8') as target_file:
+            json_obj = target_file.read()
+        return cls.load_model(cls, json_obj)
+
+    def load_model(self, path):
         # I think this fails if the list elements are multidimensional numpy arrays
         # carefully check this
+        # lazy way of assuming that if one array is empty this is the first time
         if None in map(type, [self.omega, self.energy, self.linear, self.quadratic]):
             (self.energy,
              self.omega,
              self.linear,
              self.quadratic,
-             ) = vIO.load_model_from_JSON(filePath)
+             ) = vIO.load_model_from_JSON(path)
         else:
-            vIO.load_model_from_JSON(filePath,
+            vIO.load_model_from_JSON(path,
                                      energies=self.energy,
                                      frequencies=self.omega,
                                      linear_couplings=self.linear,
                                      quadratic_couplings=self.quadratic,
                                      )
+        # should we update the states and modes after loading the model?
         return
 
 

@@ -114,8 +114,10 @@ class FileStructure:
 
     def make_directories(self):
         """x"""
+        print("Got to make_directories")
         for directory in self.dir_list:
-            os.makedirs(directory, exist_ok=True)
+            print(directory)
+            # os.makedirs(directory, exist_ok=True)
         return
 
     def make_rho_directories(self, id_rho):
