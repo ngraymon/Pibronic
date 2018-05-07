@@ -1,4 +1,5 @@
 # minimal.py
+
 # system imports
 import itertools as it
 from functools import partial

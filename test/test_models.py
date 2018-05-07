@@ -26,12 +26,13 @@ class TestProcessingVibronicModel():
     def files(self, request):
         return fs.FileStructure(self.test_path, request.param[0], request.param[1])
 
-    def test_creating_coupled_model_from_h_file(self, files):
-        path_h_file = files.path_es + "fake_vibron.h"
-        vIO.create_coupling_from_h_file(files, path_h_file)
-        samefile = filecmp.cmp(files.path_vib_model, files.path_vib_params + "coupled_model_reference.json")
-        assert samefile
-        return
+    # looks like we might not use this file type anymore
+    # def test_creating_coupled_model_from_h_file(self, files):
+    #     path_h_file = files.path_es + "fake_vibron.h"
+    #     vIO.create_coupling_from_h_file(files, path_h_file)
+    #     samefile = filecmp.cmp(files.path_vib_model, files.path_vib_params + "coupled_model_reference.json")
+    #     assert samefile
+    #     return
 
     def test_creating_harmonic_model_from_coupled_model(self, files):
         vIO.create_harmonic_model(files)
@@ -89,49 +90,49 @@ class TestMinimalNatively():
 
     test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
 
-    # def test_create_BoxData_inline(self):
-    #     data = minimal.BoxData()
-    #     return
+    def test_create_BoxData_inline(self):
+        data = minimal.BoxData()
+        return
 
-    # def test_create_BoxData_from_file(self):
-    #     return
+    def test_create_BoxData_from_file(self):
+        return
 
-    # def test_create_BoxData_from_jsonData(self):
-    #     return
+    def test_create_BoxData_from_jsonData(self):
+        return
 
-    # @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
-    # def data(self, request):
-    #     data = minimal.BoxData()
-    #     data.id_data = request.param[0]
-    #     data.id_rho = request.param[1]
-    #     return data
+    @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
+    def data(self, request):
+        data = minimal.BoxData()
+        data.id_data = request.param[0]
+        data.id_rho = request.param[1]
+        return data
 
-    # @pytest.fixture(scope="class")
-    # def files(self, data):
-    #     return fs.FileStructure.from_boxdata(self.test_path, data)
+    @pytest.fixture(scope="class")
+    def files(self, data):
+        return fs.FileStructure.from_boxdata(self.test_path, data)
 
-    # def test_simple_block_compute(self, files, data):
-    #     data.path_vib_model = files.path_vib_model
-    #     data.path_rho_model = files.path_rho_model
+    def test_simple_block_compute(self, files, data):
+        data.path_vib_model = files.path_vib_model
+        data.path_rho_model = files.path_rho_model
 
-    #     data.states = 2
-    #     data.modes = 2
+        data.states = 2
+        data.modes = 2
 
-    #     data.samples = self.samples
-    #     data.beads = 10
-    #     data.temperature = 300.0
-    #     data.blocks = self.samples // self.block_size
-    #     data.block_size = self.block_size
+        data.samples = self.samples
+        data.beads = 10
+        data.temperature = 300.0
+        data.blocks = self.samples // self.block_size
+        data.block_size = self.block_size
 
-    #     # setup empty tensors, models, and constants
-    #     data.preprocess()
+        # setup empty tensors, models, and constants
+        data.preprocess()
 
-    #     # store results here
-    #     results = minimal.BoxResult(data=data)
-    #     results.path_root = files.path_rho_results
+        # store results here
+        results = minimal.BoxResult(data=data)
+        results.path_root = files.path_rho_results
 
-    #     minimal.block_compute(data, results)
-    #     return
+        minimal.block_compute(data, results)
+        return
 
     @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
     def dataPM(self, request):
@@ -174,55 +175,3 @@ class TestMinimalNatively():
         minimal.block_compute_pm(dataPM, results)
         return
 
-    def test_simple_jackknife(self, filesPM):
-        pibronic.jackknife.calculate_estimators_and_variance(filesPM)
-        return
-
-
-# class TestDataSet0Rho0():
-#     id_data = 0
-#     id_rho = 0
-
-#     def test_load(self):
-#         self.id_data = 0
-#         self.id_rho = 0
-
-#         np.random.seed(242351)  # pick our seed
-#         self.samples = int(1e1)
-#         self.block_size = int(1e1)
-#         self.test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
-
-#         # load the relevant data
-#         data = minimal.BoxData()
-#         data.id_data = self.id_data
-#         data.id_rho = self.id_rho
-
-#         # should be able to pass a data object to file_structure
-#         files = fs.FileStructure.from_boxdata(self.test_path, data)
-#         data.path_vib_model = files.path_vib_model
-#         data.path_rho_model = files.path_rho_model
-
-#         data.states = 2
-#         data.modes = 2
-
-#         data.samples = self.samples
-#         data.beads = 10
-#         data.temperature = 300.0
-#         data.blocks = self.samples // self.block_size
-#         data.block_size = self.block_size
-
-#         # setup empty tensors, models, and constants
-#         data.preprocess()
-
-#         # store results here
-#         results = minimal.BoxResult(data=data)
-#         results.path_root = files.path_rho_results
-
-#         minimal.block_compute(data, results)
-
-#         return
-
-
-# if __name__ == '__main__':
-#     runner = unittest.TextTestRunner()
-#     runner.run(suite())

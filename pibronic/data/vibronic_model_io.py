@@ -110,8 +110,8 @@ def pretty_print_model(id_model, unitsOfeV=False):
     # isolate the lists
     energy = input_dictionary["energies"]
     omega = input_dictionary["frequencies"]
-    linear = input_dictionary["linear coupling"]
-    quadratic = input_dictionary["quadratic coupling"]
+    linear = input_dictionary["linear couplings"]
+    quadratic = input_dictionary["quadratic couplings"]
 
     # by default convert the output to wavenumbers
     conversionFactor = 1 if unitsOfeV else constants.wavenumber_per_eV
@@ -1005,6 +1005,7 @@ def create_coupling_from_op_file(FS, path_file_op):
     return FS.path_vib_model
 
 
+# not working ATM
 def create_coupling_from_op_hyperlink(FS, url):
     """assumes that the path_file_op is in electronic_structure"""
     import urllib
@@ -1247,10 +1248,10 @@ def load_model_from_JSON(path_full, energies=None,frequencies=None, linear_coupl
         frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
 
         linear_couplings = np.empty((nmode, nel, nel), dtype=F64)
-        linear_couplings[:] = np.array(input_dictionary["linear coupling"], dtype=F64)
+        linear_couplings[:] = np.array(input_dictionary["linear couplings"], dtype=F64)
 
         quadratic_couplings = np.empty((nmode, nmode, nel, nel), dtype=F64)
-        quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"], dtype=F64)
+        quadratic_couplings[:] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
 
         return energies, frequencies, linear_couplings, quadratic_couplings
 
@@ -1263,8 +1264,8 @@ def load_model_from_JSON(path_full, energies=None,frequencies=None, linear_coupl
 
         energies[:] = np.array(input_dictionary["energies"], dtype=F64)
         frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
-        linear_couplings[:] = np.array(input_dictionary["linear coupling"], dtype=F64)
-        quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"], dtype=F64)
+        linear_couplings[:] = np.array(input_dictionary["linear couplings"], dtype=F64)
+        quadratic_couplings[:] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
 
     return
 
@@ -1293,10 +1294,10 @@ def load_sample_from_JSON(path_full, energies=None, frequencies=None, linear_cou
         frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
 
         linear_couplings = np.empty((nmode, nel), dtype=F64)
-        linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear coupling"], dtype=F64), axis1=1, axis2=2)
+        linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear couplings"], dtype=F64), axis1=1, axis2=2)
 
         quadratic_couplings = np.empty((nmode, nmode, nel), dtype=F64)
-        quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic coupling"], dtype=F64), axis1=2, axis2=3)
+        quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic couplings"], dtype=F64), axis1=2, axis2=3)
 
         return energies, frequencies, linear_couplings, quadratic_couplings
 
@@ -1314,14 +1315,14 @@ def load_sample_from_JSON(path_full, energies=None, frequencies=None, linear_cou
         # assert(quadratic_couplings.shape == (nmode, nmode, nel))
         # energies[:] = np.diag(np.array(input_dictionary["energies"], dtype=F64))
         # frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
-        # linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear coupling"], dtype=F64), axis1=1, axis2=2)
-        # quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic coupling"], dtype=F64), axis1=2, axis2=3)
+        # linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear couplings"], dtype=F64), axis1=1, axis2=2)
+        # quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic couplings"], dtype=F64), axis1=2, axis2=3)
         # ===================== DEPRECIATED =================================== #
 
         energies[:] = np.array(input_dictionary["energies"], dtype=F64)
         frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
-        linear_couplings[:] = np.array(input_dictionary["linear coupling"], dtype=F64)
-        quadratic_couplings[:] = np.array(input_dictionary["quadratic coupling"], dtype=F64)
+        linear_couplings[:] = np.array(input_dictionary["linear couplings"], dtype=F64)
+        quadratic_couplings[:] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
     return
 
 
@@ -1391,7 +1392,14 @@ def setup_input_params(directory_path, new_directory=False):
         path = '/home/ngraymon/chem740/work_dir/scripting/ammonia/ammonia_vibron'
         nsurf, nmode, energies, frequencies, linear_terms, quadratic_terms = read_model_h_file(path)
 
-    save_model_to_JSON(path_params+json_filename, energies, frequencies, linear_terms, quadratic_terms)
+    kwargs = {"number of modes": frequencies.shape[0],
+              "number of surfaces": energies.shape[0],
+              "energies": energies,
+              "frequencies": frequencies,
+              "linear couplings": linear_terms,
+              "quadratic couplings": quadratic_terms,
+              }
+    save_model_to_JSON(path_params+json_filename, **kwargs)
 
 
 def get_nmode_nsurf_from_coupled_model(id_model):
@@ -1459,8 +1467,14 @@ def remove_coupling_from_model(path_source, path_destination):
     energy = np.diagonal(e).copy()
     linear = np.diagonal(l, axis1=1, axis2=2).copy()
     quadratic = np.diagonal(q, axis1=2, axis2=3).copy()
-
-    save_model_to_JSON(path_destination, energy, w, linear, quadratic)
+    kwargs = {"number of modes": numModes,
+              "number of surfaces": numStates,
+              "energies": energy,
+              "frequencies": w,
+              "linear couplings": linear,
+              "quadratic couplings": quadratic,
+              }
+    save_model_to_JSON(path_destination, **kwargs)
     return
 
 

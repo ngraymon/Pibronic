@@ -5,11 +5,9 @@
 import os
 import inspect
 
-# import unittest
+# third party imports
 import pytest
 import filecmp
-
-# third party imports
 import numpy as np
 from numpy import float64 as F64
 import pibronic
