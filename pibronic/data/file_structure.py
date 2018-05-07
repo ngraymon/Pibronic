@@ -6,10 +6,10 @@ keeps directory structure consistant over the many modules if changes need to be
 
 # system imports
 import os
-import sys
+# import sys
 
 # third party imports
-import numpy as np
+# import numpy as np
 
 # local imports
 from . import file_name
@@ -103,7 +103,7 @@ class FileStructure:
         self.path_rho_model = self.path_rho_params + file_name.sampling_model
 
         # if not self.directories_exist():
-        # self.make_directories()
+        self.make_directories()
         return
 
     def directories_exist(self):
@@ -114,10 +114,9 @@ class FileStructure:
 
     def make_directories(self):
         """x"""
-        print("Got to make_directories")
         for directory in self.dir_list:
-            print(directory)
-            # os.makedirs(directory, exist_ok=True)
+            path = getattr(self, directory)
+            os.makedirs(path, exist_ok=True)
         return
 
     def make_rho_directories(self, id_rho):
