@@ -47,6 +47,29 @@ def test_calculate_jackknife_terms():
     return
 
 
+def test_calculate_alpha_terms():
+    """obviously not a good test at the moment"""
+    X = 100
+    delta_beta = 1.0
+    rho = np.ones(X)
+    g = np.ones(X)
+    g_plus = np.ones(X) + 1
+    g_minus = np.ones(X)
+    alpha_plus = 2.0
+    alpha_minus = 2.0
+
+    ret = jk.calculate_alpha_terms(delta_beta, rho, g, g_plus, g_minus, alpha_plus, alpha_minus)
+
+    assert np.all(ret[0] == 1.0)
+    assert ret[1] == 1.0
+    assert ret[2] == 4.0
+    assert np.all(ret[3] == 2.0)
+    assert ret[4] == alpha_plus
+    assert np.all(ret[5] == 1.0)
+    assert ret[6] == alpha_minus
+    return
+
+
 def test_estimate_property():
     """obviously not a good test at the moment"""
     X = 100

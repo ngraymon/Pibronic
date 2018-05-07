@@ -45,7 +45,7 @@ def calculate_property_terms(*args):
 
 def calculate_alpha_terms(*args):
     """calculate g/r, sym_d1, sym_d2 given the estimation of the difference + alpha"""
-    delta_beta, y_rho, y_rhop, yp_rhop, y_rhom, ym_rhom, y_g, y_gp, yp_gp, y_gm, ym_gm, ap, am = args
+    delta_beta, y_rho, y_g, y_gp, y_gm, ap, am = args
 
     ratio = y_g / y_rho
 
