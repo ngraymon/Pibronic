@@ -174,4 +174,3 @@ class TestMinimalNatively():
 
         minimal.block_compute_pm(dataPM, results)
         return
-
