@@ -5,21 +5,22 @@
 import os
 import inspect
 
+
+# local imports
+from ..context import pibronic
+import pibronic.data.file_structure as fs
+import pibronic.pimc.minimal as minimal
+
 # third party imports
 import pytest
-import filecmp
 import numpy as np
 from numpy import float64 as F64
-import pibronic
-import pibronic.data.file_structure as fs
-import pibronic.data.vibronic_model_io as vIO
-import pibronic.pimc.minimal as minimal
 
 
 @pytest.fixture()
 def path():
     # does this work when deployed?
-    return os.path.join(os.path.dirname(os.path.dirname(inspect.getfile(pibronic))), "test/test_models/")
+    return os.path.join(os.path.dirname(os.path.dirname(inspect.getfile(pibronic))), "tests/test_models/")
 
 
 @pytest.fixture()

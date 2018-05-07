@@ -83,5 +83,3 @@ def test_estimate_jackknife():
     assert math.isclose(ret["Cv"], 1.0 / kBT)
     assert math.isclose(ret["Cv error"], 2.7755575615628914e-16)
     return
-
-

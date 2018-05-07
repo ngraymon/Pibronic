@@ -4,22 +4,22 @@
 # system imports
 import os
 
-# import unittest
-import pytest
-import filecmp
-
-# third party imports
-import numpy as np
-import pibronic
-import pibronic.data.file_structure as fs
+# local imports
+from .context import pibronic
 import pibronic.data.vibronic_model_io as vIO
+import pibronic.data.file_structure as fs
 import pibronic.pimc.minimal as minimal
 import pibronic.constants
+
+# third party imports
+import filecmp
+import pytest
+import numpy as np
 
 
 class TestProcessingVibronicModel():
 
-    test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
+    test_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "test_models/")
 
     # check both the data set 0 and data set 1
     @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])
@@ -88,7 +88,7 @@ class TestMinimalNatively():
     block_size = int(1e1)
     np.random.seed(242351)  # pick our seed
 
-    test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
+    test_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "test_models/")
 
     def test_create_BoxData_inline(self):
         data = minimal.BoxData()
@@ -174,4 +174,3 @@ class TestMinimalNatively():
 
         minimal.block_compute_pm(dataPM, results)
         return
-
