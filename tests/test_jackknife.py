@@ -3,10 +3,14 @@
 # system imports
 import math
 
-# third party imports
-import numpy as np
+
+# local imports
+from .context import pibronic
 import pibronic.jackknife as jk
 from pibronic.constants import boltzman
+
+# third party imports
+import numpy as np
 
 
 def test_calculate_property_terms():
