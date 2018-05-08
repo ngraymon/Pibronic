@@ -9,7 +9,7 @@ install:
   - pip install codecov
 
 script:
-  - pytest tests/test_main.py --cov=./
+  - pytest tests/test_models.py --cov=./
   - pytest tests/pimc/test_minimal.py --cov=./
   - pytest tests/test_jackknife.py --cov=./
 
