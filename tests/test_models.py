@@ -119,7 +119,7 @@ class TestMinimalNatively():
         data.modes = 2
 
         data.samples = self.samples
-        data.beads = 10
+        data.beads = 12
         data.temperature = 300.0
         data.blocks = self.samples // self.block_size
         data.block_size = self.block_size

@@ -24,11 +24,13 @@ Ancillary code will be uploading in the near future
 The main PIMC simulation code is provided in minimal.py
 
 In Progress:
-- link postprocessing to jackknife
-- increase coverage of tests
+- refresh server code
+- write basic tests of server code
+- increasing coverage of tests
 
 To do list:
 - refresh jackknife
+- Create discrete numerical test case to verify jackknife output
 - inject file_name and file_structure into older modules
 - prune vibronic_model_io
 - integrate FileStructure with electronic_structure
