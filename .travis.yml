@@ -1,17 +1,18 @@
 language: python
 python:
-  - "3.6"
-  
+  - 3.6
 cache: pip
 
 install:
   - pip install -r requirements.txt
+  - pip install pytest pytest-cov
+  - pip install codecov
 
 script:
-  - pytest
+  - pytest --cov=./
 
 after_success:
-  - coveralls
+  - codecov
 
 notifications:
   email: false

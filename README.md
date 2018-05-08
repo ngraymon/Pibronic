@@ -1,9 +1,8 @@
 # Pibronic
 [![PyPI](https://img.shields.io/pypi/v/pibronic.svg)](https://pypi.org/project/pibronic/)
 [![Travis](https://img.shields.io/travis/ngraymon/Pibronic.svg)](https://travis-ci.org/ngraymon/Pibronic)
-[![Coverage Status](https://coveralls.io/repos/github/ngraymon/Pibronic/badge.svg?branch=master)](https://coveralls.io/github/ngraymon/Pibronic?branch=master)
+[![Coverage Status](https://codecov.io/gh/ngraymon/Pibronic/branch/master/graph/badge.svg)](https://codecov.io/gh/ngraymon/Pibronic)
 ----
-
 
 A python package that handles the creation of vibronic models using ACESII and VIBRON
 as well as the calculation of thermodynamic properties using those vibronic models.
