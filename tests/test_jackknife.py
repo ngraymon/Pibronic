@@ -122,7 +122,3 @@ def test_add_harmonic_contribution():
     assert test_dict["E"] == nums[0] + nums[2]
     assert test_dict["Cv"] == nums[1] + nums[3]
     return
-
-
-def test_perform_jackknife():
-    return
