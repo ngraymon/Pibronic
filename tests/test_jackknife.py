@@ -74,12 +74,11 @@ def test_estimate_property():
     """obviously not a good test at the moment"""
     X = 100
     T = 300.00
-    delta_beta = 1.0
     g_r = np.ones(X)
     sym1 = np.ones(X)
     sym2 = np.ones(X) + 1
 
-    ret = jk.estimate_property(X, T, delta_beta, g_r, sym1, sym2)
+    ret = jk.estimate_property(X, T, g_r, sym1, sym2)
     kBT = boltzman * pow(T, 2.)
 
     assert ret["Z"] == 1.0
@@ -109,4 +108,21 @@ def test_estimate_jackknife():
     assert ret["E error"] == 0.0
     assert math.isclose(ret["Cv"], 1.0 / kBT)
     assert math.isclose(ret["Cv error"], 2.7755575615628914e-16)
+    return
+
+
+def test_add_harmonic_contribution():
+    nums = np.random.randint(0, 1000, size=4)
+    test_dict = {"E": nums[0],"Cv": nums[1]}
+
+    E_harmonic = nums[2]
+    Cv_harmonic = nums[3]
+
+    jk.add_harmonic_contribution(test_dict, E_harmonic, Cv_harmonic)
+    assert test_dict["E"] == nums[0] + nums[2]
+    assert test_dict["Cv"] == nums[1] + nums[3]
+    return
+
+
+def test_perform_jackknife():
     return

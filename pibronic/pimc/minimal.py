@@ -638,22 +638,45 @@ class BoxResult:
 
     id_job = None
 
+    @classmethod
+    def read_number_of_samples(cls, path_full):
+        """x"""
+        with np.load(path_full) as data:
+            return data["number_of_samples"]
+
+    @classmethod
+    def verify_result_keys_are_present(cls, path, fileObj):
+        """x"""
+        key_list = ["number_of_samples, s_rho", "s_g"]
+        for k in key_list:
+            if k not in fileObj.keys():
+                s = "Expected key ({:s}) not present in result file\n{:s}\n"
+                raise AssertionError(s.foramt(k, path))
+
+    def initialize_arrays(self):
+        self.scaled_g = np.empty(self.samples, dtype=F64)
+        self.scaled_rho = np.empty(self.samples, dtype=F64)
+        return
+
     def __init__(self, data=None, X=None):
+        """x"""
         if data is not None:
             self.partial_name = partial(file_name.pimc().format, P=data.beads, T=data.temperature)
             self.samples = data.samples
         elif X is not None:
             self.samples = X
         else:
-            raise AssertionError("data or X must be provided to BoxResult __init__")
-
-        # TODO - need better handling of cases where X is not provided
-        self.scaled_g = np.empty(self.samples, dtype=F64)
-        self.scaled_rho = np.empty(self.samples, dtype=F64)
+            self.samples = 0
+            log.debug("The BoxResult object has been initialized with 0 samples this could be an issue?")
+            # raise AssertionError("data or X must be provided to BoxResult __init__")
+        self.initialize_arrays()
         return
 
     def save_results(self, number_of_samples):
-        if self.id_job is not None:
+        """x"""
+        if self.samples is 0:
+            raise AssertionError("BoxResult still has 0 samples - this should not happen")
+        elif self.id_job is not None:
             self.name = self.partial_name(J=self.id_job)
         else:
             """ TODO - this could be dangerous on the server if a BoxResult object is created
@@ -671,6 +694,7 @@ class BoxResult:
 
         # save raw data points
         np.savez(path_full,
+                 number_of_samples=self.samples,
                  s_rho=self.scaled_rho,
                  s_g=self.scaled_g,
                  # s_g=self.scaled_g[result_view],
@@ -679,30 +703,68 @@ class BoxResult:
         return
 
     def load_results(self, path_full):
-
+        """x"""
         with np.load(path_full) as data:
-            key_list = ["s_rho", "s_g"]
-            for k in key_list:
-                if k not in data.keys():
-                    s = "Expected key ({:s}) not present in result file\n{:s}\n"
-                    raise AssertionError(s.foramt(k, path_full))
+            BoxResult.verify_result_keys_are_present(path_full, data)
+            if self.samples is 0:
+                self.samples = data["number_of_samples"]
+            elif data["number_of_samples"] is not self.samples:
+                raise AssertionError("BoxResult has a different number of samples that the input file - this should not happen")
 
+            self.initialize_arrays()
             self.scaled_g = data["s_g"]
             self.scaled_rho = data["s_rho"]
+        return
 
+    def load_multiple_results(self, list_of_paths):
+        """x"""
+        number_of_samples = 0
+        for path in list_of_paths:
+            with np.load(path, mmap_mode="r") as data:
+                number_of_samples += data["number_of_samples"]
+
+        assert number_of_samples is not 0, "number of samples should have changed"
+        self.samples = number_of_samples
+        self.initialize_arrays()
+
+        start = 0
+        finish = 0
+        for path in list_of_paths:
+            with np.load(path) as data:
+                finish = data["number_of_samples"]
+                self.scaled_g[start:finish] = data["s_g"]
+                self.scaled_rho[start:finish] = data["s_rho"]
+                assert not np.any(data["s_rho"] == 0.0), "Zeros in the denominator"
+                start = data["number_of_samples"]
         return
 
 
 class BoxResultPM(BoxResult):
     """plus minus version of BoxResult"""
-    def __init__(self, data=None, X=None):
-        super().__init__(data, X)
-        # TODO - need better handling of cases where X is not provided
+
+    @classmethod
+    def verify_result_keys_are_present(cls, path, fileObj):
+        """x"""
+        super().verify_result_keys_are_present(path, fileObj)
+        key_list = ["s_gP", "s_gM"]
+        for k in key_list:
+            if k not in fileObj.keys():
+                s = "Expected key ({:s}) not present in result file\n{:s}\n"
+                raise AssertionError(s.foramt(k, path))
+
+    def initialize_arrays(self):
+        super().initialize_arrays()
         self.scaled_gofr_plus = np.empty(self.samples, dtype=F64)
         self.scaled_gofr_minus = np.empty(self.samples, dtype=F64)
         return
 
+    def __init__(self, data=None, X=None):
+        """x"""
+        super().__init__(data, X)
+        return
+
     def save_results(self, number_of_samples):
+        """x"""
         if self.id_job is not None:
             self.name = self.partial_name(J=self.id_job)
         else:
@@ -720,6 +782,7 @@ class BoxResultPM(BoxResult):
 
         # save raw data points
         np.savez(path_full,
+                 number_of_samples=self.samples,
                  s_rho=self.scaled_rho,
                  s_g=self.scaled_g,
                  s_gP=self.scaled_gofr_plus,
@@ -728,19 +791,36 @@ class BoxResultPM(BoxResult):
         return
 
     def load_results(self, path_full):
-
+        """x"""
+        super().load_results(path_full)
+        # this could be more efficient, since we open the file twice
         with np.load(path_full) as data:
-            key_list = ["s_rho", "s_g", "s_gP", "s_gM"]
-            for k in key_list:
-                if k not in data.keys():
-                    s = "Expected key ({:s}) not present in result file\n{:s}\n"
-                    raise AssertionError(s.foramt(k, path_full))
-
-            self.scaled_rho = data["s_rho"]
-            self.scaled_g = data["s_g"]
             self.scaled_gofr_plus = data["s_gP"]
             self.scaled_gofr_minus = data["s_gM"]
+        return
 
+    def load_multiple_results(self, list_of_paths):
+        """x"""
+        number_of_samples = 0
+        for path in list_of_paths:
+            with np.load(path, mmap_mode="r") as data:
+                number_of_samples += data["number_of_samples"]
+
+        assert number_of_samples is not 0, "number of samples should have changed"
+        self.samples = number_of_samples
+        self.initialize_arrays()
+
+        start = 0
+        finish = 0
+        for path in list_of_paths:
+            with np.load(path) as data:
+                finish = data["number_of_samples"]
+                self.scaled_g[start:finish] = data["s_g"]
+                self.scaled_rho[start:finish] = data["s_rho"]
+                assert not np.any(data["s_rho"] == 0.0), "Zeros in the denominator"
+                self.scaled_gofr_plus[start:finish] = data["s_gP"]
+                self.scaled_gofr_minus[start:finish] = data["s_gM"]
+                start = data["number_of_samples"]
         return
 
 

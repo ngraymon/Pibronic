@@ -22,11 +22,11 @@ from numpy import float64 as F64
 
 # local imports
 # from ..data import vibronic_model_io as vIO
-from .. import constants
+# from .. import constants
 # from ..constants import hbar
 from ..log_conf import log
 from ..data import file_name
-from ..data import file_structure
+# from ..data import file_structure
 # from ..server import job_boss
 
 # TODO - should these single file functions exist? is there enough need to justify their use?
@@ -87,6 +87,7 @@ def retrive_file_paths_for_jackknife(FS):
     list_sos_rho = retrive_sos_sampling_file_list(FS)
 
     return list_pimc, list_sos_vib, list_sos_rho
+
 
 # I believe this function is decommissioned for the time being
 def extract_pimc_parameters(list_pimc, list_coupled, list_sampling):
@@ -173,109 +174,34 @@ def extract_jackknife_parameters(list_pimc, list_coupled, list_sampling):
     return value_dict
 
 
-def load_data(FS, P, B, T, pimcArgs, rhoArgs):
-    """x"""
+def load_data(FS, P, B, T, pimc_results, rhoArgs):
+    """ load data from all files with same P and T"""
 
     path_data_points = FS.template_pimc.format(P=P, T=T, J="*")
+    list_of_files = [file for file in glob.glob(path_data_points)]
+    pimc_results.load_multiple_results(list_of_files)
     path_sos = FS.template_sos_rho.format(B=B)
 
     try:
-        with np.load(path_data_points, allow_pickle=True) as npz_file:
-            # TODO - should make a class function in minimal.BoxResult that returns the data
-            # instead of using the specifiers "s_g", etc.
-            # this reduces the number of places in the code that need to be changed
-            pimcArgs["s_g"] = npz_file["s_g"]
-            pimcArgs["s_rho"] = npz_file["s_rho"]
-            # plus minus version
-            if "s_gP" in npz_file:
-                pimcArgs["s_gP"] = npz_file["s_gP"]
-                pimcArgs["s_gM"] = npz_file["s_gM"]
-
-        # TODO - should add stricter testing to make sure that the fraction itself isn't too small or big
-        if np.any(pimcArgs["s_rho"] == 0.0):
-            raise Exception("zeros in the denominator")
-
         with open(path_sos, "r") as rho_file:
             rho_dict = json.loads(rho_file.read())
+            # TODO - should make a class function in a new module that handles sos stuff ??
+            input_temp_index = rho_dict["temperature"].index(T)
+            # make sure the temperature matches
+            assert T == rho_dict["temperature"][input_temp_index], "different temperatures"
 
-        # TODO - should make a class function in a new module that handles sos stuff ??
-        input_temp_index = rho_dict["temperature"].index(T)
-        # make sure the temperature matches
-        assert(T == rho_dict["temperature"][input_temp_index])
+            rhoArgs["Z"] = rho_dict["Z_sampling"][input_temp_index]
+            rhoArgs["E"] = rho_dict["E_sampling"][input_temp_index]
+            rhoArgs["Cv"] = rho_dict["Cv_sampling"][input_temp_index]
 
-        rhoArgs["Z"] = rho_dict["Z_sampling"][input_temp_index]
-        rhoArgs["E"] = rho_dict["E_sampling"][input_temp_index]
-        rhoArgs["Cv"] = rho_dict["Cv_sampling"][input_temp_index]
-        rhoArgs["alpha_plus"] = rhoArgs["Z"] / rho_dict["Z_sampling+beta"][input_temp_index]
-        rhoArgs["alpha_minus"] = rhoArgs["Z"] / rho_dict["Z_sampling-beta"][input_temp_index]
+            rhoArgs["alpha_plus"] = rhoArgs["Z"] / rho_dict["Z_sampling+beta"][input_temp_index]
+            rhoArgs["alpha_minus"] = rhoArgs["Z"] / rho_dict["Z_sampling-beta"][input_temp_index]
 
     except OSError as err:
         # skip if we cannot obtain all the necessary data
-        log.info("Skipped {:} and {:}".format(path_data_points, path_sos))
+        print("Skipped {:} and {:}".format(path_data_points, path_sos))
         return
 
     # We worked
     print(path_data_points)
-    # print(sos_f_name)
-    # print(alpha_plus)
-    # print(np.mean(y_rhop / y_rho))
-    # print(np.mean(y_rho / y_rhop))
-    # print(alpha_minus)
-    # print(np.mean(y_rhom / y_rho))
-    # print(np.mean(y_rho / y_rhom))
-    # print(y_gplus[0:5])
-    # print(y_gplus[0:5]*alpha_plus)
-    # print(y_gminus[0:5])
-    # print(y_gminus[0:5]*alpha_minus)
-    # print(y_gplus[0:5] - y_gminus[0:5])
-    # print(y_gplus[0:5]*alpha_plus - y_gminus[0:5]*alpha_minus)
     return
-
-
-if (__name__ == "__main__"):
-
-    # catalogue available files
-    pimcList, coupledList, samplingList = retrive_file_paths_for_jackknife()
-
-    # find shared values
-    argDict = extract_parameters(pimcList, coupledList, samplingList)
-
-    # would be nice to have some feedback about what values there are and what are missing
-
-    # manually select specific values from those available
-    pimc_restriction = range(12, 101, 1) # at least 12 beads before we plot
-    # pick the highest number of samples
-    sample_restriction = argDict["samples"][-1]
-    # pick the highest number of basis functions
-    basis_restriction = argDict["basis_fxns"][-1]
-    # temperature is currently fixed at 300K
-    temperature_restriction = np.array([300])
-
-    # intersect returns sorted, unique values that are in both of the input arrays
-    argDict["temperatures"] = np.intersect1d(argDict["temperatures"], temperature_restriction)
-    argDict["pimc_beads"] = np.intersect1d(argDict["pimc_beads"], pimc_restriction)
-    argDict["basis_fxns"] = np.intersect1d(argDict["basis_fxns"], basis_restriction)
-    argDict["samples"] = np.intersect1d(argDict["samples"], sample_restriction)
-
-    # create a list of arguments for multiprocessing pool
-    # arg_list = []
-    # for X in argDict["samples"]:
-    #     for P in argDict["pimc_beads"]:
-    #         for T in argDict["temperatures"]:
-    #             for B in argDict["basis_fxns"]:
-    #                 arg_list.append((X, P, T, B))
-    arg_list = [(X, P, T, B)
-                for X in argDict["samples"]
-                for P in argDict["pimc_beads"]
-                for T in argDict["temperatures"]
-                for B in argDict["basis_fxns"]
-                ]
-
-    arg_iterator = iter(arg_list)
-
-    block_size = 10
-
-    with mp.Pool(block_size) as p:
-        p.starmap(main, arg_list)
-
-    print("Finished")
