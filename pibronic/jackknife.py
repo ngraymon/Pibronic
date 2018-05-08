@@ -7,21 +7,21 @@ import multiprocessing as mp
 # import subprocess
 # import socket
 # import glob
-# import json
+import json
 # import sys
 # import os
-
-# third party imports
-import numpy as np
 
 # local imports
 # from .data import vibronic_model_io as vIO
 from .data import postprocessing as pp
 # from .data import file_structure
 # from .data import file_name  # do we need this?
-from .pimc.minimal import BoxResult, BoxResultPM
+from .pimc.minimal import BoxResultPM
 from . import constants
 from .constants import boltzman
+
+# third party imports
+import numpy as np
 
 
 def calculate_property_terms(*args):
@@ -73,11 +73,11 @@ def calculate_alpha_terms(*args):
     return ret
 
 
-def calculate_alpha_jackknife_terms(terms, constants):
+def calculate_alpha_jackknife_terms(*args):
     """x"""
     # LN is g_plus / rho
     # RN is g_minus over / rho
-    X, delta_beta, ratio, LN, RN, alpha_plus, alpha_minus = terms
+    X, delta_beta, ratio, LN, RN, alpha_plus, alpha_minus = args
 
     # first start with the full sum
     jk_ratio = np.full(shape=X, fill_value=np.sum(ratio))
@@ -148,7 +148,8 @@ def estimate_property(*args):
     # Energy
     E = -1. * np.mean(sym1) / np.mean(g_r)
     # error
-    E_err = np.zeros_like(E)  # can't be measured
+    E_err = 0.0  # can't be measured
+    # E_err = np.zeros_like(E)  # can't be measured
     # this is just a lower bound on my error bars
     # E_err = np.std(sym1 / g_r, ddof=0)
     # E_err /= np.sqrt(X - 1) # remember that this is necessary!
@@ -158,7 +159,8 @@ def estimate_property(*args):
     Cv -= pow(E, 2.)
     Cv /= boltzman * pow(T, 2.)
     # error
-    Cv_err = np.zeros_like(Cv)  # can't be measured
+    Cv_err = 0.0  # can't be measured
+    # Cv_err = np.zeros_like(Cv)  # can't be measured
     # this is just a lower bound on my error bars
     # old_Cv_err = np.std(old_Cv_err, ddof=0)
     # old_Cv_err /= np.sqrt(X - 1) # remember that this is necessary!
@@ -214,12 +216,15 @@ def add_harmonic_contribution(input_dict, E_sampling, Cv_sampling):
 
 # doesn't necessarily need the # of beads
 # B is only needed for small 2x2 cases where we can do exact diagonalization
-def perform_statistical_analysis(FS, X, P, T, B):
+def perform_statistical_analysis(FS, P, T, B, X=None):
     """x"""
     pimc_results = BoxResultPM()
     rhoData = {}
 
-    pp.load_data(X, P, B, T, pimc_results, rhoData)
+    pp.load_data(FS, P, B, T, pimc_results, rhoData)
+    if X is None:
+        # set the number of samples from load_data
+        X = pimc_results.samples
 
     Z_sampling = rhoData["Z"]
     E_sampling = rhoData["E"]
@@ -228,23 +233,23 @@ def perform_statistical_analysis(FS, X, P, T, B):
     alpha_minus = rhoData["alpha_minus"]
 
     # byCopy?, should be byRef, double check this
-    rho = pimc_results.s_rho
-    g = pimc_results.s_g
-    # rho_plus = pimc_results.s_rhop
-    # rho_minus = pimc_results.s_rhom
-    g_plus = pimc_results.s_gp
-    g_minus = pimc_results.s_gm
+    rho = pimc_results.scaled_rho
+    g = pimc_results.scaled_g
+    # rho_plus = pimc_results.scaled_rho_plus
+    # rho_minus = pimc_results.scaled_rho_minus
+    g_plus = pimc_results.scaled_gofr_plus
+    g_minus = pimc_results.scaled_gofr_minus
 
     data = [rho, g, g_plus, g_minus]
     data_alpha = [rho, g, g_plus, g_minus, alpha_plus, alpha_minus]
 
-    terms = calculate_property_terms(constants.delta_beta, data)
-    terms_alpha = calculate_alpha_terms(constants.delta_beta, data_alpha)
+    terms = calculate_property_terms(constants.delta_beta, *data)
+    terms_alpha = calculate_alpha_terms(constants.delta_beta, *data_alpha)
 
     assert(np.allclose(terms[0], terms_alpha[0]))
 
     # Calculate the jackknife terms
-    # JK_terms = calculate_jackknife_terms(X, terms)
+    # JK_terms = calculate_jackknife_terms(X, *terms)
     JK_terms_alpha = calculate_alpha_jackknife_terms(X, constants.delta_beta, g / rho, g_plus / rho, g_minus / rho, alpha_plus, alpha_minus)
 
     # calculate <exp> s.t. (H = <exp>)
@@ -252,17 +257,24 @@ def perform_statistical_analysis(FS, X, P, T, B):
     # JK_ret = estimate_jackknife(X, T, constants.delta_beta, ret, JK_terms)
 
     # calculate <exp> s.t. (H = <exp> + ho)
-    ret_alpha = estimate_property(terms_alpha, constants)
-    JK_ret_alpha = estimate_jackknife(JK_terms_alpha, constants, ret_alpha)
+    ret_alpha = estimate_property(X, T, *terms)
+    JK_ret_alpha = estimate_jackknife(X, T, constants.delta_beta, ret_alpha, *JK_terms_alpha)
 
     # Remember that we need to handle the difference terms specially
     add_harmonic_contribution(ret_alpha, E_sampling, Cv_sampling)
     add_harmonic_contribution(JK_ret_alpha, E_sampling, Cv_sampling)
 
-    # we need to save data to file here!
-    # output_path = path_results + filePrefix
-    # output_path += "X{X:d}_P{P:d}_T{T:d}_thermo".format(X=X, P=P, T=T)
-    # save to thermo file
+    # prepare dictionary
+    path = FS.template_jackknife.format(P=P, T=T, X=X)
+    output_dict = ret_alpha
+    # temporary HACK
+    for key in JK_ret_alpha.keys():
+        output_dict["jk_" + key] = JK_ret_alpha[key]
+
+    # save data to file
+    with open(path, mode='w', encoding='UTF8') as target_file:
+        target_file.write(json.dumps(output_dict))
+
     return
 
 
@@ -292,7 +304,7 @@ if (__name__ == "__main__"):
     arg_dict["samples"] = np.intersect1d(arg_dict["samples"], sample_restriction)
 
     # create a list of arguments for multiprocessing pool
-    arg_list = [(X, P, T, B)
+    arg_list = [(P, T, B, X)
                 for X in arg_dict["samples"]
                 for P in arg_dict["pimc_beads"]
                 for T in arg_dict["temperatures"]

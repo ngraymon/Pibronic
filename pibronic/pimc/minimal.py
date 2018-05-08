@@ -719,8 +719,12 @@ class BoxResult:
     def load_multiple_results(self, list_of_paths):
         """x"""
         number_of_samples = 0
+        assert not len(list_of_paths) == 0, "list_of_paths cannot be empty"
+
         for path in list_of_paths:
+            # should verify path is correct?
             with np.load(path, mmap_mode="r") as data:
+                # should verify file is not empty?
                 number_of_samples += data["number_of_samples"]
 
         assert number_of_samples is not 0, "number of samples should have changed"
@@ -802,8 +806,12 @@ class BoxResultPM(BoxResult):
     def load_multiple_results(self, list_of_paths):
         """x"""
         number_of_samples = 0
+        assert not len(list_of_paths) == 0, "list_of_paths cannot be empty"
+
         for path in list_of_paths:
+            # should verify path is correct?
             with np.load(path, mmap_mode="r") as data:
+                # should verify file is not empty?
                 number_of_samples += data["number_of_samples"]
 
         assert number_of_samples is not 0, "number of samples should have changed"
@@ -814,13 +822,13 @@ class BoxResultPM(BoxResult):
         finish = 0
         for path in list_of_paths:
             with np.load(path) as data:
-                finish = data["number_of_samples"]
+                finish += data["number_of_samples"]
                 self.scaled_g[start:finish] = data["s_g"]
                 self.scaled_rho[start:finish] = data["s_rho"]
                 assert not np.any(data["s_rho"] == 0.0), "Zeros in the denominator"
                 self.scaled_gofr_plus[start:finish] = data["s_gP"]
                 self.scaled_gofr_minus[start:finish] = data["s_gM"]
-                start = data["number_of_samples"]
+                start += data["number_of_samples"]
         return
 
 

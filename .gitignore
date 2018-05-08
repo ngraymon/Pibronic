@@ -2,6 +2,8 @@
 
 # Ignore output files from running tests
 tests/test_models/**/*.npz
+# when pytest tmpdir feature is used this line should no longer be necessary
+tests/test_models/data_set_*/rho_*/results/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

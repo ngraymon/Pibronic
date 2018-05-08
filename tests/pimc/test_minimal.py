@@ -25,7 +25,6 @@ def path():
 
 @pytest.fixture()
 def FS(path):
-    # test_path = '/home/ngraymon/test/Pibronic/test/test_models/'
     return fs.FileStructure(path, 0, id_rho=0)
 
 
@@ -83,7 +82,7 @@ def test_simple_block_compute(FS, data):
     data.modes = 2
 
     data.samples = samples
-    data.beads = 10
+    data.beads = 12
     data.temperature = 300.0
     data.blocks = samples // block_size
     data.block_size = block_size

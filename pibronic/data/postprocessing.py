@@ -177,6 +177,15 @@ def extract_jackknife_parameters(list_pimc, list_coupled, list_sampling):
 def load_data(FS, P, B, T, pimc_results, rhoArgs):
     """ load data from all files with same P and T"""
 
+    """
+    this usuage of FS.template_pimc.format(P=P, T=T, J="*") raises a good question about the design!
+    possible ways to implement:
+        - some combination of partial
+        - write function for each template_* member of file_structure to replace .format()
+        - write function for file_name
+    currently solved by:
+        self.template_pimc = self.path_rho_results + file_name.pimc(J="{J:s}")
+    """
     path_data_points = FS.template_pimc.format(P=P, T=T, J="*")
     list_of_files = [file for file in glob.glob(path_data_points)]
     pimc_results.load_multiple_results(list_of_files)
@@ -202,6 +211,4 @@ def load_data(FS, P, B, T, pimc_results, rhoArgs):
         print("Skipped {:} and {:}".format(path_data_points, path_sos))
         return
 
-    # We worked
-    print(path_data_points)
     return
