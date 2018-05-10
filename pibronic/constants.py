@@ -31,6 +31,12 @@ delta_beta = 2.0e-4
 wavenumber_per_eV = 8065.6
 
 
+# the number of bytes in a giga-byte
+GB_per_byte = 1e9
+
+maximum_memory_per_node = 128  # in giga-bytes
+
+
 def beta(temperature):
     """returns a value of beta for a given temperature in Kelvin"""
     val = 1. / (temperature * boltzman)

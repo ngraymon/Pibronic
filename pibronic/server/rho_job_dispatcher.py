@@ -1,158 +1,192 @@
-# submission script for jobs on nlogn
-import numpy as np
-import sys, os, socket, subprocess
-from hurry.filesize import size, si
+"""submission script to automate submitting multiple jobs on slurm server"""
+
+# system imports
+import subprocess
+import socket
+import os
+
+# local imports
 import pibronic.data.vibronic_model_io as vIO
+from ..data import file_structure
+from ..constants import GB_per_byte, maximum_memory_per_node
 
-# use this flag to force all SOS files to be replaced
-# should only be used if the model is changed or there is a heisenbug
-FORCE_REPLACE = False
+# third party imports
+# from hurry.filesize import size, si
+# import numpy as np
 
-assert(len(sys.argv) == 4)
-assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
-assert(sys.argv[2].isnumeric() and int(sys.argv[1]) >= 0)
-assert(sys.argv[3].isnumeric() and int(sys.argv[1]) >= 1)
 
-# workspace_dir = "/home/ngraymon/thesis_code/pimc/workspace/"
-workspace_dir = "/work/ngraymon/pimc/"
-data_set_id   = int(sys.argv[1])
-data_set_dir  = "data_set_{:d}/".format(data_set_id)
-rho_set_id    = int(sys.argv[2])
-rho_set_dir   = "rho_{:d}/".format(rho_set_id)
+# array_qsub = "sbatch"
+# array_qsub += (""
+#                " --output={hostname:}:{root_dir:}execution_output/"  # defines output directions
+#                " --job-name=\"RHO{id_data:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}\""  # name the jobs
+#                " --array=0-{max_jobs:d}%1"  # this creates a job array with MAX_JOBS number of jobs
+#                " --cpu_per_task=16"
+#                " -N1"
+#                # " --ntasks=1"
+#                # " --label"
+#                " --mem-per-cpu=1000"
+#                # " -n=5"
+#                " ./server_scripts/slurm/pimc_job.sh"
+#                )
 
-# read in the model parameters from the vibronic_model_dictionary.JSON file
-number_of_modes, number_of_surfaces = vIO.get_nmode_nsurf_from_sampling_model(data_set_id, rho_set_id)
-coupled_modes, coupled_surfs = vIO.get_nmode_nsurf_from_coupled_model(data_set_id)
-# currently can only process one or two mode models
-assert(number_of_modes == 1 or number_of_modes == 2)
+sos_qsub = "sbatch"
+sos_qsub += (" -m n"  # this stops all mail from being sent
+             " --priority 0"  # this defines the priority of the job, default is 0
+             " --mem={memory:}G"
+             # " --mem-per-cpu={memory:}G"
+             " --ntasks=1"
+             " --cpus-per-task={n_cpus:d}"
+             # " --workdir={hostname:}:{dir_data:}execution_output/"  # defines output directions
+             " --workdir={dir_data:}execution_output/"  # defines output directions
+             " --job-name=\"SOS{id_data:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}\""
+             " --output=\"{dir_data:}execution_output/SOS{id_data:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}.o%A\""
+             " --export="
+             "\"MODES={coupled_modes:d}\""
+             ",\"SURFACES={coupled_surfaces:d}\""
+             ",\"BASIS_SIZE={basis_size:d}\""
+             ",\"NUM_OF_TEMPS={n_temps:d}\""
+             ",\"ROOT_DIR={dir_data:}\""
+             ",\"NUMBER_OF_CORES={n_cpus:d}\""
+             ",\"MEMORY_RESERVED={memory:}\""
+             ",\"id_data={id_data:}\""
+             ",\"BLAS_MODULE_DIR=/home/ngraymon/dev/privatemodules/openBLAS\""
+             ",\"Q_HOSTNAME={hostname:}\""
+             " ./server_scripts/sos_job.sh"
+             )
 
-# we read all appropriate parameters from the model_parameters_source.txt
-source_file = "./model_parameters_source.txt"
-parameter_dictionary = vIO.parse_model_params(source_file)
-# temperature_list = parameter_dictionary["temperature_list"]
-temperature_list = [300]
 
-# the memory is heavily dependent on the BASIS SIZE
-SIZE_OF_GB_IN_BYTES = 1e9
-chosen_size_of_basis = int(sys.argv[3])
-cores_requested = 12
-# 8 bytes for a double, times the number of doubles in the largest matrix
-chosen_memory_size = 8 * pow((number_of_surfaces * pow(chosen_size_of_basis, number_of_modes)), 2)
-# multiply by a factor of 10 for saftey ( we assume at least 4-5 matricies in use at once)
-chosen_memory_size *= 15
-# express the result in a number of GB
-chosen_memory_size /= SIZE_OF_GB_IN_BYTES
-# make sure we request at least 1 GB of memory
-chosen_memory_size = 1 if (round(chosen_memory_size) is 0) else round(chosen_memory_size)
-# chosen_memory_size = 15
+rho_qsub = "sbatch"
+rho_qsub += (" -m n"  # this stops all mail from being sent
+             " --priority 0"  # this defines the priority of the job, default is 0
+             " --mem={memory:}G"
+             # " --mem-per-cpu={memory:}G"
+             " --ntasks=1"
+             " --cpus-per-task={n_cpus:d}"
+             # " --workdir={hostname:}:{dir_rho:}execution_output/"  # defines output directions
+             " --workdir={dir_rho:}execution_output/"  # defines output directions
+             " --job-name=\"RHO{id_data:d}_B{basis_size:d}_S{uncoupled_surfaces:d}_N{uncoupled_modes:d}\""
+             " --output=\"{dir_rho:}execution_output/RHO{id_data:d}_B{basis_size:d}_S{uncoupled_surfaces:d}_N{uncoupled_modes:d}.o%A\""
+             " {wait_param:s}"  # optional wait parameter
+             " --export="
+             "\"MODES={uncoupled_modes:d}\""
+             ",\"SURFACES={uncoupled_surfaces:d}\""
+             ",\"BASIS_SIZE={basis_size:d}\""
+             ",\"NUM_OF_TEMPS={n_temps:d}\""
+             ",\"ROOT_DIR={data_rho:}\""
+             ",\"NUMBER_OF_CORES={n_cpus:d}\""
+             ",\"MEMORY_RESERVED={memory:}\""
+             ",\"id_data={id_data:}\""
+             ",\"id_rho={id_rho:}\""
+             ",\"BLAS_MODULE_DIR=/home/ngraymon/dev/privatemodules/openBLAS\""
+             ",\"Q_HOSTNAME={hostname:}\""
+             " ./server_scripts/rho_job.sh"
+             )
 
-MAXIMUM_NODE_MEMORY = 128
-# both integers are in units of GB
-assert (chosen_memory_size < MAXIMUM_NODE_MEMORY), "Asked for {:d}GB".format(chosen_memory_size)
 
-# the main command
-hostname = socket.gethostname()
-sos_qsub = "sbatch" + (  " -m n"  # this stops all mail from being sent
-                     + " --priority 0"  # this defines the priority of the job, default is 0
-                     + " --mem={memory:}G"
-                     # + " --mem-per-cpu={memory:}G"
-                     + " --ntasks=1"
-                     + " --cpus-per-task={n_cpus:d}"
-                     # + " --workdir={:}".format(hostname) + ":{root_dir:}execution_output/"  # defines output directions
-                     + " --workdir={root_dir:}execution_output/"  # defines output directions
-                     + " --job-name=\"SOS{data_set_id:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}\""
-                     + " --output=\"{root_dir:}execution_output/SOS{data_set_id:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}.o%A\""
-                     + " --export="
-                     + "\"MODES={n_modes:d}\""
-                     + ",\"SURFACES={n_surfaces:d}\""
-                     + ",\"BASIS_SIZE={basis_size:d}\""
-                     + ",\"NUM_OF_TEMPS={n_temps:d}\""
-                     + ",\"ROOT_DIR={root_dir:}\""
-                     + ",\"NUMBER_OF_CORES={n_cpus:d}\""
-                     + ",\"MEMORY_RESERVED={memory:}\""
-                     + ",\"DATA_SET_ID={data_set_id:}\""
-                     + ",\"BLAS_MODULE_DIR=/home/ngraymon/dev/privatemodules/openBLAS\""
-                     + ",\"Q_HOSTNAME={:}\"".format(hostname)
-                     + " ./server_scripts/sos_job.sh"
-                    )
+def submit_sos_job(FS, param_dict):
+    """x"""
 
-# MAX_JOBS = len(bead_list)
+    N, A = vIO.get_nmode_nsurf_from_coupled_model(FS=FS)
+    param_dict["coupled_modes"] = N
+    param_dict["coupled_surfs"] = A
 
-# array_qsub  = "sbatch" + (""
-#                  # + " --output={:}".format(hostname) + ":{root_dir:}execution_output/" # defines output directions
-#                  + " --job-name=\"RHO{data_set_id:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}\"" # name the jobs
-#                  + " --array=0-{:d}%1".format(MAX_JOBS) # this creates a job array with MAX_JOBS number of jobs
-#                  + " --cpu_per_task=16"
-#                  + " -N1"
-#                  # + " --ntasks=1"
-#                  # + " --label"
-#                  + " --mem-per-cpu=1000"
-#                  # + " -n=5"
-#                  + " ./server_scripts/slurm/pimc_job.sh"
-#                 )
+    command = sos_qsub.format(**param_dict)
 
-rho_qsub = "sbatch" + (" -m n"  # this stops all mail from being sent
-                     + " --priority 0"  # this defines the priority of the job, default is 0
-                     + " --mem={memory:}G"
-                     # + " --mem-per-cpu={memory:}G"
-                     + " --ntasks=1"
-                     + " --cpus-per-task={n_cpus:d}"
-                     # + " --workdir={:}".format(hostname) + ":{root_dir:}execution_output/"  # defines output directions
-                     + " --workdir={root_dir:}execution_output/"  # defines output directions
-                     + " --job-name=\"RHO{data_set_id:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}\""
-                     + " --output=\"{root_dir:}execution_output/RHO{data_set_id:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}.o%A\""
-                     + " {wait_param:s}" # optional wait parameter
-                     + " --export="
-                     + "\"MODES={n_modes:d}\""
-                     + ",\"SURFACES={n_surfaces:d}\""
-                     + ",\"BASIS_SIZE={basis_size:d}\""
-                     + ",\"NUM_OF_TEMPS={n_temps:d}\""
-                     + ",\"ROOT_DIR={root_dir:}\""
-                     + ",\"NUMBER_OF_CORES={n_cpus:d}\""
-                     + ",\"MEMORY_RESERVED={memory:}\""
-                     + ",\"DATA_SET_ID={data_set_id:}\""
-                     + ",\"RHO_SET_ID={rho_set_id:}\""
-                     + ",\"BLAS_MODULE_DIR=/home/ngraymon/dev/privatemodules/openBLAS\""
-                     + ",\"Q_HOSTNAME={:}\"".format(hostname)
-                     + " ./server_scripts/rho_job.sh"
-                    )
-
-# the reference file
-root_sos_file = workspace_dir+data_set_dir+"parameters/sos_B{:d}.json".format(chosen_size_of_basis)
-
-wait_arg = "" # empty value
-# if the reference file doesn't exist we need to run SOS to generate it!
-if FORCE_REPLACE or not os.path.isfile(root_sos_file):
-    command = sos_qsub.format(
-                n_modes=coupled_modes,
-                n_surfaces=coupled_surfs,
-                basis_size=chosen_size_of_basis,
-                n_temps=len(temperature_list),
-                n_cpus=cores_requested,
-                memory=chosen_memory_size,
-                root_dir=workspace_dir+data_set_dir,
-                data_set_id=data_set_id
-                )
+    # use subprocess to capture the jobid in the return value from SLURM
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     out, error = p.communicate()
-    # print("SOS FIRST", out.decode(), "\n", error.decode())
-    SOS_JOB_ID = int(out.decode()[20:])
-    wait_arg = "--dependency afterok:{:}".format(SOS_JOB_ID)
 
-# otherwise we can just procced to create our rho file
-command = rho_qsub.format(
-            wait_param=wait_arg,
-            n_modes=number_of_modes,
-            n_surfaces=number_of_surfaces,
-            basis_size=chosen_size_of_basis,
-            n_temps=len(temperature_list),
-            n_cpus=cores_requested,
-            memory=chosen_memory_size,
-            root_dir=workspace_dir+data_set_dir+rho_set_dir,
-            data_set_id=data_set_id,
-            rho_set_id=rho_set_id
-            )
-p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-out, error = p.communicate()
-if not error.decode() == "":
-    print("RHO AFTER", out.decode(), "\n", error.decode())
+    # this is highly dependent on the output from SLURM and the setup on our local cluster
+    # TODO - create a more resilient way of extracting the job id when submitting
+    id_sos_job = int(out.decode()[20:])
+
+    # modify the wait arg so that each rho job waits until the sos job has finished
+    param_dict["wait_param"] = "--dependency afterok:{:}".format(id_sos_job)
+    return
+
+
+def estimate_memory_usuage(A, N, B):
+    """x"""
+
+    # the memory is heavily dependent on the BASIS SIZE
+    # 8 bytes for a double, times the number of doubles in the largest matrix
+    chosen_memory_size = 8 * pow((A * pow(B, N)), 2)
+    # multiply by a factor of 10 for saftey ( we assume at least 4-5 matricies in use at once )
+    chosen_memory_size *= 10
+    # express the result in a number of GB
+    chosen_memory_size /= GB_per_byte
+    # make sure we request at least 1 GB of memory
+    chosen_memory_size = 1 if (round(chosen_memory_size) is 0) else round(chosen_memory_size)
+
+    # both integers are in units of GB
+    assert chosen_memory_size < maximum_memory_per_node, f"Asked for {chosen_memory_size:d}GB"
+
+    return chosen_memory_size
+
+
+def submit_rho_job(FS=None, path_root=None, id_data=None, id_rho=None, recalculate_sos_file=False, param_dict=None):
+    """ recalculate_sos_file is a boolean flag which forces all sos files to be replaced when true, should only use this if the model has changed or debugging"""
+
+    if FS is None:
+        assert path_root is not None and type(id_data) is str
+        assert id_data is not None and type(id_data) is int
+        assert id_rho is not None and type(id_rho) is int  # maybe not necessary?
+        FS = file_structure.FileStructure(path_root, id_data, id_rho=id_rho)
+
+    if param_dict is None:
+        # or maybe we could look for a parameter dictionary in the current directory?
+        param_dict = {"basis_size": 20,
+                      "wait_param": "",
+                      "n_cpus": 12,
+                      "dir_data": FS.path_data,
+                      "dir_rho": FS.path_rho,
+                      "id_data": FS.id_data,
+                      "id_rho": FS.id_rho,
+                      "hostname": socket.gethostname(),
+                      }
+
+    # read in the model parameters from the JSON files
+    N, A = vIO.get_nmode_nsurf_from_sampling_model(FS=FS)
+    param_dict["uncoupled_modes"] = N
+    param_dict["uncoupled_surfaces"] = A
+
+    # should be able to process more than 2 mode, however this will stay here until a specific multi-mode test case is constructed for saftey
+    assert(N == 1 or N == 2)
+
+    # we read in the appropriate parameters from somewhere?
+    # source_file = "./model_parameters_source.txt"
+    # parameter_dictionary = vIO.parse_model_params(source_file)
+
+    # temperature_list = parameter_dictionary["temperature_list"]
+    temperature_list = [300]
+    param_dict["n_temps"] = len(temperature_list)
+    param_dict["memory"] = estimate_memory_usuage(A, N, param_dict["basis_size"])
+
+    # the reference file
+    path = FS.template_sos_rho.format(B=param_dict["basis_size"])
+
+    # if the reference file doesn't exist we need to run SOS to generate it!
+    if recalculate_sos_file or not os.path.isfile(path):
+        # need to pass param_dict byRef so that wait_arg can be modified if need be
+        submit_sos_job(FS, param_dict)
+
+    # otherwise we can just procced to create our rho file
+    command = rho_qsub.format(**param_dict)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    out, error = p.communicate()
+
+    if not error.decode() == "":
+        # should this be an exception?
+        raise Exception("rho output\n{:s}\n{:s}\n".format(out.decode(), error.decode()))
+
+    return
+
+
+if (__name__ == "__main__"):
+    # set this up to run from the command line in the future?
+
+    # assert(len(sys.argv) == 4)
+    # assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
+    # assert(sys.argv[2].isnumeric() and int(sys.argv[1]) >= 0)
+    # assert(sys.argv[3].isnumeric() and int(sys.argv[1]) >= 1)
+    pass

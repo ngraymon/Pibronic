@@ -2,14 +2,14 @@
 # should handle the majority of file I/O
 
 # system imports
-from pathlib import Path
+# from pathlib import Path
 import itertools as it
-import functools as ft
+# import functools as ft
 import subprocess
-import fileinput
+# import fileinput
 import shutil
 import json
-import math
+# import math
 import mmap
 import sys
 import os
@@ -17,7 +17,7 @@ import os
 # third party imports
 import fortranformat as ff  # Fortran format for VIBRON
 import numpy as np
-from numpy import newaxis as NEW
+# from numpy import newaxis as NEW
 from numpy import float64 as F64
 from numpy.random import uniform as Uniform
 import parse
@@ -82,14 +82,14 @@ list_sub_dirs = [
     ]
 
 
-def pretty_print_model(id_model, unitsOfeV=False):
+def pretty_print_model(id_data, unitsOfeV=False):
     """one method of printing the models in a human readable format"""
     # checkOS()
     import pandas as pd
     from xarray import DataArray as dArr
 
     # parameter values
-    N, A = get_nmode_nsurf_from_coupled_model(id_model)
+    N, A = get_nmode_nsurf_from_coupled_model(id_data)
     numStates = A
     numModes = N
     States = range(numStates)
@@ -103,7 +103,7 @@ def pretty_print_model(id_model, unitsOfeV=False):
 
     # load the data
     path = path_default_root + dir_vib + "parameters/" + "coupled_model.json"
-    path = path.format(id_model)
+    path = path.format(id_data)
     target_file = open(path, mode='r', encoding='UTF8')
     input_dictionary = json.loads(target_file.read())
 
@@ -1402,15 +1402,9 @@ def setup_input_params(directory_path, new_directory=False):
     save_model_to_JSON(path_params+json_filename, **kwargs)
 
 
-def get_nmode_nsurf_from_coupled_model(id_model):
-    """find nmodes and nsurfs for coupling_model.json files"""
-    # checkOS()
-    directory_path = (path_default_root + dir_vib + "parameters/").format(id_model)
-
-    json_filename = "coupled_model.json"
-    path_full = directory_path + json_filename
-
-    with open(path_full, mode='r', encoding='UTF8') as target_file:
+def _get_nmode_nsurf_from_file(path):
+    assert os.path.isfile(path), "invalid path:\n{:s}".format(path)
+    with open(path, mode='r', encoding='UTF8') as target_file:
         input_dictionary = json.loads(target_file.read())
 
     number_of_modes = input_dictionary["number of modes"]
@@ -1418,40 +1412,23 @@ def get_nmode_nsurf_from_coupled_model(id_model):
     return number_of_modes, number_of_surfaces
 
 
-def get_nmode_nsurf_from_coupled_modelff(path_full):
-    """find nmodes and nsurfs for sampling_model.json files by using a filepath"""
-    with open(path_full, mode='r', encoding='UTF8') as target_file:
-        input_dictionary = json.loads(target_file.read())
-
-    number_of_modes = input_dictionary["number of modes"]
-    number_of_surfaces = input_dictionary["number of surfaces"]
-    return number_of_modes, number_of_surfaces
-
-
-def get_nmode_nsurf_from_sampling_model(id_model, id_rho):
-    """find nmodes and nsurfs for sampling_model.json files"""
-    # checkOS()
-    directory_path = (path_default_root + dir_vib + dir_rho + "parameters/").format(id_model, id_rho)
-
-    json_filename = "sampling_model.json"
-    path_full = directory_path + json_filename
-
-    with open(path_full, mode='r', encoding='UTF8') as target_file:
-        input_dictionary = json.loads(target_file.read())
-
-    number_of_modes = input_dictionary["number of modes"]
-    number_of_surfaces = input_dictionary["number of surfaces"]
-    return number_of_modes, number_of_surfaces
+def get_nmode_nsurf_from_coupled_model(FS=None, path=None):
+    """return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file"""
+    if FS is None:
+        assert path is not None, "no arguments provided"
+    else:
+        path = FS.path_vib_model
+    return _get_nmode_nsurf_from_file(path)
 
 
-def get_nmode_nsurf_from_sampling_modelff(path_full):
-    """find nmodes and nsurfs for sampling_model.json files by using a filepath"""
-    with open(path_full, mode='r', encoding='UTF8') as target_file:
-        input_dictionary = json.loads(target_file.read())
-
-    number_of_modes = input_dictionary["number of modes"]
-    number_of_surfaces = input_dictionary["number of surfaces"]
-    return number_of_modes, number_of_surfaces
+"""it might be nice to have the ability to specify id_data or id_rho, although this should be done in a way that queries file_structure so as to not "leak" the file structure out to other areas of the code"""
+def get_nmode_nsurf_from_sampling_model(FS=None, path=None):
+    """return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file"""
+    if FS is None:
+        assert path is not None, "no arguments provided"
+    else:
+        path = FS.path_rho_model
+    return _get_nmode_nsurf_from_file(path)
 
 
 def remove_coupling_from_model(path_source, path_destination):
@@ -1483,8 +1460,8 @@ def create_harmonic_model(FS):
     checkOS()
     source = FS.path_vib_params + "coupled_model.json"
     dest = FS.path_vib_params + "harmonic_model.json"
-    # source = (FS.path_default_root + dir_vib + "parameters/coupled_model.json").format(id_model)
-    # dest = (FS.path_default_root + dir_vib + "parameters/harmonic_model.json").format(id_model)
+    # source = (FS.path_default_root + dir_vib + "parameters/coupled_model.json").format(id_data)
+    # dest = (FS.path_default_root + dir_vib + "parameters/harmonic_model.json").format(id_data)
     remove_coupling_from_model(source, dest)
     s = "Created harmonic model {:s} by removing coupling from {:s}"
     log.debug(s.format(dest, source))

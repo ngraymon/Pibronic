@@ -57,7 +57,7 @@ class FileStructure:
 
     def __init__(self, path_root, id_data, id_rho=0):
         """x"""
-        assert(type(path_root) == str)
+        assert type(path_root) is str, "did not provide a path in str format"
         self.id_rho = id_rho
         self.id_data = id_data
         self.path_root = path_root

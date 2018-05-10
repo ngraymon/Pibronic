@@ -243,7 +243,7 @@ class ModelSampling(ModelClass):
         return
 
     def load_model(self, filePath):
-        _, newStates = vIO.get_nmode_nsurf_from_sampling_modelff(filePath)
+        _, newStates = vIO.get_nmode_nsurf_from_sampling_model(path=filePath)
 
         # replace the vibronic models state size with rho's state size
         self.param_dict['A'] = self.states = newStates
