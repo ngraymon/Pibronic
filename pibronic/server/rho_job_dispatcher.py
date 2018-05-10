@@ -1,4 +1,4 @@
-"""submission script to automate submitting multiple jobs on slurm server"""
+"""submission script to automate submitting jobs on slurm server"""
 
 # system imports
 import subprocess
@@ -15,8 +15,8 @@ from ..constants import GB_per_byte, maximum_memory_per_node
 # import numpy as np
 
 
-# array_qsub = "sbatch"
-# array_qsub += (""
+# array_cmd = "sbatch"
+# array_cmd += (""
 #                " --output={hostname:}:{root_dir:}execution_output/"  # defines output directions
 #                " --job-name=\"RHO{id_data:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}\""  # name the jobs
 #                " --array=0-{max_jobs:d}%1"  # this creates a job array with MAX_JOBS number of jobs
@@ -29,58 +29,58 @@ from ..constants import GB_per_byte, maximum_memory_per_node
 #                " ./server_scripts/slurm/pimc_job.sh"
 #                )
 
-sos_qsub = "sbatch"
-sos_qsub += (" -m n"  # this stops all mail from being sent
-             " --priority 0"  # this defines the priority of the job, default is 0
-             " --mem={memory:}G"
-             # " --mem-per-cpu={memory:}G"
-             " --ntasks=1"
-             " --cpus-per-task={n_cpus:d}"
-             # " --workdir={hostname:}:{dir_data:}execution_output/"  # defines output directions
-             " --workdir={dir_data:}execution_output/"  # defines output directions
-             " --job-name=\"SOS{id_data:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}\""
-             " --output=\"{dir_data:}execution_output/SOS{id_data:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}.o%A\""
-             " --export="
-             "\"MODES={coupled_modes:d}\""
-             ",\"SURFACES={coupled_surfaces:d}\""
-             ",\"BASIS_SIZE={basis_size:d}\""
-             ",\"NUM_OF_TEMPS={n_temps:d}\""
-             ",\"ROOT_DIR={dir_data:}\""
-             ",\"NUMBER_OF_CORES={n_cpus:d}\""
-             ",\"MEMORY_RESERVED={memory:}\""
-             ",\"id_data={id_data:}\""
-             ",\"BLAS_MODULE_DIR=/home/ngraymon/dev/privatemodules/openBLAS\""
-             ",\"Q_HOSTNAME={hostname:}\""
-             " ./server_scripts/sos_job.sh"
-             )
+sos_cmd = "sbatch"
+sos_cmd += (" -m n"  # this stops all mail from being sent
+            " --priority 0"  # this defines the priority of the job, default is 0
+            " --mem={memory:}G"
+            # " --mem-per-cpu={memory:}G"
+            " --ntasks=1"
+            " --cpus-per-task={n_cpus:d}"
+            # " --workdir={hostname:}:{dir_data:}execution_output/"  # defines output directions
+            " --workdir={dir_data:}execution_output/"  # defines output directions
+            " --job-name=\"SOS{id_data:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}\""
+            " --output=\"{dir_data:}execution_output/SOS{id_data:d}_B{basis_size:d}_S{n_surfaces:d}_N{n_modes:d}.o%A\""
+            " --export="
+            "\"MODES={coupled_modes:d}\""
+            ",\"SURFACES={coupled_surfaces:d}\""
+            ",\"BASIS_SIZE={basis_size:d}\""
+            ",\"NUM_OF_TEMPS={n_temps:d}\""
+            ",\"ROOT_DIR={dir_data:}\""
+            ",\"NUMBER_OF_CORES={n_cpus:d}\""
+            ",\"MEMORY_RESERVED={memory:}\""
+            ",\"id_data={id_data:}\""
+            ",\"BLAS_MODULE_DIR=/home/ngraymon/dev/privatemodules/openBLAS\""
+            ",\"Q_HOSTNAME={hostname:}\""
+            " ./server_scripts/sos_job.sh"
+            )
 
 
-rho_qsub = "sbatch"
-rho_qsub += (" -m n"  # this stops all mail from being sent
-             " --priority 0"  # this defines the priority of the job, default is 0
-             " --mem={memory:}G"
-             # " --mem-per-cpu={memory:}G"
-             " --ntasks=1"
-             " --cpus-per-task={n_cpus:d}"
-             # " --workdir={hostname:}:{dir_rho:}execution_output/"  # defines output directions
-             " --workdir={dir_rho:}execution_output/"  # defines output directions
-             " --job-name=\"RHO{id_data:d}_B{basis_size:d}_S{uncoupled_surfaces:d}_N{uncoupled_modes:d}\""
-             " --output=\"{dir_rho:}execution_output/RHO{id_data:d}_B{basis_size:d}_S{uncoupled_surfaces:d}_N{uncoupled_modes:d}.o%A\""
-             " {wait_param:s}"  # optional wait parameter
-             " --export="
-             "\"MODES={uncoupled_modes:d}\""
-             ",\"SURFACES={uncoupled_surfaces:d}\""
-             ",\"BASIS_SIZE={basis_size:d}\""
-             ",\"NUM_OF_TEMPS={n_temps:d}\""
-             ",\"ROOT_DIR={data_rho:}\""
-             ",\"NUMBER_OF_CORES={n_cpus:d}\""
-             ",\"MEMORY_RESERVED={memory:}\""
-             ",\"id_data={id_data:}\""
-             ",\"id_rho={id_rho:}\""
-             ",\"BLAS_MODULE_DIR=/home/ngraymon/dev/privatemodules/openBLAS\""
-             ",\"Q_HOSTNAME={hostname:}\""
-             " ./server_scripts/rho_job.sh"
-             )
+rho_cmd = "sbatch"
+rho_cmd += (" -m n"  # this stops all mail from being sent
+            " --priority 0"  # this defines the priority of the job, default is 0
+            " --mem={memory:}G"
+            # " --mem-per-cpu={memory:}G"
+            " --ntasks=1"
+            " --cpus-per-task={n_cpus:d}"
+            # " --workdir={hostname:}:{dir_rho:}execution_output/"  # defines output directions
+            " --workdir={dir_rho:}execution_output/"  # defines output directions
+            " --job-name=\"RHO{id_data:d}_B{basis_size:d}_S{uncoupled_surfaces:d}_N{uncoupled_modes:d}\""
+            " --output=\"{dir_rho:}execution_output/RHO{id_data:d}_B{basis_size:d}_S{uncoupled_surfaces:d}_N{uncoupled_modes:d}.o%A\""
+            " {wait_param:s}"  # optional wait parameter
+            " --export="
+            "\"MODES={uncoupled_modes:d}\""
+            ",\"SURFACES={uncoupled_surfaces:d}\""
+            ",\"BASIS_SIZE={basis_size:d}\""
+            ",\"NUM_OF_TEMPS={n_temps:d}\""
+            ",\"ROOT_DIR={data_rho:}\""
+            ",\"NUMBER_OF_CORES={n_cpus:d}\""
+            ",\"MEMORY_RESERVED={memory:}\""
+            ",\"id_data={id_data:}\""
+            ",\"id_rho={id_rho:}\""
+            ",\"BLAS_MODULE_DIR=/home/ngraymon/dev/privatemodules/openBLAS\""
+            ",\"Q_HOSTNAME={hostname:}\""
+            " ./server_scripts/rho_job.sh"
+            )
 
 
 def submit_sos_job(FS, param_dict):
@@ -90,7 +90,7 @@ def submit_sos_job(FS, param_dict):
     param_dict["coupled_modes"] = N
     param_dict["coupled_surfs"] = A
 
-    command = sos_qsub.format(**param_dict)
+    command = sos_cmd.format(**param_dict)
 
     # use subprocess to capture the jobid in the return value from SLURM
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -171,7 +171,7 @@ def submit_rho_job(FS=None, path_root=None, id_data=None, id_rho=None, recalcula
         submit_sos_job(FS, param_dict)
 
     # otherwise we can just procced to create our rho file
-    command = rho_qsub.format(**param_dict)
+    command = rho_cmd.format(**param_dict)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     out, error = p.communicate()
 

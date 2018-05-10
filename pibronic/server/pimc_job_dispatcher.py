@@ -1,207 +1,159 @@
-# submission script for jobs on nlogn
-import numpy as np
-import sys, os, socket, subprocess
+"""submission script to automate submitting jobs on slurm server"""
+
+# system imports
+import subprocess
+import socket
+# import sys
+# import os
+
+# local imports
 import pibronic.data.vibronic_model_io as vIO
+from ..data import file_structure
+from ..constants import delta_beta
 
-assert(len(sys.argv) == 3)
-assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
-assert(sys.argv[2].isnumeric() and int(sys.argv[1]) >= 0)
-
-# workspace_dir = "/home/ngraymon/thesis_code/pimc/workspace/"
-workspace_dir = "/work/ngraymon/pimc/"
-data_set_id   = int(sys.argv[1])
-data_set_dir  = "data_set_{:d}/".format(data_set_id)
-rho_set_id    = int(sys.argv[2])
-rho_set_dir   = "rho_{:d}/".format(rho_set_id)
-
-directory_path = workspace_dir + data_set_dir
-sampling_path = directory_path + rho_set_dir
-assert(os.path.exists(sampling_path))
+# third party imports
+import numpy as np
 
 # unsafe
+# this should be a command in file_structure that cleans all the files up
 # os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "execution_output/"))
 # os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "results/"))
 # os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "output/"))
 # os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "plots/"))
 
 
-
-# read in the model parameters from the vibronic_model_dictionary.JSON file
-coupled_modes, coupled_surfaces = vIO.get_nmode_nsurf_from_coupled_model(data_set_id)
-rho_modes, rho_surfaces = vIO.get_nmode_nsurf_from_sampling_model(data_set_id, rho_set_id)
-
-# we read all appropriate parameters from the model_parameters_source.txt
-source_file = "./model_parameters_source.txt"
-parameter_dictionary = vIO.parse_model_params(source_file)
-temperature_list     = parameter_dictionary["temperature_list"]
-# sample_list          = parameter_dictionary["sample_list"] # we dont need this anymore?
-# bead_list            = parameter_dictionary["bead_list"]
-# bead_list            = np.array([170])
-# bead_list            = np.array([1,4,8,16,32,64,128])
-# bead_list            = np.array([3])
-# bead_list            = np.sort(np.array([1,4,8,16,32,64,128] + [2, 6, 10, 12, 14, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]))
-# bead_list            = np.sort(np.array([1,4,8,16,32,64,128] + [2, 6, 10, 12, 14, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]))
-# bead_list            = np.array([7])
-# bead_list = np.sort(np.array([16,32,64,128] + [12, 14, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]))
-# memory_list          = np.ones_like(bead_list, dtype=int) + (bead_list // 20)
-
-# bead_list = np.sort(np.array([16,32,64,128] + [12, 14, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]))
-# bead_list = np.array([1, 4, 8])
-# memory_list = np.where(bead_list < 50, [10], [20])
-# memory_list = np.where(bead_list < 50, [10], [20])
-# print(bead_list)
-# print(memory_list)
-# sys.exit(0)
-
-
-bead_list = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50, 75, 100])
-memory_list = np.array([25]*len(bead_list))
-
-# choose these runtime parameters
-number_of_samples = int(1e6)
-block_size = int(1e2)
-number_of_cpus = 1
-
-# temporary testing
-temperature_list = [300]
-
-
-hostname = socket.gethostname()
-sbatch = "sbatch" + (
-                       " -m n"  # this stops all mail from being sent
-                     + " --priority 0"  # this defines the priority of the job, default is 0
-                     + " --mem={memory:}G"
-                     + " --partition=highmem"
-                     + " --ntasks=1"
-                     + " --cpus-per-task={n_cpus:d}"
-                     + " --workdir={:}".format(hostname) + ":{rho_dir:}execution_output/"  # defines output directions
-                     + " --job-name=\"F{data_set_id:}_A{cA:d}_N{cN:d}_X{n_samples:d}_P{n_beads:d}_T{temp:d}\""
-                     + " --output=\"{rho_dir:}execution_output/\"F{data_set_id:}_A{cA:d}_N{cN:d}_X{n_samples:d}_P{n_beads:d}_T{temp:d}\".o%A\""
-                     + " {wait_param:s}" # optional wait parameter
-                     + " --export="
-                     + "\"MODES={cN:d}\""
-                     + ",\"SURFACES={cA:d}\""
-                     + ",\"RHO_MODES={rN:d}\""
-                     + ",\"RHO_SURFACES={rA:d}\""
-                     + ",\"SAMPLES={n_samples:d}\""
-                     + ",\"BLOCKS={block_size:d}\""
-                     + ",\"BEADS={n_beads:d}\""
-                     + ",\"TEMP={temp:d}\""
-                     + ",\"DELTA_BETA={delta_beta:f}\""
-                     + ",\"ROOT_DIR={root_dir:}\""
-                     + ",\"RHO_DIR={rho_dir:}\""
-                     + ",\"NUMBER_OF_CORES={n_cpus:d}\""
-                     + ",\"MEMORY_RESERVED={memory:}\""
-                     + ",\"DATA_SET_ID={data_set_id:}\""
-                     + ",\"RHO_SET_ID={rho_set_id:}\""
-                     + ",\"PYTHON3_PATH=/home/ngraymon/dev/ubuntu/16.04/bin/python3\""
-                     + ",\"Q_HOSTNAME={:}\"".format(hostname)
-                     + " ./server_scripts/pimc_job.sh"
-                    )
+pimc_cmd = "sbatch"
+pimc_cmd += (
+             " -m n"  # this stops all mail from being sent
+             " --priority 0"  # this defines the priority of the job, default is 0
+             " --mem={memory:}G"
+             " --partition={partition:}"
+             " --ntasks=1"
+             " --cpus-per-task={n_cpus:d}"
+             # this should be factored out into file_structure
+             " --workdir={hostname:}:{dir_rho:}execution_output/"  # defines output directions
+             # the job name here should be factored out into file_name in data
+             " --job-name=\"F{id_data:}_A{coupled_surfaces:d}_N{coupled_modes:d}_X{n_samples:d}_P{n_beads:d}_T{temp:d}\""
+             # this should be factored out into file_name and file_structure
+             " --output=\"{dir_rho:}execution_output/\"F{id_data:}_A{cA:d}_N{cN:d}_X{n_samples:d}_P{n_beads:d}_T{temp:d}\".o%A\""
+             " {wait_param:s}"  # optional wait parameter
+             " --export="
+             "\"MODES={coupled_modes:d}\""
+             ",\"SURFACES={coupled_surfaces:d}\""
+             ",\"RHO_MODES={uncoupled_modes:d}\""
+             ",\"RHO_SURFACES={uncoupled_surfaces:d}\""
+             ",\"SAMPLES={n_samples:d}\""
+             ",\"BLOCKS={block_size:d}\""
+             ",\"BEADS={n_beads:d}\""
+             ",\"TEMP={temp:d}\""
+             ",\"DELTA_BETA={delta_beta:f}\""
+             ",\"ROOT_DIR={dir_root:}\""
+             ",\"RHO_DIR={dir_rho:}\""
+             ",\"NUMBER_OF_CORES={n_cpus:d}\""
+             ",\"MEMORY_RESERVED={memory:}\""
+             ",\"id_data={id_data:}\""
+             ",\"id_rho={id_rho:}\""
+             # this might be worth eventually removing?
+             ",\"PYTHON3_PATH=/home/ngraymon/dev/privatemodules/openBLAS\""
+             ",\"Q_HOSTNAME={hostname:}\""
+             # this should be made more robust?
+             # use an absolute path?
+             " ./server_scripts/pimc_job.sh"
+             )
 
 
-if(False):
-    os.system(sbatch.format(
-        cN=coupled_modes,
-        cA=coupled_surfaces,
-        rN=rho_modes,
-        rA=rho_surfaces,
-        n_samples=int(1e6),
-        block_size=int(1e2),
-        n_beads=7,
-        n_cpus=1,
-        delta_beta=2.0e-4,
-        temp=300,
-        memory=3, #GB
-        root_dir=directory_path,
-        rho_dir=sampling_path,
-        data_set_id=data_set_id,
-        rho_set_id=rho_set_id,
-        wait_param="", # blank no waiting
-        )
-    )
-    sys.exit(0)
-
-# store one job ID for each value of P
-JOB_ARRAY = [0]*len(bead_list)
+def extract_job_id(out, error):
+    """this might need to be more dynamic and change with type of server"""
+    return int(out.decode()[20:])
 
 
-if(hostname == "nlogn"):
-    for bead_index, bead_val in enumerate(bead_list):
-        command = sbatch.format(
-                cN=coupled_modes,
-                cA=coupled_surfaces,
-                rN=rho_modes,
-                rA=rho_surfaces,
-                n_samples=number_of_samples,
-                block_size=block_size,
-                n_beads=bead_val,
-                n_cpus=number_of_cpus,
-                delta_beta=2.0e-4,
-                temp=temperature_list[-1],
-                memory=memory_list[bead_index],
-                root_dir=directory_path,
-                rho_dir=sampling_path,
-                data_set_id=data_set_id,
-                rho_set_id=rho_set_id,
-                wait_param="", # blank - no waiting
-                )
-        print(command)
-        sys.exit(0)
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        out, error = p.communicate()
-        JOB_ARRAY[bead_index] = int(out.decode()[20:])
+def submit_pimc_job(FS=None, path_root=None, id_data=None, id_rho=None, param_dict=None):
+    """x"""
 
-        for temp_val in temperature_list[-2::-1]:  # go backwards because higher temps are easier
-            command = sbatch.format(
-                    cN=coupled_modes,
-                    cA=coupled_surfaces,
-                    rN=rho_modes,
-                    rA=rho_surfaces,
-                    n_samples=number_of_samples,
-                    block_size=block_size,
-                    n_beads=bead_val,
-                    n_cpus=number_of_cpus,
-                    delta_beta=2.0e-4,
-                    temp=temp_val,
-                    memory=memory_list[bead_index],
-                    root_dir=directory_path,
-                    rho_dir=sampling_path,
-                    data_set_id=data_set_id,
-                    rho_set_id=rho_set_id,
-                    wait_param="--dependency afterok:{:}".format(JOB_ARRAY[bead_index]),
-                    )
+    if FS is None:
+        assert path_root is not None and type(id_data) is str
+        assert id_data is not None and type(id_data) is int
+        assert id_rho is not None and type(id_rho) is int  # maybe not necessary?
+        FS = file_structure.FileStructure(path_root, id_data, id_rho=id_rho)
+
+    if param_dict is None:
+        # or maybe we could look for a parameter dictionary in the current directory?
+        param_dict = {"basis_size": 20,
+                      "wait_param": "",
+                      "n_cpus": 1,
+                      "temperature_list": [300, ],
+                      "delta_beta": delta_beta,
+                      "n_samples": int(1e6),
+                      "block_size": int(1e2),
+                      "dir_root": FS.path_root,
+                      "dir_data": FS.path_data,
+                      "dir_rho": FS.path_rho,
+                      "id_data": FS.id_data,
+                      "id_rho": FS.id_rho,
+                      "hostname": socket.gethostname(),
+                      "partition": "serial",  # use "highmem" for large memory jobs
+                      }
+
+    # read in the model parameters from the JSON files
+    N, A = vIO.get_nmode_nsurf_from_coupled_model(FS=FS)
+    param_dict["coupled_modes"] = N
+    param_dict["coupled_surfaces"] = A
+    # read in the model parameters from the JSON files
+    N, A = vIO.get_nmode_nsurf_from_sampling_model(FS=FS)
+    param_dict["uncoupled_modes"] = N
+    param_dict["uncoupled_surfaces"] = A
+
+    # coupled_modes, coupled_surfaces = vIO.get_nmode_nsurf_from_coupled_model(id_data)
+    # rho_modes, rho_surfaces = vIO.get_nmode_nsurf_from_sampling_model(id_data, id_rho)
+
+    temperature_list = param_dict["temperature_list"]
+    # sample_list          = param_dict["sample_list"] # we dont need this anymore?
+    # bead_list            = param_dict["bead_list"]
+    # memory_list          = np.ones_like(bead_list, dtype=int) + (bead_list // 20)
+    # bead_list = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50, 75, 100])
+    bead_list = np.array([12, ])
+    memory_list = np.array([25]*len(bead_list))
+
+    if(param_dict["hostname"] == "nlogn"):
+        for bead_index, bead_val in enumerate(bead_list):
+            param_dict["wait_param"] = ""
+            command = pimc_cmd.format(memory=memory_list[bead_index],
+                                      n_beads=bead_val,
+                                      temp=temperature_list[-1],
+                                      **param_dict
+                                      )
             p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, error = p.communicate()
-            JOB_ARRAY[bead_index] = int(out.decode()[20:])
+            previous_job_id = extract_job_id(out, error)
 
-elif(hostname=="feynman"):
-    for bead_index, bead_val in enumerate(bead_list):
-    # for bead_index, bead_val in enumerate([400]):
-        # for temp_val in [300]:
-        for temp_val in temperature_list:
-            command = sbatch.format(
-                    cN=coupled_modes,
-                    cA=coupled_surfaces,
-                    rN=rho_modes,
-                    rA=rho_surfaces,
-                    n_samples=number_of_samples,
-                    block_size=block_size,
-                    n_beads=bead_val,
-                    n_cpus=number_of_cpus,
-                    delta_beta=2.0e-4,
-                    temp=temp_val,
-                    memory=memory_list[bead_index],
-                    root_dir=directory_path,
-                    rho_dir=sampling_path,
-                    data_set_id=data_set_id,
-                    rho_set_id=rho_set_id,
-                    wait_param="", # blank no waiting
-                    )
-            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            out, error = p.communicate()
+            # go backwards because higher temps are easier
+            for temp_val in temperature_list[-2::-1]:
+                param_dict["wait_param"] = f"--dependency afterok:{previous_job_id:d}"
+                command = pimc_cmd.format(memory=memory_list[bead_index],
+                                          n_beads=bead_val,
+                                          temp=temp_val,
+                                          **param_dict
+                                          )
+                p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                out, error = p.communicate()
+                previous_job_id = extract_job_id(out, error)
+    else:
+        for bead_index, bead_val in enumerate(bead_list):
+            for temp_val in temperature_list:
+                command = pimc_cmd.format(memory=memory_list[bead_index],
+                                          n_beads=bead_val,
+                                          temp=temp_val,
+                                          **param_dict
+                                          )
+                p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                out, error = p.communicate()
+    return
 
 
+if (__name__ == "__main__"):
+    # set this up to run from the command line in the future?
 
-
-
+    # assert(len(sys.argv) == 3)
+    # assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
+    # assert(sys.argv[2].isnumeric() and int(sys.argv[1]) >= 0)
+    pass

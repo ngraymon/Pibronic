@@ -1,5 +1,5 @@
-# job_boss.py
-#
+"""provides a number of job submission related functions - a helper module for job submission"""
+
 # system imports
 import subprocess
 from subprocess import Popen, TimeoutExpired
@@ -9,10 +9,10 @@ import signal
 import time
 import os
 
-# third party imports
-
 # local imports
-# from ..data import vibronic_model_io as vIO
+# import pibronic.data.vibronic_model_io as vIO
+# from ..data import file_structure
+# from ..constants import GB_per_byte, maximum_memory_per_node
 from ..log_conf import log
 from .. import constants
 
@@ -20,8 +20,9 @@ from .. import constants
 job_state_lock = threading.Lock()
 job_almost_done_flag = False
 
-# which headnode we are on
+# this should go in the param_dict
 hostname = socket.gethostname()
+# this should be redone
 partition = 'highmem' if hostname == 'feynman' else 'serial'
 
 
@@ -39,7 +40,7 @@ def SIGUSR1_handle(signum, frame):
     else:
         log.lock("I couldn't aquire the lock so I'm setting an alarm")
         job_almost_done_flag = (signum == signal.SIGUSR1)
-        signal.alarm(10) # set the alarm to wake up this thread
+        signal.alarm(10)  # set the alarm to wake up this thread
     return
 
 
@@ -144,29 +145,28 @@ class PimcSubmissionClass:
     LARGEST_JOB_SAMPLE = int(1E5)
     # default values
     param_dict = {
-        "delta_beta" : constants.delta_beta,
-        "temperature_list" : [0.0,],
-        "bead_list" : [0, ],
-        "number_of_samples" : 0,
-        "number_of_blocks" : 0,
-        "number_of_states" : 0,
-        "number_of_modes" : 0,
-        "number_of_beads" : 0,
-        "path_scratch" : "",
-        "path_root" : "",
-        "path_data" : "",
-        "path_rho" : "",
-        "id_data" : 0,
-        "id_rho" : 0,
-        "partition" : "serial,highmem",
-        "block_size" : int(1e2),
-        "memory_per_node" : 20,
-        "total_memory" : 20,
-        "cpus_per_task" : 4,
-        "cores_per_socket" : 4,
-        "wait_param" : "",
+        "delta_beta": constants.delta_beta,
+        "temperature_list": [0.0, ],
+        "bead_list": [0, ],
+        "number_of_samples": 0,
+        "number_of_blocks": 0,
+        "number_of_states": 0,
+        "number_of_modes": 0,
+        "number_of_beads": 0,
+        "path_scratch": "",
+        "path_root": "",
+        "path_data": "",
+        "path_rho": "",
+        "id_data": 0,
+        "id_rho": 0,
+        "partition": "serial,highmem",
+        "block_size": int(1e2),
+        "memory_per_node": 20,
+        "total_memory": 20,
+        "cpus_per_task": 4,
+        "cores_per_socket": 4,
+        "wait_param": "",
     }
-
 
     def __init__(self, file_structure_obj, param_dict):
         """x"""
@@ -180,18 +180,17 @@ class PimcSubmissionClass:
         blocks = self.LARGEST_JOB_SAMPLE // self.param_dict["block_size"]
 
         new = {
-                "number_of_blocks" : blocks,
-                "path_scratch" : self.file_struct.path_rho.replace("work", "scratch"),
-                "path_root" : self.file_struct.path_root,
-                "path_data" : self.file_struct.path_data,
-                "path_rho" : self.file_struct.path_rho,
-                "path_model_vib" : self.file_struct.path_vib_params + "coupled_model.json",
-                "path_model_rho" : self.file_struct.path_rho_params + "sampling_model.json",
+                "number_of_blocks": blocks,
+                "path_scratch": self.file_struct.path_rho.replace("work", "scratch"),
+                "path_root": self.file_struct.path_root,
+                "path_data": self.file_struct.path_data,
+                "path_rho": self.file_struct.path_rho,
+                "path_model_vib": self.file_struct.path_vib_params + "coupled_model.json",
+                "path_model_rho": self.file_struct.path_rho_params + "sampling_model.json",
         }
 
         self.param_dict.update(new)
         return
-
 
     def submit_jobs(self):
         """submit jobs at diff temps and beads"""
@@ -225,7 +224,6 @@ class PimcSubmissionClass:
                     # sys.exit(0)
         return
 
-
     def submit_job_array(self):
         """for each temp submit an array of jobs over the beads"""
 
@@ -254,40 +252,40 @@ def prepare_job_feynman(param_dict):
     # for saftey
     param_dict["hostname"] = "feynman"
 
-    template_name = (   "D{id_data:d}_"
-                        "R{id_rho:d}_"
-                        # "A{number_of_states:d}_"
-                        # "N{number_of_modes:d}_"
-                        # "X{number_of_samples:d}_"
-                        "P{number_of_beads:d}_"
-                        "T{temperature:.2f}"
-                        )
-
-
+    template_name = ("D{id_data:d}_"
+                     "R{id_rho:d}_"
+                     # "A{number_of_states:d}_"
+                     # "N{number_of_modes:d}_"
+                     # "X{number_of_samples:d}_"
+                     "P{number_of_beads:d}_"
+                     "T{temperature:.2f}"
+                     )
 
     param_dict["job_name"] = template_name.format(**param_dict)
 
     template_from = "\"{:}results/{:}_J\""
-    template_from = template_from.format(   param_dict["path_scratch"],
-                                            param_dict["job_name"],
-                                            # param_dict["path_rho"],
-                                        )
+    template_from = template_from.format(param_dict["path_scratch"],
+                                         param_dict["job_name"],
+                                         # param_dict["path_rho"],
+                                         )
     template_to = "\"{:}results/\"".format(param_dict["path_rho"])
 
     param_dict["copy_from"] = template_from
     param_dict["copy_to"] = template_to
+    # TODO - remove circular dependancy?
+    from ..pimc.minimal import BoxData
     param_dict["execution_parameters"] = BoxData.json_encode(params=param_dict)
 
-    export_options = (  ""
-                        " --export="
-                        "ROOT_DIR={path_rho:s}"
-                        ",SCRATCH_DIR={path_scratch:s}"
-                        ",COPY_FROM={copy_from:s}"
-                        ",COPY_TO={copy_to:s}"
-                        ",EXECUTION_PARAMETERS=\'{execution_parameters:s}\'"
-                        ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3"
-                        ",SAMPLING_SCRIPT=/home/ngraymon/pibronic/pibronic/server/pimc.py"
-                        )
+    export_options = (""
+                      " --export="
+                      "ROOT_DIR={path_rho:s}"
+                      ",SCRATCH_DIR={path_scratch:s}"
+                      ",COPY_FROM={copy_from:s}"
+                      ",COPY_TO={copy_to:s}"
+                      ",EXECUTION_PARAMETERS=\'{execution_parameters:s}\'"
+                      ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3"
+                      ",SAMPLING_SCRIPT=/home/ngraymon/pibronic/pibronic/server/pimc.py"
+                      )
 
     param_dict["export_options"] = export_options.format(**param_dict)
 
@@ -322,56 +320,54 @@ def prepare_job_nlogn(param_dict):
     # for saftey
     param_dict["hostname"] = "nlogn"
 
-    template_name = (   "D{id_data:d}_"
-                        "R{id_rho:d}_"
-                        # "A{number_of_states:d}_"
-                        # "N{number_of_modes:d}_"
-                        # "X{number_of_samples:d}_"
-                        "P{number_of_beads:d}_"
-                        "T{temperature:.2f}"
-                        )
+    template_name = ("D{id_data:d}_"
+                     "R{id_rho:d}_"
+                     # "A{number_of_states:d}_"
+                     # "N{number_of_modes:d}_"
+                     # "X{number_of_samples:d}_"
+                     "P{number_of_beads:d}_"
+                     "T{temperature:.2f}"
+                     )
 
     param_dict["job_name"] = template_name.format(**param_dict)
 
     template_copy = "\"mv --force \"{:}results/{:}\"* \"{:}results/\" \""
-    template_copy = template_copy.format(   param_dict["path_scratch"],
-                                            param_dict["job_name"],
-                                            param_dict["path_rho"],
-                                        )
+    template_copy = template_copy.format(param_dict["path_scratch"],
+                                         param_dict["job_name"],
+                                         param_dict["path_rho"],
+                                         )
 
     param_dict["copy_commands"] = template_copy
     param_dict["execution_parameters"] = BoxData.json_encode(params=param_dict)
 
-
-    export_options = (  ""
-                        " --export="
-                        "ROOT_DIR={path_rho:s}"
-                        ",SCRATCH_DIR={path_scratch:s}"
-                        ",COPY_COMMANDS={copy_commands:s}"
-                        ",EXECUTION_PARAMETERS=\'{execution_parameters:s}\'"
-                        ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3"
-                        ",SAMPLING_SCRIPT=/home/ngraymon/pibronic/pibronic/server/pimc.py"
-                        )
+    export_options = (""
+                      " --export="
+                      "ROOT_DIR={path_rho:s}"
+                      ",SCRATCH_DIR={path_scratch:s}"
+                      ",COPY_COMMANDS={copy_commands:s}"
+                      ",EXECUTION_PARAMETERS=\'{execution_parameters:s}\'"
+                      ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3"
+                      ",SAMPLING_SCRIPT=/home/ngraymon/pibronic/pibronic/server/pimc.py"
+                      )
     param_dict["export_options"] = export_options.format(**param_dict)
-
 
     sbatch = "sbatch"
     sbatch += (
-                " -m n"  # this stops all mail from being sent
-                " --priority 0"  # this defines the priority of the job, default is 0
-                " --ntasks=1"
-                " --job-name={job_name:s}"
-                " --partition={partition:s}"
-                " --workdir={hostname:s}:{path_rho:}execution_output/"
-                " --output={path_rho:}execution_output/{job_name:s}.o%A"
-                # " --ntask={number_of_tasks:d}"
-                " --cpus-per-task={cpus_per_task:d}"
-                " --cores-per-socket={cores_per_socket:d}"
-                " --mem={memory_per_node:}G"
-                # " --mem-per-cpu={memory_per_cpu:}G" # mutually exclusive with --mem
-                " {wait_param:s}" # optional wait parameter
-                " {export_options:s}"
-                " /home/ngraymon/pibronic/pibronic/server/pimc_job.sh"
-                )
+               " -m n"  # this stops all mail from being sent
+               " --priority 0"  # this defines the priority of the job, default is 0
+               " --ntasks=1"
+               " --job-name={job_name:s}"
+               " --partition={partition:s}"
+               " --workdir={hostname:s}:{path_rho:}execution_output/"
+               " --output={path_rho:}execution_output/{job_name:s}.o%A"
+               # " --ntask={number_of_tasks:d}"
+               " --cpus-per-task={cpus_per_task:d}"
+               " --cores-per-socket={cores_per_socket:d}"
+               " --mem={memory_per_node:}G"
+               # " --mem-per-cpu={memory_per_cpu:}G" # mutually exclusive with --mem
+               " {wait_param:s}"  # optional wait parameter
+               " {export_options:s}"
+               " /home/ngraymon/pibronic/pibronic/server/pimc_job.sh"
+               )
 
     return sbatch
