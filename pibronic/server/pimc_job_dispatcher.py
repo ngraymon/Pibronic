@@ -14,14 +14,6 @@ from ..constants import delta_beta
 # third party imports
 import numpy as np
 
-# unsafe
-# this should be a command in file_structure that cleans all the files up
-# os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "execution_output/"))
-# os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "results/"))
-# os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "output/"))
-# os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "plots/"))
-
-
 pimc_cmd = "sbatch"
 pimc_cmd += (
              " -m n"  # this stops all mail from being sent
@@ -137,7 +129,7 @@ def submit_pimc_job(FS=None, path_root=None, id_data=None, id_rho=None, param_di
                 p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                 out, error = p.communicate()
                 previous_job_id = extract_job_id(out, error)
-    else:
+    if(param_dict["hostname"] == "feynman"):
         for bead_index, bead_val in enumerate(bead_list):
             for temp_val in temperature_list:
                 command = pimc_cmd.format(memory=memory_list[bead_index],
@@ -147,6 +139,8 @@ def submit_pimc_job(FS=None, path_root=None, id_data=None, id_rho=None, param_di
                                           )
                 p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                 out, error = p.communicate()
+    else:
+        raise Exception("This server is currently not supported")
     return
 
 

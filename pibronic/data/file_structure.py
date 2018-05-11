@@ -6,14 +6,14 @@ keeps directory structure consistant over the many modules if changes need to be
 
 # system imports
 import os
-# import sys
+from os.path import join
+# from pathlib import Path  # should eventually make use of this
 
 # third party imports
-# import numpy as np
 
 # local imports
 from . import file_name
-from .. import log_conf
+from ..log_conf import log
 
 
 # the names of the sub directories
@@ -57,28 +57,33 @@ class FileStructure:
 
     def __init__(self, path_root, id_data, id_rho=0):
         """x"""
-        assert type(path_root) is str, "did not provide a path in str format"
+        # assert type(path_root) is str, "did not provide a path in str format"
+
         self.id_rho = id_rho
         self.id_data = id_data
-        self.path_root = path_root
-        self.path_data = path_root + self.template_vib.format(id_data)
-        self.path_rho = path_root + self.template_rho.format(id_data, id_rho)
+        assert os.path.exists(path_root), "the path_root does not exist"
+        assert os.path.isdir(path_root), "the path_root is not a directory"
+        self.path_root = os.path.abspath(path_root)
+        # main directories
+        self.path_data = join(self.path_root, self.template_vib.format(id_data))
+        self.path_rho = join(self.path_root, self.template_rho.format(id_data, id_rho))
         # special
-        self.path_es = self.path_data + "electronic_structure/"
-
-        self.path_vib_params = path_root + self.template_vib_params.format(id_data)
-        self.path_vib_results = path_root + self.template_vib_results.format(id_data)
-        self.path_vib_output = path_root + self.template_vib_output.format(id_data)
-        self.path_vib_plots = path_root + self.template_vib_plots.format(id_data)
-        self.path_rho_params = path_root + self.template_rho_params.format(id_data, id_rho)
-        self.path_rho_results = path_root + self.template_rho_results.format(id_data, id_rho)
-        self.path_rho_output = path_root + self.template_rho_output.format(id_data, id_rho)
-        self.path_rho_plots = path_root + self.template_rho_plots.format(id_data, id_rho)
+        self.path_es = join(self.path_data, "electronic_structure")
+        # sub directories
+        self.path_vib_params = join(path_root, self.template_vib_params.format(id_data))
+        self.path_vib_results = join(path_root, self.template_vib_results.format(id_data))
+        self.path_vib_output = join(path_root, self.template_vib_output.format(id_data))
+        self.path_vib_plots = join(path_root, self.template_vib_plots.format(id_data))
+        self.path_rho_params = join(path_root, self.template_rho_params.format(id_data, id_rho))
+        self.path_rho_results = join(path_root, self.template_rho_results.format(id_data, id_rho))
+        self.path_rho_output = join(path_root, self.template_rho_output.format(id_data, id_rho))
+        self.path_rho_plots = join(path_root, self.template_rho_plots.format(id_data, id_rho))
 
         # root_suffix = "D{:d}_R{:d}_".format(id_data, id_rho)
         # self.pimc_suffix = root_suffix + "P{P:d}_T{T:.2f}_J*_data_points.npz"
         # self.jackknife_suffix = root_suffix + "P{P:d}_T{T:.2f}_X{X:d}_thermo"
 
+        # can't use os.path.join on these because they are format strings that haven't been fully resolved yet
         self.template_pimc = self.path_rho_results + file_name.pimc(J="{J:s}")
         self.template_jackknife = self.path_rho_results + file_name.jackknife()
         self.template_sos_rho = self.path_rho_params + file_name.sos()
@@ -90,6 +95,7 @@ class FileStructure:
         # self.jackknife_suffix = self.template_jackknife_suffix
 
         self.dir_list = [a for a in dir(self) if a.startswith('path_')]
+
         # print(self.dir_list, '\n\n')
         # self.dir_list = [self.path_data, self.path_es]
         # self.dir_list.extend([self.path_data + x for x in list_sub_dirs])
@@ -98,9 +104,9 @@ class FileStructure:
         """ TODO - possibly rename the sampling and coupled paths?
         they are paths but shouldn't be in the dir_list
         """
-        self.path_vib_model = self.path_vib_params + file_name.coupled_model
-        self.path_har_model = self.path_vib_params + file_name.harmonic_model
-        self.path_rho_model = self.path_rho_params + file_name.sampling_model
+        self.path_vib_model = join(self.path_vib_params, file_name.coupled_model)
+        self.path_har_model = join(self.path_vib_params, file_name.harmonic_model)
+        self.path_rho_model = join(self.path_rho_params, file_name.sampling_model)
 
         # if not self.directories_exist():
         self.make_directories()
@@ -116,6 +122,7 @@ class FileStructure:
         """x"""
         for directory in self.dir_list:
             path = getattr(self, directory)
+            log.flow(path)
             os.makedirs(path, exist_ok=True)
         return
 
