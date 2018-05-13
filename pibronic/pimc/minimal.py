@@ -80,6 +80,7 @@ class ModelClass:
     quartic = None
 
     def __init__(self, states=1, modes=1):
+        """x"""
         self.states = states
         self.modes = modes
         self.state_range = range(states)
@@ -94,6 +95,7 @@ class ModelClass:
         return cls.load_model(cls, json_obj)
 
     def load_model(self, path):
+        """x"""
         # I think this fails if the list elements are multidimensional numpy arrays
         # carefully check this
         # lazy way of assuming that if one array is empty this is the first time
@@ -104,12 +106,14 @@ class ModelClass:
              self.quadratic,
              ) = vIO.load_model_from_JSON(path)
         else:
-            vIO.load_model_from_JSON(path,
-                                     energies=self.energy,
-                                     frequencies=self.omega,
-                                     linear_couplings=self.linear,
-                                     quadratic_couplings=self.quadratic,
-                                     )
+            kwargs = {}
+            kwargs["number of modes"] = self.modes
+            kwargs["number of surfaces"] = self.states
+            kwargs["energies"] = self.energy
+            kwargs["frequencies"] = self.omega
+            kwargs["linear couplings"] = self.linear
+            kwargs["quadratic couplings"] = self.quadratic
+            vIO.load_model_from_JSON(path, **kwargs)
         # should we update the states and modes after loading the model?
         return
 
@@ -243,7 +247,7 @@ class ModelSampling(ModelClass):
         return
 
     def load_model(self, filePath):
-        _, newStates = vIO.get_nmode_nsurf_from_sampling_model(path=filePath)
+        oldModes, newStates = vIO.get_nmode_nsurf_from_sampling_model(path=filePath)
 
         # replace the vibronic models state size with rho's state size
         self.param_dict['A'] = self.states = newStates
@@ -257,6 +261,7 @@ class ModelSampling(ModelClass):
         self.omega = np.zeros(self.size['N'], dtype=F64)
         self.energy = np.zeros(self.size['A'], dtype=F64)
         self.linear = np.zeros(self.size['NA'], dtype=F64)
+        # in this case we might need to rethink the load_sample_from_JSON - here we provide quadratic when they are zero
         self.quadratic = np.zeros(self.size['NNA'], dtype=F64)
 
         # sampling parameters
@@ -265,7 +270,15 @@ class ModelSampling(ModelClass):
         self.state_shift = np.zeros(self.size['AN'], dtype=F64)
         self.cc_samples = np.zeros(self.size['BNP'], dtype=F64)
 
-        vIO.load_sample_from_JSON(filePath, self.energy, self.omega, self.linear, self.quadratic)
+        # this brings up the good point that we might want to load a JSON file without providing the number of modes and surfaces
+        kwargs = {}
+        kwargs["number of modes"] = oldModes
+        kwargs["number of surfaces"] = newStates
+        kwargs["energies"] = self.energy
+        kwargs["frequencies"] = self.omega
+        kwargs["linear couplings"] = self.linear
+        kwargs["quadratic couplings"] = self.quadratic
+        vIO.load_sample_from_JSON(filePath, **kwargs)
         return
 
     def draw_sample(self, sample_view):
@@ -983,6 +996,46 @@ def build_numerator(data, vib, outputArray, idx):
     # trace over the surfaces
     outputArray[idx] = np.trace(data.numerator, axis1=1, axis2=2)
     assert np.all(outputArray[idx] >= 0), "g(R) must always be positive"
+    return
+
+
+def compute_only_gR(data, result):
+    """ Compute and save only g(R) for building data_set to train ML algorithm"""
+
+    # labels for clarity
+    rho = data.rho
+    vib = data.vib
+
+    # store results here
+    # y_rho = result.scaled_rho.view()
+    y_g = result.scaled_g.view()
+
+    # store the combined scaling factor in here
+    S12 = np.zeros(data.size['BP'])
+
+    for block_index in range(0, data.blocks):
+
+        # indicies
+        start = block_index * data.block_size
+        end = (block_index + 1) * data.block_size
+        sample_view = slice(start, end)
+
+        # generate sample points in collective co-ordinates
+        data.draw_sample(sample_view)
+
+        # process the sapmled points
+        data.transform_sampled_coordinates(sample_view)
+
+        # build O matricies for system distribution
+        build_o_matrix(data, vib.const)
+
+        # compute parts with normal scaling factor
+        build_scaling_factors(S12, rho.const, vib.const)
+        scale_o_matricies(S12, rho.const, vib.const)
+        diagonalize_coupling_matrix(data)
+        build_numerator(data, vib.const, y_g, sample_view)
+
+    result.save_results(end)
     return
 
 

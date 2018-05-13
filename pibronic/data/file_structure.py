@@ -26,6 +26,7 @@ list_sub_dirs = [
     ]
 
 
+# should this be renamed to DirectoryStructure?
 class FileStructure:
     """handles creation and verification of default file structure storing data from/to jobs"""
     template_vib = "data_set_{:d}/"
@@ -58,6 +59,11 @@ class FileStructure:
     def __init__(self, path_root, id_data, id_rho=0):
         """x"""
         # assert type(path_root) is str, "did not provide a path in str format"
+
+        """
+        should FileStructure use log or return something to inidicate if the folders already exist?
+        should it automatically choose a new data set number if the currently provided one is being used? or should it throw an error?
+        """
 
         self.id_rho = id_rho
         self.id_data = id_data

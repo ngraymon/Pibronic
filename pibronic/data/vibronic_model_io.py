@@ -27,6 +27,7 @@ from ..log_conf import log
 from .. import constants
 from .. import helper
 from . import file_structure
+from . import file_name
 
 
 # this function should most likely be removed
@@ -80,6 +81,70 @@ list_sub_dirs = [
     "execution_output/",
     "plots/",
     ]
+
+
+# current template for all possible parameters
+template_dict = {"number of modes": 0,
+                 "number of surfaces": 0,
+                 "energies": None,
+                 "frequencies": None,
+                 "linear couplings": None,
+                 "quadratic couplings": None,
+                 "cubic couplings": None,
+                 "quartic couplings": None,
+                 }
+
+
+def verify_model_parameters(**kwargs):
+    """make sure the provided model parameters follow the file conventions"""
+    assert "number of modes" in kwargs, "need the number of modes"
+    assert "number of surfaces" in kwargs, "need the number of surfaces"
+    assert "energies" in kwargs, "energies are required"
+    assert "frequencies" in kwargs, "frequencies are required"
+
+    N = int(kwargs["number of modes"])
+    A = int(kwargs["number of surfaces"])
+
+    for key, value in kwargs.items():
+        if key == "energies":
+            assert kwargs[key].shape == (A, A), "energies have incorrect shape"
+        if key == "frequencies":
+            assert kwargs[key].shape == (N, ), "frequencies have incorrect shape"
+        if key == "linear couplings":
+            assert kwargs[key].shape == (N, A, A), "linear couplings have incorrect shape"
+        if key == "quadratic couplings":
+            assert kwargs[key].shape == (N, N, A, A), "quadratic couplings have incorrect shape"
+        if key == "cubic couplings":
+            assert kwargs[key].shape == (N, N, N, A, A), "cubic couplings have incorrect shape"
+        if key == "quartic couplings":
+            assert kwargs[key].shape == (N, N, N, N, A, A), "quartic couplings have incorrect shape"
+    return
+
+
+def verify_sample_parameters(**kwargs):
+    """make sure the provided sample parameters follow the file conventions"""
+    assert "number of modes" in kwargs, "need the number of modes"
+    assert "number of surfaces" in kwargs, "need the number of surfaces"
+    assert "energies" in kwargs, "energies are required"
+    assert "frequencies" in kwargs, "frequencies are required"
+
+    N = int(kwargs["number of modes"])
+    A = int(kwargs["number of surfaces"])
+
+    for key, value in kwargs.items():
+        if key == "energies":
+            assert kwargs[key].shape == (A, ), "energies have incorrect shape"
+        if key == "frequencies":
+            assert kwargs[key].shape == (N, ), "frequencies have incorrect shape"
+        if key == "linear couplings":
+            assert kwargs[key].shape == (N, A), "linear couplings have incorrect shape"
+        if key == "quadratic couplings":
+            assert kwargs[key].shape == (N, N, A), "quadratic couplings have incorrect shape"
+        if key == "cubic couplings":
+            assert kwargs[key].shape == (N, N, N, A), "cubic couplings have incorrect shape"
+        if key == "quartic couplings":
+            assert kwargs[key].shape == (N, N, N, N, A), "quartic couplings have incorrect shape"
+    return
 
 
 def pretty_print_model(id_data, unitsOfeV=False):
@@ -949,16 +1014,26 @@ def read_model_op_file(path_file_op):
 
     # duplicate the lower triangle values into the upper triangle
 
+    # do we not account for the symmetry in surfaces? this might be incorrect
+
+    linear_couplings[:] += linear_couplings.transpose(0, 2, 1)
+
     # the couplings are a symmetric matrix
     for a, b in it.product(States, States):
-        linear_couplings[:, a, b] += linear_couplings[:, b, a]
         quadratic_couplings[:, :, a, b] += np.tril(quadratic_couplings[:, :, a, b], k=-1).T
         quadratic_couplings[:, :, a, b] += quadratic_couplings[:, :, b, a]
         # are these two correct?
         cubic_couplings[:, :, :, a, b] += np.tril(cubic_couplings[:, :, :, a, b], k=-1).T
-        cubic_couplings[:, :, :, a, b] += cubic_couplings[:, :, :, b, a]
+        cubic_couplings[:, :, :, a, b] += cubic_couplings[:, :, :, b, a]  # this is probably incorrect
         quartic_couplings[:, :, :, :, a, b] += np.tril(quartic_couplings[:, :, :, :, a, b], k=-1).T
         quartic_couplings[:, :, :, :, a, b] += quartic_couplings[:, :, :, :, b, a]
+
+    # don't overcount the diagonals
+    for a in States:
+        linear_couplings[:, a, a] /= 2.
+        quadratic_couplings[:, :, a, b] /= 2.
+        cubic_couplings[:, :, :, a, b] /= 2.
+        quartic_couplings[:, :, :, :, a, b] /= 2.
 
     # check for symmetry in surfaces
     assert np.allclose(excitation_energies, excitation_energies.transpose(1, 0))
@@ -975,15 +1050,19 @@ def read_model_op_file(path_file_op):
     assert np.allclose(quartic_couplings, quartic_couplings.transpose(0, 1, 3, 2, 4, 5))
 
     # and we are done
-    return_dict = {"number of modes": numModes,
-                   "number of surfaces": numStates,
-                   "energies": excitation_energies,
-                   "frequencies": frequencies,
-                   "linear couplings": linear_couplings,
-                   "quadratic couplings": quadratic_couplings,
-                   "cubic couplings": cubic_couplings,
-                   "quartic couplings": quartic_couplings,
-                   }
+    maximal_dict = {"number of modes": numModes,
+                    "number of surfaces": numStates,
+                    "energies": excitation_energies,
+                    "frequencies": frequencies,
+                    "linear couplings": linear_couplings,
+                    "quadratic couplings": quadratic_couplings,
+                    "cubic couplings": cubic_couplings,
+                    "quartic couplings": quartic_couplings,
+                    }
+
+    # if the arrays only have zeros then we might not need to store them?
+    return_dict = dict((k, v) for k, v in maximal_dict.items() if not np.all(v == 0))
+
     return return_dict
 
 
@@ -1166,13 +1245,36 @@ def read_model_auto_file(filename):
 def save_model_to_JSON(path_full, **kwargs):
     """x"""
 
+    verify_model_parameters(**kwargs)
+
+    log.debug("Saving model to {:s}".format(path_full))
+
+    # convert each numpy array to a list
+    for key, value in kwargs.items():
+        if isinstance(value, (np.ndarray, np.generic)):
+            kwargs[key] = value.tolist()
+
+    # the old way involved passing in each parameter as nonkeyword argument
+    # output_dictionary = {
+    #     "number of modes":     N,
+    #     "number of surfaces":  A,
+    #     "energies":            kwargs["energies"].tolist(),
+    #     "frequencies":         kwargs["frequencies"].tolist(),
+    #     "linear couplings":    kwargs["linear_couplings"].tolist(),
+    #     "quadratic couplings": kwargs["quadratic_couplings"].tolist(),
+    # }
+
+    with open(path_full, mode='w', encoding='UTF8') as target_file:
+        target_file.write(json.dumps(kwargs))
+
+    return
+
+
+def save_sample_to_JSON(path_full, **kwargs):
+    """x"""
+
     # base case
-    assert "number of modes" in kwargs, "need the number of modes"
-    assert "number of surfaces" in kwargs, "need the number of surfaces"
-    assert "energies" in kwargs, "no energies provided"
-    assert "frequencies" in kwargs, "no frequencies provided"
-    assert kwargs["energies"].shape[0] == kwargs["number of surfaces"], "energies have incorrect shape"
-    assert kwargs["frequencies"].shape[0] == kwargs["number of modes"], "frequencies have incorrect shape"
+    verify_sample_parameters(**kwargs)
 
     log.debug("Saving model to {:s}".format(path_full))
 
@@ -1226,103 +1328,114 @@ def make_rho_directories(path_root, id_rho):
     return
 
 
-# TODO - this currently does not support loading models with more than quadratic coupling
-def load_model_from_JSON(path_full, energies=None,frequencies=None, linear_couplings=None, quadratic_couplings=None):
+def load_model_from_JSON(path_full, **kwargs):
     """if only a path to the file is provided, arrays
     are returned othwerise provided arrays are filled with appropriate values"""
     log.debug("Loading model {:s}".format(path_full))
+
     # open the JSON file
-    target_file = open(path_full, mode='r', encoding='UTF8')
-    input_dictionary = json.loads(target_file.read())
-    target_file.close()
-    nmode = int(input_dictionary["number of modes"])
-    nel = int(input_dictionary["number of surfaces"])
+    with open(path_full, mode='r', encoding='UTF8') as target_file:
+        input_dictionary = json.loads(target_file.read())
 
     # no arrays were provided so return newly created
     # arrays after filling them with the approriate values
-    if frequencies is None:
-        energies = np.empty((nel, nel), dtype=F64)
-        energies[:] = np.array(input_dictionary["energies"], dtype=F64)
+    if not kwargs:
+        _dict = template_dict.copy()
+        _dict["number of modes"] = int(input_dictionary["number of modes"])
+        _dict["number of surfaces"] = int(input_dictionary["number of surfaces"])
+        _dict["energies"] = np.array(input_dictionary["energies"], dtype=F64)
+        _dict["frequencies"] = np.array(input_dictionary["frequencies"], dtype=F64)
 
-        frequencies = np.empty((nmode,), dtype=F64)
-        frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
+        if "linear couplings" in input_dictionary:
+            _dict["linear couplings"] = np.array(input_dictionary["linear couplings"], dtype=F64)
+            # if we don't predefine the shape, can we run into problems?
+            # linear_couplings = np.empty((N, A, A), dtype=F64)
 
-        linear_couplings = np.empty((nmode, nel, nel), dtype=F64)
-        linear_couplings[:] = np.array(input_dictionary["linear couplings"], dtype=F64)
+        if "quadratic couplings" in input_dictionary:
+            _dict["quadratic couplings"] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
+            # if we don't predefine the shape, can we run into problems?
+            # quadratic_couplings = np.empty((N, N, A, A), dtype=F64)
 
-        quadratic_couplings = np.empty((nmode, nmode, nel, nel), dtype=F64)
-        quadratic_couplings[:] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
+        if "cubic couplings" in input_dictionary:
+            _dict["cubic couplings"] = np.array(input_dictionary["cubic couplings"], dtype=F64)
 
-        return energies, frequencies, linear_couplings, quadratic_couplings
+        if "quartic couplings" in input_dictionary:
+            _dict["quartic couplings"] = np.array(input_dictionary["quartic couplings"], dtype=F64)
+
+        # if the arrays only have zeros then we might not need to store them?
+        return_dict = dict((k, v) for k, v in _dict.items() if not (np.all(v == 0) or v is None))
+
+        return return_dict
 
     # arrays were provided so fill them with the appropriate values
     else:
-        assert(energies.shape == (nel, nel))
-        assert(frequencies.shape == (nmode,))
-        assert(linear_couplings.shape == (nmode, nel, nel))
-        assert(quadratic_couplings.shape == (nmode, nmode, nel, nel))
+        verify_model_parameters(**kwargs)
 
-        energies[:] = np.array(input_dictionary["energies"], dtype=F64)
-        frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
-        linear_couplings[:] = np.array(input_dictionary["linear couplings"], dtype=F64)
-        quadratic_couplings[:] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
+        # it might also be good to have some way to calculate the "shape" based on the name?
+        # maybe we should make an enum module that contains the naming conventions for the values in the json files?! - future work
+
+        for key, value in kwargs.items():
+            if isinstance(value, (np.ndarray, np.generic)):
+                # this is a safer way of forcing the input arrays that have no corresponding key in the input_dictionary to have zero values
+                # although this might not be necessary, it is a safer alternative at the moment
+                if key not in input_dictionary:
+                    kwargs[key][:] = 0.0
+                else:
+                    kwargs[key][:] = np.array(input_dictionary[key], dtype=F64)
 
     return
 
 
-# TODO - this currently does not support loading models with more than quadratic coupling
-def load_sample_from_JSON(path_full, energies=None, frequencies=None, linear_couplings=None, quadratic_couplings=None):
-    """x"""
-
-    log.debug("Loading rho model {:s}".format(path_full))
-    # open the JSON file
+def load_sample_from_JSON(path_full, **kwargs):
+    """if only a path to the file is provided, arrays
+    are returned othwerise provided arrays are filled with appropriate values"""
+    log.debug("Loading rho model (sampling model) {:s}".format(path_full))
     with open(path_full, mode='r', encoding='UTF8') as target_file:
         input_dictionary = json.loads(target_file.read())
-    target_file = open(path_full, mode='r', encoding='UTF8')
-    input_dictionary = json.loads(target_file.read())
-    target_file.close()
-    nmode = int(input_dictionary["number of modes"])
-    nel = int(input_dictionary["number of surfaces"])
 
     # no arrays were provided so return newly created
     # arrays after filling them with the approriate values
-    if frequencies is None:
-        energies = np.empty((nel), dtype=F64)
-        energies[:] = np.diag(np.array(input_dictionary["energies"], dtype=F64))
+    if not kwargs:
+        _dict = template_dict.copy()
+        _dict["number of modes"] = int(input_dictionary["number of modes"])
+        _dict["number of surfaces"] = int(input_dictionary["number of surfaces"])
+        _dict["energies"] = np.array(input_dictionary["energies"], dtype=F64)
+        _dict["frequencies"] = np.array(input_dictionary["frequencies"], dtype=F64)
 
-        frequencies = np.empty((nmode), dtype=F64)
-        frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
+        if "linear couplings" in input_dictionary:
+            _dict["linear couplings"] = np.array(input_dictionary["linear couplings"], dtype=F64)
+            # if we don't predefine the shape, can we run into problems?
+            # linear_couplings = np.empty((N, A, A), dtype=F64)
 
-        linear_couplings = np.empty((nmode, nel), dtype=F64)
-        linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear couplings"], dtype=F64), axis1=1, axis2=2)
+        if "quadratic couplings" in input_dictionary:
+            _dict["quadratic couplings"] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
+            # if we don't predefine the shape, can we run into problems?
+            # quadratic_couplings = np.empty((N, N, A, A), dtype=F64)
 
-        quadratic_couplings = np.empty((nmode, nmode, nel), dtype=F64)
-        quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic couplings"], dtype=F64), axis1=2, axis2=3)
+        if "cubic couplings" in input_dictionary:
+            _dict["cubic couplings"] = np.array(input_dictionary["cubic couplings"], dtype=F64)
 
-        return energies, frequencies, linear_couplings, quadratic_couplings
+        if "quartic couplings" in input_dictionary:
+            _dict["quartic couplings"] = np.array(input_dictionary["quartic couplings"], dtype=F64)
+
+        # if the arrays only have zeros then we might not need to store them?
+        return_dict = dict((k, v) for k, v in _dict.items() if not (np.all(v == 0) or v is None))
+        return return_dict
 
     # arrays were provided so fill them with the appropriate values
     else:
-        # HACK
-        # print("HACKY BS - ")
+        verify_sample_parameters(**kwargs)
 
-        # ===================== DEPRECIATED =================================== #
-        # ==== this code is only needed if the input sample model is still in the old format
-        # ==== it will be eventually removed
-        # assert(energies.shape == (nel,))
-        # assert(frequencies.shape == (nmode,))
-        # assert(linear_couplings.shape == (nmode, nel))
-        # assert(quadratic_couplings.shape == (nmode, nmode, nel))
-        # energies[:] = np.diag(np.array(input_dictionary["energies"], dtype=F64))
-        # frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
-        # linear_couplings[:] = np.diagonal(np.array(input_dictionary["linear couplings"], dtype=F64), axis1=1, axis2=2)
-        # quadratic_couplings[:] = np.diagonal(np.array(input_dictionary["quadratic couplings"], dtype=F64), axis1=2, axis2=3)
-        # ===================== DEPRECIATED =================================== #
-
-        energies[:] = np.array(input_dictionary["energies"], dtype=F64)
-        frequencies[:] = np.array(input_dictionary["frequencies"], dtype=F64)
-        linear_couplings[:] = np.array(input_dictionary["linear couplings"], dtype=F64)
-        quadratic_couplings[:] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
+        # it might also be good to have some way to calculate the "shape" based on the name?
+        # maybe we should make an enum module that contains the naming conventions for the values in the json files?! - future work
+        for key, value in kwargs.items():
+            if isinstance(value, (np.ndarray, np.generic)):
+                # this is a safer way of forcing the input arrays that have no corresponding key in the input_dictionary to have zero values
+                # although this might not be necessary, it is a safer alternative at the moment
+                if key not in input_dictionary:
+                    kwargs[key][:] = 0.0
+                else:
+                    kwargs[key][:] = np.array(input_dictionary[key], dtype=F64)
     return
 
 
@@ -1433,35 +1546,34 @@ def get_nmode_nsurf_from_sampling_model(FS=None, path=None):
 
 def remove_coupling_from_model(path_source, path_destination):
     """reads in a model and sets all the coupling parameters to zero"""
-    checkOS()
+    kwargs = load_model_from_JSON(path_source)
 
-    e, w, l, q = load_model_from_JSON(path_source)
-    numModes = w.shape[0]
-    numStates = e.shape[0]
-    Modes = range(numModes)
-    States = range(numStates)
+    kwargs["energies"] = np.diagonal(kwargs["energies"]).copy()
 
-    energy = np.diagonal(e).copy()
-    linear = np.diagonal(l, axis1=1, axis2=2).copy()
-    quadratic = np.diagonal(q, axis1=2, axis2=3).copy()
-    kwargs = {"number of modes": numModes,
-              "number of surfaces": numStates,
-              "energies": energy,
-              "frequencies": w,
-              "linear couplings": linear,
-              "quadratic couplings": quadratic,
-              }
-    save_model_to_JSON(path_destination, **kwargs)
+    key = "linear couplings"
+    if key in kwargs:
+        kwargs[key] = np.diagonal(kwargs[key], axis1=1, axis2=2).copy()
+
+    key = "quadratic couplings"
+    if key in kwargs:
+        kwargs[key] = np.diagonal(kwargs[key], axis1=2, axis2=3).copy()
+
+    key = "cubic couplings"
+    if key in kwargs:
+        kwargs[key] = np.diagonal(kwargs[key], axis1=3, axis2=4).copy()
+
+    key = "quartic couplings"
+    if key in kwargs:
+        kwargs[key] = np.diagonal(kwargs[key], axis1=4, axis2=5).copy()
+
+    save_sample_to_JSON(path_destination, **kwargs)
     return
 
 
 def create_harmonic_model(FS):
     """wrapper function to refresh harmonic model"""
-    checkOS()
-    source = FS.path_vib_params + "coupled_model.json"
-    dest = FS.path_vib_params + "harmonic_model.json"
-    # source = (FS.path_default_root + dir_vib + "parameters/coupled_model.json").format(id_data)
-    # dest = (FS.path_default_root + dir_vib + "parameters/harmonic_model.json").format(id_data)
+    source = FS.path_vib_params + file_name.coupled_model
+    dest = FS.path_vib_params + file_name.harmonic_model
     remove_coupling_from_model(source, dest)
     s = "Created harmonic model {:s} by removing coupling from {:s}"
     log.debug(s.format(dest, source))
@@ -1470,9 +1582,8 @@ def create_harmonic_model(FS):
 
 def create_basic_sampling_model(FS):
     """wrapper function to make the simplest sampling model"""
-    checkOS()
     source = create_harmonic_model(FS)
-    dest = FS.path_rho_params + "sampling_model.json"
+    dest = FS.path_rho_params + file_name.sampling_model
 
     if os.path.isfile(dest):
         s = "Sampling model {:s} already exists!"
