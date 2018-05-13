@@ -32,7 +32,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.1.dev1',
+    version='0.1.2.dev1',
 
     description='Quantum Mechanical Computational Package',
     long_description=read_md('README.md'),
@@ -106,10 +106,11 @@ setup(
         'scipy>=1.0.0',
         'matplotlib>=2.1.2',
         'fortranformat==0.2.5',
+        'parse==1.8.2',
         # '',
     ],
 
-    python_requires='~=3.3',
+    python_requires='~=3.6',
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

@@ -57,6 +57,53 @@ def sos(B="{B:d}"):
     return _sos.format(B)
 
 
+""" R values used for training ML algorithms
+P - refers the number of beads (int)
+T - refers to the tempearture in Kelvin (float-2 places)
+J - jobnumber, default is zero (int)
+"""
+_training_data_input = "P{:s}_T{:s}_J{:s}_training_data_input.npz"
+
+
+def training_data_input(P="{P:d}", T="{T:.2f}", J="{J:d}"):
+    """ wrapper function to allow parameterized search for files
+        can pass in any regular expression
+        most commonly will just pass in "*" to search for all files of a given argument
+    """
+    return _training_data_input.format(P, T, J)
+
+""" output of a g(R) run - used for training ML algorithms
+P - refers the number of beads (int)
+T - refers to the tempearture in Kelvin (float-2 places)
+J - jobnumber, default is zero (int)
+"""
+_training_data_g_output = "P{:s}_T{:s}_J{:s}_training_data_g_output.npz"
+
+
+def training_data_g_output(P="{P:d}", T="{T:.2f}", J="{J:d}"):
+    """ wrapper function to allow parameterized search for files
+        can pass in any regular expression
+        most commonly will just pass in "*" to search for all files of a given argument
+    """
+    return _training_data_g_output.format(P, T, J)
+
+
+""" output of a rho(R) run - used for training ML algorithms
+P - refers the number of beads (int)
+T - refers to the tempearture in Kelvin (float-2 places)
+J - jobnumber, default is zero (int)
+"""
+_training_data_rho_output = "P{:s}_T{:s}_J{:s}_training_data_rho_output.npz"
+
+
+def training_data_rho_output(P="{P:d}", T="{T:.2f}", J="{J:d}"):
+    """ wrapper function to allow parameterized search for files
+        can pass in any regular expression
+        most commonly will just pass in "*" to search for all files of a given argument
+    """
+    return _training_data_rho_output.format(P, T, J)
+
+
 # TODO - maybe only need one file name for both rho and sos???
 """ output of SOS for model diagonal in electronic states
 B - refers the number of basis functions to obtain results inside file (int)

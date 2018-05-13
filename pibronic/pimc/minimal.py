@@ -24,6 +24,13 @@ from ..data import file_name  # do we need this?
 from ..data import vibronic_model_io as vIO
 from ..server import job_boss
 
+"""
+For future thought:
+see - https://stackoverflow.com/questions/5836335/consistently-create-same-random-numpy-array/5837352#5837352
+and - https://stackoverflow.com/questions/32172054/how-can-i-retrieve-the-current-seed-of-numpys-random-number-generator?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+
+Will have to think carefully about recording the random inputs that are sampled in a robust and cohesive manner
+"""
 
 float_tolerance = 1e-23
 
@@ -247,10 +254,11 @@ class ModelSampling(ModelClass):
         return
 
     def load_model(self, filePath):
-        oldModes, newStates = vIO.get_nmode_nsurf_from_sampling_model(path=filePath)
+        sameModes, newStates = vIO.get_nmode_nsurf_from_sampling_model(path=filePath)
 
         # replace the vibronic models state size with rho's state size
         self.param_dict['A'] = self.states = newStates
+        self.modes = sameModes
 
         # construct 'size' tuples
         self.size = {}
@@ -272,8 +280,8 @@ class ModelSampling(ModelClass):
 
         # this brings up the good point that we might want to load a JSON file without providing the number of modes and surfaces
         kwargs = {}
-        kwargs["number of modes"] = oldModes
-        kwargs["number of surfaces"] = newStates
+        kwargs["number of modes"] = self.modes
+        kwargs["number of surfaces"] = self.states
         kwargs["energies"] = self.energy
         kwargs["frequencies"] = self.omega
         kwargs["linear couplings"] = self.linear
@@ -282,6 +290,7 @@ class ModelSampling(ModelClass):
         return
 
     def draw_sample(self, sample_view):
+        """Generates collective co-ordinates and stores them in self.cc_samples with dimensions BNP"""
         # collective co-ordinate samples
         self.cc_samples = np.random.normal(
                                     loc=self.sample_means,
@@ -430,6 +439,22 @@ class BoxData:
     _COMMA_REPLACEMENT = ";"
     _SEPARATORS = (_COMMA_REPLACEMENT, ':')
 
+    @classmethod
+    def from_FileStructure(cls, FS):
+        """constructor wrapper"""
+        data = cls()
+        data.id_data = FS.id_data
+        data.id_rho = FS.id_rho
+
+        data.path_vib_model = FS.path_vib_model
+        data.path_rho_model = FS.path_rho_model
+
+        N, A = vIO.get_nmode_nsurf_from_coupled_model(FS)
+        data.states = A
+        data.modes = N
+
+        return data
+
     @classmethod  # this feels unnecessary
     def build(cls, id_data, id_rho):
         """constructor wrapper"""
@@ -526,8 +551,21 @@ class BoxData:
         return
 
     def draw_sample(self, sample_view):
-        """"""
+        """Draws samples from the distribution rho -
+        the rho object fills its cc_samples parameter with collective co-ordinates
+        which will be transformed to bead dependent co-ordinates by self.transform_sampled_coordinates()"""
         self.rho.draw_sample(sample_view)
+        return
+
+    def generate_random_R_values(self, result, storage_array, sample_view):
+        """Randomly generates R values that have no relation to the distribution rho or g
+        they only have the correct dimensions BANP and are shifted appropriately """
+        # generate sample points in dimensionless co-ordinates R
+        storage_array[sample_view, :, :] = np.random.random(size=self.rho.size['BNP'])
+        np.copyto(self.qTensor, storage_array[sample_view, NEW, ...])
+
+        # we transform the dimensionless co-ordinates to surface dependent co-ordinates q = R - d
+        self.qTensor -= self.vib.state_shift[NEW, :, :, NEW]
         return
 
     def transform_sampled_coordinates(self, sample_view):
@@ -569,7 +607,7 @@ class BoxData:
 
         self.size_list = ['X', 'P', 'N', 'A', 'B',
                           'BP', 'AN', 'NA', 'AA',
-                          'BNP', 'BPA', 'BAA',
+                          'BNP', 'BPA', 'BAA', 'XNP',
                           'NAA', 'NNA', 'ANP',
                           'BANP', 'BPAA', 'NNAA', 'BPAN', ]
 
@@ -685,10 +723,10 @@ class BoxResult:
         self.initialize_arrays()
         return
 
-    def save_results(self, number_of_samples):
-        """x"""
+    def compute_path_to_file(self):
+        """ used by BoxResultPM as well """
         if self.samples is 0:
-            raise AssertionError("BoxResult still has 0 samples - this should not happen")
+            raise AssertionError("{:s} still has 0 samples - this should not happen".format(self.__class__.__name__))
         elif self.id_job is not None:
             self.name = self.partial_name(J=self.id_job)
         else:
@@ -702,11 +740,14 @@ class BoxResult:
                 self.name = self.partial_name(J=old_j+1)
 
         # result_view = slice(0, number_of_samples)
+        return os.path.join(self.path_root, self.name)
 
-        path_full = os.path.join(self.path_root, self.name)
+    def save_results(self, number_of_samples):
+        """x"""
+        path = self.compute_path_to_file()
 
         # save raw data points
-        np.savez(path_full,
+        np.savez(path,
                  number_of_samples=self.samples,
                  s_rho=self.scaled_rho,
                  s_g=self.scaled_g,
@@ -782,23 +823,10 @@ class BoxResultPM(BoxResult):
 
     def save_results(self, number_of_samples):
         """x"""
-        if self.id_job is not None:
-            self.name = self.partial_name(J=self.id_job)
-        else:
-            """ TODO - this could be dangerous on the server if a BoxResult object is created
-            but not assigned a job id - need to create a test to prevent this from happening
-            """
-            # should be 0 or the last number + 1
-            self.name = self.partial_name(J=0)
-            if False:  # search for other job id's
-                old_j = 90  # placeholder
-                self.name = self.partial_name(J=old_j+1)
-
-        # result_view = slice(0, number_of_samples)
-        path_full = os.path.join(self.path_root, self.name)
+        path = self.compute_path_to_file()
 
         # save raw data points
-        np.savez(path_full,
+        np.savez(path,
                  number_of_samples=self.samples,
                  s_rho=self.scaled_rho,
                  s_g=self.scaled_g,
@@ -999,19 +1027,15 @@ def build_numerator(data, vib, outputArray, idx):
     return
 
 
-def compute_only_gR(data, result):
-    """ Compute and save only g(R) for building data_set to train ML algorithm"""
+def block_compute_gR(data, result):
+    """ Compute and save only g(R) for building data_set to train ML algorithm
+     for block_size # of sampled points in each loop"""
 
     # labels for clarity
-    rho = data.rho
     vib = data.vib
 
-    # store results here
-    # y_rho = result.scaled_rho.view()
-    y_g = result.scaled_g.view()
-
-    # store the combined scaling factor in here
-    S12 = np.zeros(data.size['BP'])
+    # store results here (these results are not! scaled)
+    g = result.scaled_g.view()  # should think about renaming scaled_g?
 
     for block_index in range(0, data.blocks):
 
@@ -1030,12 +1054,101 @@ def compute_only_gR(data, result):
         build_o_matrix(data, vib.const)
 
         # compute parts with normal scaling factor
-        build_scaling_factors(S12, rho.const, vib.const)
-        scale_o_matricies(S12, rho.const, vib.const)
         diagonalize_coupling_matrix(data)
-        build_numerator(data, vib.const, y_g, sample_view)
+        build_numerator(data, vib.const, g, sample_view)
 
     result.save_results(end)
+    return
+
+
+def save_gR_with_samples(data, result, input_R_values):
+    """ temporary function to save g(R) results with R values
+    don't want to pollute BoxResult with extra functions that might not be necessary in the future
+    so this will go here for now"""
+
+    result.partial_name = partial(file_name.training_data_g_output().format, P=data.beads, T=data.temperature)
+    path = result.compute_path_to_file()
+
+    np.savez(path,
+             number_of_samples=result.samples,
+             g=result.scaled_g,
+             )
+
+    result.partial_name = partial(file_name.training_data_input().format, P=data.beads, T=data.temperature)
+    path = result.compute_path_to_file()
+
+    np.savez(path,
+             number_of_samples=result.samples,
+             input_R_values=input_R_values,
+             )
+    return
+
+
+def block_compute_rhoR_from_input_samples(data, result, input_R_values):
+    """ Compute and save rho(R) from input R values for testing data_set to train ML algorithm
+     for block_size # of sampled points in each loop
+    """
+
+    # labels for clarity
+    rho = data.rho
+
+    # views
+    rho_of_R = result.scaled_rho.view()
+    input_R_view = input_R_values.view()
+
+    for block_index in range(0, data.blocks):
+
+        # indicies
+        start = block_index * data.block_size
+        end = (block_index + 1) * data.block_size
+        sample_view = slice(start, end)
+
+        # we copy in the data values that we read in from load_R_samples
+        data.qTensor[:] = input_R_view[sample_view, NEW, ...]
+        # we transform the dimensionless co-ordinates to surface dependent co-ordinates q = R - d
+        data.qTensor -= data.vib.state_shift[NEW, :, :, NEW]
+
+        # build O matricies for system distribution
+        build_o_matrix(data, rho.const)
+        build_denominator(rho.const, rho_of_R, sample_view)
+
+    # return and let the caller of the function save the results appropriately
+    return
+
+
+def block_compute_gR_from_raw_samples(data, result):
+    """ Compute and save g(R) and R values for building data_set to train ML algorithm
+     for block_size # of sampled points in each loop
+    """
+
+    # labels for clarity
+    vib = data.vib
+
+    # store results here (these results are not! scaled)
+    g_of_R = result.scaled_g.view()  # should think about renaming scaled_g?
+    input_R_values = np.empty(data.size['XNP'], dtype=F64)
+    input_view = input_R_values.view()
+
+    for block_index in range(0, data.blocks):
+
+        # indicies
+        start = block_index * data.block_size
+        end = (block_index + 1) * data.block_size
+        sample_view = slice(start, end)
+
+        # generate sample points in surface dependent co-ordinates q = R - d
+        # but which were not sampled from
+        data.generate_random_R_values(result, input_view, sample_view)
+
+        # build O matricies for system distribution
+        build_o_matrix(data, vib.const)
+
+        # compute parts with normal scaling factor
+        diagonalize_coupling_matrix(data)
+        build_numerator(data, vib.const, g_of_R, sample_view)
+
+    # save results with their sampled co-ordinates
+    save_gR_with_samples(data, result, input_R_values)
     return
 
 
