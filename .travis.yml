@@ -1,12 +1,13 @@
 language: python
 python:
   - 3.6
-cache: pip
 
 install:
   - pip install -r requirements.txt
   - pip install pytest pytest-cov
   - pip install codecov
+
+cache: pip
 
 before_script:
   - pytest tests/pimc/test_minimal.py
