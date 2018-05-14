@@ -6,15 +6,18 @@ from subprocess import Popen, TimeoutExpired
 import threading
 import socket
 import signal
+import math
 import time
+import sys
 import os
 
 # local imports
 # import pibronic.data.vibronic_model_io as vIO
-# from ..data import file_structure
+from ..data import file_structure
 # from ..constants import GB_per_byte, maximum_memory_per_node
 from ..log_conf import log
 from .. import constants
+from ..pimc import minimal
 
 # lock for asynchronous communication
 job_state_lock = threading.Lock()
@@ -128,6 +131,8 @@ def submit_job(command, parameter_dictionary):
     """craft the job submission command - no error checking"""
     command = command.format(**parameter_dictionary)
 
+    # print(command)
+    # exit(0)
     """ submits the job to the slurm server"""
     p = Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     out, error = p.communicate()
@@ -159,7 +164,8 @@ class PimcSubmissionClass:
         "path_rho": "",
         "id_data": 0,
         "id_rho": 0,
-        "partition": "serial,highmem",
+        "partition": "serial",
+        # "partition": "serial,highmem",
         "block_size": int(1e2),
         "memory_per_node": 20,
         "total_memory": 20,
@@ -168,11 +174,9 @@ class PimcSubmissionClass:
         "wait_param": "",
     }
 
-    def __init__(self, file_structure_obj, param_dict):
+    def __init__(self, FS, param_dict):
         """x"""
-        self.file_struct = file_structure_obj
-        # self.path_root = file_structure_obj.path_root
-        # self.path_data = file_structure_obj.path_data
+        self.file_struct = FS
         # self.path_rho = self.path_data + "rho_{id_rho:d}/".format(**param_dict)
         self.param_dict.update(param_dict)
 
@@ -201,7 +205,8 @@ class PimcSubmissionClass:
         total_samples = self.param_dict["number_of_samples"]
         self.param_dict["number_of_samples"] = self.LARGEST_JOB_SAMPLE
 
-        num = total_samples // self.LARGEST_JOB_SAMPLE
+        # should always be at least 1
+        num = max(1, total_samples // self.LARGEST_JOB_SAMPLE)
 
         for temp in temperature_list:
             for beads in bead_list:
@@ -210,17 +215,25 @@ class PimcSubmissionClass:
                 params["number_of_beads"] = beads
                 params["temperature"] = temp
 
+                # HACKY - TODO - in progress
+                # this should go in the param_dict
+                hostname = socket.gethostname()
+                # this should be redone
+                partition = 'highmem' if hostname == 'feynman' else 'serial'
+                print(hostname, partition)
+
                 command = None
-                if job_boss.hostname == "nlogn":
+                if hostname == "nlogn":
                     command = prepare_job_nlogn(params)
-                elif job_boss.hostname == "feynman":
+                elif hostname == "feynman":
                     command = prepare_job_feynman(params)
                 else:
                     raise Exception("Not on nlogn or feynman?")
 
                 for sample_index in range(0, num):
                     print(temp, beads, sample_index)
-                    job_id, out, error = job_boss.submit_job(command, params)
+                    module_name = self.__class__.__module__
+                    job_id, out, error = sys.modules[module_name].submit_job(command, params)
                     # sys.exit(0)
         return
 
@@ -338,7 +351,7 @@ def prepare_job_nlogn(param_dict):
                                          )
 
     param_dict["copy_commands"] = template_copy
-    param_dict["execution_parameters"] = BoxData.json_encode(params=param_dict)
+    param_dict["execution_parameters"] = minimal.BoxData.json_encode(params=param_dict)
 
     export_options = (""
                       " --export="
@@ -371,3 +384,9 @@ def prepare_job_nlogn(param_dict):
                )
 
     return sbatch
+
+#
+#
+#
+#
+#

@@ -21,6 +21,7 @@ from . import electronic_structure as ES
 from .data import vibronic_model_io as vIO
 from .data import file_structure
 from .pimc import minimal
+from .server import job_boss
 
 # source for generating vibronic models
 import pibronic.input_files
@@ -171,7 +172,7 @@ def execute(file_path, id_model):
     }
 
     # create an execution object
-    engine = minimal.PimcExecutionClass(files, parameter_dictionary)
+    engine = job_boss.PimcSubmissionClass(files, parameter_dictionary)
 
     engine.submit_jobs()
 
