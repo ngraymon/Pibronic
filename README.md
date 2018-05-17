@@ -2,6 +2,8 @@
 [![PyPI](https://img.shields.io/pypi/v/pibronic.svg)](https://pypi.org/project/pibronic/)
 [![Travis](https://img.shields.io/travis/ngraymon/Pibronic.svg)](https://travis-ci.org/ngraymon/Pibronic)
 [![Coverage Status](https://codecov.io/gh/ngraymon/Pibronic/branch/master/graph/badge.svg)](https://codecov.io/gh/ngraymon/Pibronic)
+[![arXiv Link](https://img.shields.io/badge/arXiv%3A-1805.05971-blue.svg)](https://arxiv.org/abs/1805.05971)
+
 ----
 
 A python package that handles the creation of vibronic models using ACESII and VIBRON
