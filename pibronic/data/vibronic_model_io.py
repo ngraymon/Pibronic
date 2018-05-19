@@ -1,5 +1,4 @@
-# vibronic_model_io.py
-# should handle the majority of file I/O
+"""vibronic_model_io.py should handle the majority of file I/O"""
 
 # system imports
 # from pathlib import Path
@@ -406,7 +405,7 @@ def read_model_h_file(path_file_h):
     helper.verify_file_exists(path_file_params)
 
     def get_number_of_electronic_states(file):
-        """"""
+        """x"""
         # skip first line
         file.readline()
         # read in line with electronic states
@@ -424,7 +423,7 @@ def read_model_h_file(path_file_h):
         return number_of_electronic_states
 
     def get_number_of_normal_modes(file):
-        """"""
+        """x"""
         # read in line with symmetric normal modes
         line = file.readline()
         # verify that we have the correct line
@@ -509,7 +508,7 @@ def read_model_h_file(path_file_h):
         #
 
     def extract_energies(path, memmap, energies):
-        """a"""
+        """x"""
         # find the begining and ending of the important region
         memmap.seek(0)  # start looking from the begining of the file
         beginString = 'Reference Hamiltonian'
@@ -690,7 +689,7 @@ def read_model_h_file(path_file_h):
 
 
 def read_model_op_file(path_file_op):
-    """ reads/parses molecule_vibron.op file"""
+    """reads/parses molecule_vibron.op file"""
 
     # declare the arrays used to store the model's paramters
     # all numbers have units of electron volts
@@ -1105,7 +1104,7 @@ def create_coupling_from_op_hyperlink(FS, url):
 
 
 def read_model_auto_file(filename):
-    '''
+    """
     Read Vibronic Model file (cp.auto) which
     contains all information on the approximate
     Born-Oppenheimer Ground State PES.
@@ -1118,7 +1117,7 @@ def read_model_auto_file(filename):
     frequencies (nmode)
     linear couplings: (nmode, nel, nel)
     quadratic couplings: (nmode, nmode, nel, nel)
-    '''
+    """
 
     # Read file (Iterator object)
     file_object = open(filename, 'r')
@@ -1301,6 +1300,7 @@ def save_sample_to_JSON(path_full, **kwargs):
 
 
 def root_directories_exists(path_root, id_data, id_rho=0):
+    """x"""
     path_data = (path_root + dir_vib).format(id_data)
     dir_list = [path_data]
     dir_list = [path_data + "electronic_structure/"]
@@ -1312,6 +1312,7 @@ def root_directories_exists(path_root, id_data, id_rho=0):
 
 
 def make_root_directories(path_root, id_data, id_rho=0):
+    """x"""
     dir_list = [path_root]
     dir_list = [path_data + "electronic_structure/"]
     dir_list.extend([path_root + x for x in list_sub_dirs])
@@ -1322,6 +1323,7 @@ def make_root_directories(path_root, id_data, id_rho=0):
 
 
 def make_rho_directories(path_root, id_rho):
+    """x"""
     dir_list = [path_root + dir_rho.format(id_rho) + x for x in list_sub_dirs]
     for directory in dir_list:
         os.makedirs(directory, exist_ok=True)
@@ -1329,8 +1331,8 @@ def make_rho_directories(path_root, id_rho):
 
 
 def load_model_from_JSON(path_full, **kwargs):
-    """if only a path to the file is provided, arrays
-    are returned othwerise provided arrays are filled with appropriate values"""
+    """ if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values
+    """
     log.debug("Loading model {:s}".format(path_full))
 
     # open the JSON file
@@ -1387,8 +1389,8 @@ def load_model_from_JSON(path_full, **kwargs):
 
 
 def load_sample_from_JSON(path_full, **kwargs):
-    """if only a path to the file is provided, arrays
-    are returned othwerise provided arrays are filled with appropriate values"""
+    """if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values
+    """
     log.debug("Loading rho model (sampling model) {:s}".format(path_full))
     with open(path_full, mode='r', encoding='UTF8') as target_file:
         input_dictionary = json.loads(target_file.read())
@@ -1466,6 +1468,7 @@ def setup_input_params(directory_path, new_directory=False):
     bead_list = None
 
     def create_dirs(dir_path):
+        """x"""
         os.makedirs(path_params,  exist_ok=True)
         os.makedirs(path_results, exist_ok=True)
         os.makedirs(path_output,  exist_ok=True)
@@ -1477,6 +1480,7 @@ def setup_input_params(directory_path, new_directory=False):
         return
 
     def cleanup_dirs(dir_path):
+        """x"""
         os.system("rm -r {:}*".format(path_results))
         os.system("rm -r {:}*".format(path_output))
         os.system("rm -r {:}*".format(path_plots))
@@ -1516,6 +1520,7 @@ def setup_input_params(directory_path, new_directory=False):
 
 
 def _get_nmode_nsurf_from_file(path):
+    """x"""
     assert os.path.isfile(path), "invalid path:\n{:s}".format(path)
     with open(path, mode='r', encoding='UTF8') as target_file:
         input_dictionary = json.loads(target_file.read())
@@ -1534,7 +1539,7 @@ def get_nmode_nsurf_from_coupled_model(FS=None, path=None):
     return _get_nmode_nsurf_from_file(path)
 
 
-"""it might be nice to have the ability to specify id_data or id_rho, although this should be done in a way that queries file_structure so as to not "leak" the file structure out to other areas of the code"""
+#it might be nice to have the ability to specify id_data or id_rho, although this should be done in a way that queries file_structure so as to not "leak" the file structure out to other areas of the code
 def get_nmode_nsurf_from_sampling_model(FS=None, path=None):
     """return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file"""
     if FS is None:
@@ -1594,6 +1599,73 @@ def create_basic_sampling_model(FS):
     s = "Created sampling model {:s} by copying {:s}"
     log.debug(s.format(dest, source))
     return dest
+
+
+def create_fake_coupled_model(FS):
+    """ take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix """
+
+    assert os.path.isfile(FS.path_vib_model), "coupled_model file doesn't exist!"
+    model_dict = load_model_from_JSON(FS.path_vib_model)
+    A = model_dict["number of surfaces"]
+    N = model_dict["number of modes"]
+
+    # generate_orthogonal_matrix
+    from scipy.stats import ortho_group
+    U = ortho_group.rvs(A)
+    # print("U\n", U)
+    # print("1\n", U.dot(U.T))
+
+    if "linear couplings" in model_dict:
+        c1 = model_dict["linear couplings"].view()
+        assert np.allclose(c1, c1.transpose(0, 2, 1)), "c1 not diagonal in surfaces"
+        new_dense_matrix = np.einsum('bj,ajk,ck->abc', U, c1, U)
+
+        for j in range(N):
+            # print(c1[j, ...], '\n')
+            # print(np.einsum(U, [3, 1], c1, [0, 1, 2], U, [2, 4], [0, 3, 4]), '\n')
+            # print(U.dot(c1[j, ...]), '\n')
+            # print(np.einsum('bj,ajk->abk', U, c1)[j, ...], '\n')
+            # print("\n\n\n")
+            # print(U.dot(c1[j, ...].dot(U.T)), '\n')
+            # print(np.einsum('bj,ajk,ck->abc', U, c1, U)[j, ...], '\n')
+            # # print(np.einsum(U, [0, 1], c1[j, ...], [0, 1], [0, 1]), '\n')
+            # assert False
+            # print(new_dense_matrix[j, ...])
+            # print(U.dot(c1[j, ...].dot(U.T)))
+            assert np.allclose(new_dense_matrix[j, ...], U.dot(c1[j, ...].dot(U.T)))
+        c1[:] = new_dense_matrix
+
+    if "quadratic couplings" in model_dict:
+        c2 = model_dict["quadratic couplings"].view()
+        assert np.allclose(c2, c2.transpose(0, 1, 3, 2)), "c2 not diagonal in surfaces"
+        new_dense_matrix = np.einsum('cj,abjk,dk->abcd', U, c1, U)
+        for j1, j2, in zip(range(N), range(N)):
+            assert np.allclose(new_dense_matrix[j1, j2, ...], U.dot(c1[j1, j2, ...].dot(U.T)))
+        c2[:] = new_dense_matrix
+
+    if "cubic couplings" in model_dict:
+        c3 = model_dict["cubic couplings"].view()
+        assert np.allclose(c3, c3.transpose(0, 1, 2, 4, 3)), "c3 not diagonal in surfaces"
+        new_dense_matrix = np.einsum('dj,abcjk,ek->abcde', U, c1, U)
+        for j1, j2, j3 in zip(range(N), range(N), range(N)):
+            assert np.allclose(new_dense_matrix[j1, j2, j3, ...], U.dot(c1[j1, j2, j3, ...].dot(U.T)))
+        c3[:] = new_dense_matrix
+
+    if "quartic couplings" in model_dict:
+        c4 = model_dict["quartic couplings"].view()
+        assert np.allclose(c4, c4.transpose(0, 1, 2, 3, 5, 4)), "c4 not diagonal in surfaces"
+        new_dense_matrix = np.einsum('ej,abcdjk,fk->abcdef', U, c1, U)
+        for j1, j2, j3, j4 in zip(range(N), range(N), range(N), range(N)):
+            assert np.allclose(new_dense_matrix[j1, j2, j3, j4, ...], U.dot(c1[j1, j2, j3, j4, ...].dot(U.T)))
+        c4[:] = new_dense_matrix
+
+    # now we need to backup the old model and save the new one
+    source = FS.path_vib_model
+    dest = FS.path_vib_params + file_name.original_model
+    shutil.copyfile(source, dest)
+
+    save_model_to_JSON(FS.path_vib_model, **model_dict)
+    return
 
 
 # this should not be used for the moment
