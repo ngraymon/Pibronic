@@ -47,3 +47,6 @@ Long term goals:
 - travis.ci + appveyor + shields.io?
 
 ----
+Thanks
+--------------------
+This package wouldn't have been possible without the help of [Dmitri Iouchtchenko](https://github.com/0 "GitHub Page")
