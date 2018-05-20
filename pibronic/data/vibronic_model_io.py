@@ -18,7 +18,6 @@ import fortranformat as ff  # Fortran format for VIBRON
 import numpy as np
 # from numpy import newaxis as NEW
 from numpy import float64 as F64
-from numpy.random import uniform as Uniform
 import parse
 
 # local imports
@@ -332,7 +331,7 @@ def generate_vibronic_model_data(paramDict=None):
                            num=numModes, endpoint=True, dtype=F64)
 
     # generate energy
-    energy[:] = Uniform(minE, maxE, size['AA'])
+    energy[:] = np.random.uniform(minE, maxE, size['AA'])
     # force the energy to be symmetric
     energy[:] = np.tril(energy) + np.tril(energy, k=-1).T
 
@@ -341,7 +340,7 @@ def generate_vibronic_model_data(paramDict=None):
 
     # generate linear terms
     for i in Modes:
-        upTri = Uniform(-l_shift[i], l_shift[i], size['AA'])
+        upTri = np.random.uniform(-l_shift[i], l_shift[i], size['AA'])
         # force the linear terms to be symmetric
         linear[:] = np.tril(upTri) + np.tril(upTri, k=-1).T
 
@@ -351,7 +350,7 @@ def generate_vibronic_model_data(paramDict=None):
     # generate quadratic terms
     for i in Modes:
         for j in range(i, numModes):
-            upTri = Uniform(-q_shift[i,j], q_shift[i,j], size['AA'])
+            upTri = np.random.uniform(-q_shift[i,j], q_shift[i,j], size['AA'])
             # force the quadratic terms to be symmetric
             quadratic[i, j, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
             quadratic[j, i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
