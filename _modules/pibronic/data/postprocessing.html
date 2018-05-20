@@ -1,0 +1,292 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.data.postprocessing &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.data.postprocessing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Handles all file processing after calculations are run</span>
+
+<span class="sd">Provides functions for collating files for statistical analaysis (such as jackknife) and plotting</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">newaxis</span> <span class="k">as</span> <span class="n">NEW</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">float64</span> <span class="k">as</span> <span class="n">F64</span>
+
+<span class="c1"># local imports</span>
+<span class="c1"># from ..data import vibronic_model_io as vIO</span>
+<span class="c1"># from .. import constants</span>
+<span class="c1"># from ..constants import hbar</span>
+<span class="kn">from</span> <span class="nn">..log_conf</span> <span class="k">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_name</span>
+<span class="c1"># from ..data import file_structure</span>
+<span class="c1"># from ..server import job_boss</span>
+
+<span class="c1"># TODO - should these single file functions exist? is there enough need to justify their use?</span>
+<span class="c1"># def retrive_a_pimc_file(files):</span>
+<span class="c1">#     &quot;&quot;&quot;verify that a specific pimc file exists and retrives the path to it&quot;&quot;&quot;</span>
+<span class="c1">#     globPath = FS.path_rho_results + file_name.jackknife(P=&quot;*&quot;, T=&quot;*&quot;, X=&quot;*&quot;)</span>
+<span class="c1">#     return glob.glob(globPath)</span>
+<span class="c1"># def retrive_a_sos_coupled_file(files):</span>
+<span class="c1">#     &quot;&quot;&quot;verify that a specific sos(coupled) file exists and retrives the path to it&quot;&quot;&quot;</span>
+<span class="c1">#     globPath = FS.path_vib_params + file_name.sos(&quot;*&quot;)</span>
+<span class="c1">#     return glob.glob(globPath)</span>
+<span class="c1"># def retrive_a_sos_sampling_file(files):</span>
+<span class="c1">#     &quot;&quot;&quot;verify that a specific sos(sampling) file exists and retrives the path to it&quot;&quot;&quot;</span>
+<span class="c1">#     globPath = FS.path_rho_params + file_name.sos(&quot;*&quot;)</span>
+<span class="c1">#     return glob.glob(globPath)</span>
+
+
+<div class="viewcode-block" id="retrive_pimc_file_list"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.retrive_pimc_file_list">[docs]</a><span class="k">def</span> <span class="nf">retrive_pimc_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return a list of the full path to each pimc file that might be used&quot;&quot;&quot;</span>
+    <span class="n">globPath</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_results</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">pimc</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">globPath</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="retrive_jackknife_file_list"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.retrive_jackknife_file_list">[docs]</a><span class="k">def</span> <span class="nf">retrive_jackknife_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return a list of the full path to each jackknife file that might be used&quot;&quot;&quot;</span>
+    <span class="n">globPath</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_results</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">jackknife</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">globPath</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="retrive_sos_coupled_file_list"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.retrive_sos_coupled_file_list">[docs]</a><span class="k">def</span> <span class="nf">retrive_sos_coupled_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return a list of the full path to each sos(coupled) file that might be used&quot;&quot;&quot;</span>
+    <span class="n">globPath</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sos</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">globPath</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="retrive_sos_sampling_file_list"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.retrive_sos_sampling_file_list">[docs]</a><span class="k">def</span> <span class="nf">retrive_sos_sampling_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return a list of the full path to each sos(sampling) file that might be used&quot;&quot;&quot;</span>
+    <span class="n">globPath</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sos</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">globPath</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="retrive_all_file_paths"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.retrive_all_file_paths">[docs]</a><span class="k">def</span> <span class="nf">retrive_all_file_paths</span><span class="p">(</span><span class="n">FS</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return three lists of the full paths to each data file that might be used&quot;&quot;&quot;</span>
+
+    <span class="n">list_pimc</span> <span class="o">=</span> <span class="n">retrive_pimc_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+    <span class="n">list_jackknife</span> <span class="o">=</span> <span class="n">retrive_jackknife_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+    <span class="n">list_sos_vib</span> <span class="o">=</span> <span class="n">retrive_sos_coupled_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+    <span class="n">list_sos_rho</span> <span class="o">=</span> <span class="n">retrive_sos_sampling_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">list_pimc</span><span class="p">,</span> <span class="n">list_jackknife</span><span class="p">,</span> <span class="n">list_sos_vib</span><span class="p">,</span> <span class="n">list_sos_rho</span></div>
+
+
+<div class="viewcode-block" id="retrive_file_paths_for_jackknife"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.retrive_file_paths_for_jackknife">[docs]</a><span class="k">def</span> <span class="nf">retrive_file_paths_for_jackknife</span><span class="p">(</span><span class="n">FS</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return three lists of the full paths to each data file that might be used&quot;&quot;&quot;</span>
+
+    <span class="n">list_pimc</span> <span class="o">=</span> <span class="n">retrive_pimc_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+    <span class="n">list_sos_vib</span> <span class="o">=</span> <span class="n">retrive_sos_coupled_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+    <span class="n">list_sos_rho</span> <span class="o">=</span> <span class="n">retrive_sos_sampling_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">list_pimc</span><span class="p">,</span> <span class="n">list_sos_vib</span><span class="p">,</span> <span class="n">list_sos_rho</span></div>
+
+
+<span class="c1"># I believe this function is decommissioned for the time being</span>
+<div class="viewcode-block" id="extract_pimc_parameters"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_pimc_parameters">[docs]</a><span class="k">def</span> <span class="nf">extract_pimc_parameters</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">,</span> <span class="n">list_coupled</span><span class="p">,</span> <span class="n">list_sampling</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;make a list of all parameters whose dependencies are satisfied</span>
+<span class="sd">    note that this function is tightly tied to the file name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># note that the way these splits are coded will pose problems if the naming scheme for sos is changed in the future</span>
+    <span class="n">value_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;basis_fxns&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;temperatures&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+    <span class="n">cL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_B&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_coupled</span><span class="p">)</span>
+    <span class="n">sL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_B&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_sampling</span><span class="p">)</span>
+
+    <span class="c1"># parse file paths to find shared #&#39;s&#39; of basis functions</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cL</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">sL</span><span class="p">))</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">])</span>
+
+    <span class="c1"># parse file paths to find shared temperature values</span>
+    <span class="c1"># for now we will leave this partially undeveloped</span>
+    <span class="n">tempL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_X&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_pimc</span><span class="p">)</span>
+    <span class="c1"># need to add thing here that checks temperatures inside sos file</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tempL</span><span class="p">))</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">])</span>
+
+    <span class="c1"># parse file paths to find shared sample values</span>
+    <span class="n">xL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_X&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_thermo&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_pimc</span><span class="p">)</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">xL</span><span class="p">))</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">])</span>
+
+    <span class="c1"># parse file paths to find pimc bead values</span>
+    <span class="n">pL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/P&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_pimc</span><span class="p">)</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pL</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]:</span>
+            <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">value_dict</span></div>
+
+
+<div class="viewcode-block" id="extract_jackknife_parameters"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_jackknife_parameters">[docs]</a><span class="k">def</span> <span class="nf">extract_jackknife_parameters</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">,</span> <span class="n">list_coupled</span><span class="p">,</span> <span class="n">list_sampling</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;make a list of all parameters whose dependencies are satisfied</span>
+<span class="sd">    note that this function is tightly tied to the file name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># note that the way these splits are coded will pose problems if the naming scheme for sos is changed in the future</span>
+    <span class="n">value_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;basis_fxns&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;temperatures&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+    <span class="n">cL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_B&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_coupled</span><span class="p">)</span>
+    <span class="n">sL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_B&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_sampling</span><span class="p">)</span>
+
+    <span class="c1"># parse file paths to find shared #&#39;s&#39; of basis functions</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cL</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">sL</span><span class="p">))</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">])</span>
+
+    <span class="c1"># parse file paths to find shared temperature values</span>
+    <span class="c1"># for now we will leave this partially undeveloped</span>
+    <span class="n">tempL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_J&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_pimc</span><span class="p">)</span>
+    <span class="c1"># need to add thing here that checks temperatures inside sos file</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tempL</span><span class="p">))</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">])</span>
+
+    <span class="c1"># # parse file paths to find shared sample values</span>
+    <span class="c1"># xL = map(lambda path: int(path.split(&quot;_X&quot;)[1].split(&quot;_P&quot;)[0]), list_pimc)</span>
+    <span class="c1"># value_dict[&quot;samples&quot;] = list(set(xL))</span>
+    <span class="c1"># value_dict[&quot;samples&quot;].sort()</span>
+    <span class="c1"># log.debug(value_dict[&quot;samples&quot;])</span>
+
+    <span class="c1"># parse file paths to find pimc bead values</span>
+    <span class="n">pL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;results/P&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">list_pimc</span><span class="p">)</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pL</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]:</span>
+            <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">value_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">value_dict</span></div>
+
+
+<div class="viewcode-block" id="load_data"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.load_data">[docs]</a><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">pimc_results</span><span class="p">,</span> <span class="n">rhoArgs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; load data from all files with same P and T&quot;&quot;&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    this usuage of FS.template_pimc.format(P=P, T=T, J=&quot;*&quot;) raises a good question about the design!</span>
+<span class="sd">    possible ways to implement:</span>
+<span class="sd">        - some combination of partial</span>
+<span class="sd">        - write function for each template_* member of file_structure to replace .format()</span>
+<span class="sd">        - write function for file_name</span>
+<span class="sd">    currently solved by:</span>
+<span class="sd">        self.template_pimc = self.path_rho_results + file_name.pimc(J=&quot;{J:s}&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path_data_points</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_pimc</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="n">list_of_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">path_data_points</span><span class="p">)]</span>
+    <span class="n">pimc_results</span><span class="o">.</span><span class="n">load_multiple_results</span><span class="p">(</span><span class="n">list_of_files</span><span class="p">)</span>
+    <span class="n">path_sos</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_sos_rho</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">B</span><span class="o">=</span><span class="n">B</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_sos</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">rho_file</span><span class="p">:</span>
+            <span class="n">rho_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">rho_file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="c1"># TODO - should make a class function in a new module that handles sos stuff ??</span>
+            <span class="n">input_temp_index</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+            <span class="c1"># make sure the temperature matches</span>
+            <span class="k">assert</span> <span class="n">T</span> <span class="o">==</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">],</span> <span class="s2">&quot;different temperatures&quot;</span>
+
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;E_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Cv_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling+beta&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling-beta&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="c1"># skip if we cannot obtain all the necessary data</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipped </span><span class="si">{:}</span><span class="s2"> and </span><span class="si">{:}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path_data_points</span><span class="p">,</span> <span class="n">path_sos</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="k">return</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

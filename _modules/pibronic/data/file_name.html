@@ -1,0 +1,212 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.data.file_name &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.data.file_name</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Bookkeeping provided by file_name module</span>
+
+<span class="sd">Store all naming conventions in one place</span>
+<span class="sd">Keeps file naming consistant over the many modules if changes need to be made</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="c1"># third party imports</span>
+<span class="c1"># local imports</span>
+
+<span class="c1"># TODO - conside the idea of making the template strings parameterizable as well as including different generating functions - seems like a lot of overhead for little gain?</span>
+
+<span class="sd">&quot;&quot;&quot; output of a pimc run</span>
+<span class="sd">P - refers the number of beads (int)</span>
+<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
+<span class="sd">J - jobnumber, default is zero (int)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">_pimc</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_J</span><span class="si">{:s}</span><span class="s2">_data_points.npz&quot;</span>
+
+
+<div class="viewcode-block" id="pimc"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_name.pimc">[docs]</a><span class="k">def</span> <span class="nf">pimc</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{P:d}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{T:.2f}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{J:d}</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to allow parameterized search for files</span>
+<span class="sd">        can pass in any regular expression</span>
+<span class="sd">        most commonly will just pass in &quot;*&quot; to search for all files of a given argument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_pimc</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">J</span><span class="p">)</span></div>
+
+
+<span class="sd">&quot;&quot;&quot; output of postprocess + jackknife</span>
+<span class="sd">P - refers the number of beads (int)</span>
+<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
+<span class="sd">X - number of samples used to obtain results inside file (int)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">_jackknife</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_X</span><span class="si">{:s}</span><span class="s2">_thermo&quot;</span>
+
+
+<div class="viewcode-block" id="jackknife"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_name.jackknife">[docs]</a><span class="k">def</span> <span class="nf">jackknife</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{P:d}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{T:.2f}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{X:d}</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to allow parameterized search for files</span>
+<span class="sd">        can pass in any regular expression</span>
+<span class="sd">        most commonly will just pass in &quot;*&quot; to search for all files of a given argument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_jackknife</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span></div>
+
+
+<span class="sd">&quot;&quot;&quot; output of SOS for coupled model</span>
+<span class="sd">B - refers the number of basis functions to obtain results inside file (int)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">_sos</span> <span class="o">=</span> <span class="s2">&quot;sos_B</span><span class="si">{:s}</span><span class="s2">.json&quot;</span>
+
+
+<div class="viewcode-block" id="sos"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_name.sos">[docs]</a><span class="k">def</span> <span class="nf">sos</span><span class="p">(</span><span class="n">B</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{B:d}</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to allow parameterized search for files</span>
+<span class="sd">        can pass in any regular expression</span>
+<span class="sd">        most commonly will just pass in &quot;*&quot; to search for all files of a given argument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_sos</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">B</span><span class="p">)</span></div>
+
+
+<span class="sd">&quot;&quot;&quot; R values used for training ML algorithms</span>
+<span class="sd">P - refers the number of beads (int)</span>
+<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
+<span class="sd">J - jobnumber, default is zero (int)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">_training_data_input</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_J</span><span class="si">{:s}</span><span class="s2">_training_data_input.npz&quot;</span>
+
+
+<div class="viewcode-block" id="training_data_input"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_name.training_data_input">[docs]</a><span class="k">def</span> <span class="nf">training_data_input</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{P:d}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{T:.2f}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{J:d}</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to allow parameterized search for files</span>
+<span class="sd">        can pass in any regular expression</span>
+<span class="sd">        most commonly will just pass in &quot;*&quot; to search for all files of a given argument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_training_data_input</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">J</span><span class="p">)</span></div>
+
+<span class="sd">&quot;&quot;&quot; output of a g(R) run - used for training ML algorithms</span>
+<span class="sd">P - refers the number of beads (int)</span>
+<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
+<span class="sd">J - jobnumber, default is zero (int)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">_training_data_g_output</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_J</span><span class="si">{:s}</span><span class="s2">_training_data_g_output.npz&quot;</span>
+
+
+<div class="viewcode-block" id="training_data_g_output"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_name.training_data_g_output">[docs]</a><span class="k">def</span> <span class="nf">training_data_g_output</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{P:d}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{T:.2f}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{J:d}</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to allow parameterized search for files</span>
+<span class="sd">        can pass in any regular expression</span>
+<span class="sd">        most commonly will just pass in &quot;*&quot; to search for all files of a given argument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_training_data_g_output</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">J</span><span class="p">)</span></div>
+
+
+<span class="sd">&quot;&quot;&quot; output of a rho(R) run - used for training ML algorithms</span>
+<span class="sd">P - refers the number of beads (int)</span>
+<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
+<span class="sd">J - jobnumber, default is zero (int)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">_training_data_rho_output</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_J</span><span class="si">{:s}</span><span class="s2">_training_data_rho_output.npz&quot;</span>
+
+
+<div class="viewcode-block" id="training_data_rho_output"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_name.training_data_rho_output">[docs]</a><span class="k">def</span> <span class="nf">training_data_rho_output</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{P:d}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{T:.2f}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{J:d}</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to allow parameterized search for files</span>
+<span class="sd">        can pass in any regular expression</span>
+<span class="sd">        most commonly will just pass in &quot;*&quot; to search for all files of a given argument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_training_data_rho_output</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">J</span><span class="p">)</span></div>
+
+
+<span class="c1"># TODO - maybe only need one file name for both rho and sos???</span>
+<span class="sd">&quot;&quot;&quot; output of SOS for model diagonal in electronic states</span>
+<span class="sd">B - refers the number of basis functions to obtain results inside file (int)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot; contains the parameters which describe the systems Hamiltonian</span>
+<span class="sd">this is the full model</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">coupled_model</span> <span class="o">=</span> <span class="s2">&quot;coupled_model.json&quot;</span>
+
+<span class="sd">&quot;&quot;&quot; contains the parameters which describe the harmonic operator</span>
+<span class="sd">this is all the Kinetic terms + any diagonal terms that can be described by a Harmonic oscillator</span>
+<span class="sd">this can be used as a simplistic sampling distribution rho_0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">harmonic_model</span> <span class="o">=</span> <span class="s2">&quot;harmonic_model.json&quot;</span>
+
+<span class="sd">&quot;&quot;&quot; contains the parameters which describe a sampling model</span>
+<span class="sd">this can be anything which is diagonal in the electronic states</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">sampling_model</span> <span class="o">=</span> <span class="s2">&quot;sampling_model.json&quot;</span>
+
+<span class="c1"># TODO - maybe include the directories and so forth inside file_name? or maybe in file_structure?</span>
+<span class="c1"># list_sub_dirs = [</span>
+<span class="c1">#     &quot;parameters/&quot;,</span>
+<span class="c1">#     &quot;results/&quot;,</span>
+<span class="c1">#     &quot;execution_output/&quot;,</span>
+<span class="c1">#     &quot;plots/&quot;,</span>
+<span class="c1"># ]</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

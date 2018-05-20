@@ -1,0 +1,532 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.data package &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pibronic.pimc package" href="pibronic.pimc.html" />
+    <link rel="prev" title="pibronic package" href="pibronic.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pibronic-data-package">
+<h1>pibronic.data package<a class="headerlink" href="#pibronic-data-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pibronic.data.file_name">
+<span id="pibronic-data-file-name-module"></span><h2>pibronic.data.file_name module<a class="headerlink" href="#module-pibronic.data.file_name" title="Permalink to this headline">¶</a></h2>
+<p>Bookkeeping provided by file_name module</p>
+<p>Store all naming conventions in one place
+Keeps file naming consistant over the many modules if changes need to be made</p>
+<dl class="data">
+<dt id="pibronic.data.file_name.coupled_model">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">coupled_model</code><em class="property"> = 'coupled_model.json'</em><a class="headerlink" href="#pibronic.data.file_name.coupled_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>contains the parameters which describe the harmonic operator
+this is all the Kinetic terms + any diagonal terms that can be described by a Harmonic oscillator
+this can be used as a simplistic sampling distribution rho_0</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pibronic.data.file_name.harmonic_model">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">harmonic_model</code><em class="property"> = 'harmonic_model.json'</em><a class="headerlink" href="#pibronic.data.file_name.harmonic_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>contains the parameters which describe a sampling model
+this can be anything which is diagonal in the electronic states</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.file_name.jackknife">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">jackknife</code><span class="sig-paren">(</span><em>P='{P:d}'</em>, <em>T='{T:.2f}'</em>, <em>X='{X:d}'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_name.html#jackknife"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_name.jackknife" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to allow parameterized search for files
+can pass in any regular expression
+most commonly will just pass in “*” to search for all files of a given argument</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.file_name.pimc">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">pimc</code><span class="sig-paren">(</span><em>P='{P:d}'</em>, <em>T='{T:.2f}'</em>, <em>J='{J:d}'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_name.html#pimc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_name.pimc" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to allow parameterized search for files
+can pass in any regular expression
+most commonly will just pass in “*” to search for all files of a given argument</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.file_name.sos">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">sos</code><span class="sig-paren">(</span><em>B='{B:d}'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_name.html#sos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_name.sos" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to allow parameterized search for files
+can pass in any regular expression
+most commonly will just pass in “*” to search for all files of a given argument</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.file_name.training_data_g_output">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">training_data_g_output</code><span class="sig-paren">(</span><em>P='{P:d}'</em>, <em>T='{T:.2f}'</em>, <em>J='{J:d}'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_name.html#training_data_g_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_name.training_data_g_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to allow parameterized search for files
+can pass in any regular expression
+most commonly will just pass in “*” to search for all files of a given argument</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.file_name.training_data_input">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">training_data_input</code><span class="sig-paren">(</span><em>P='{P:d}'</em>, <em>T='{T:.2f}'</em>, <em>J='{J:d}'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_name.html#training_data_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_name.training_data_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to allow parameterized search for files
+can pass in any regular expression
+most commonly will just pass in “*” to search for all files of a given argument</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.file_name.training_data_rho_output">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">training_data_rho_output</code><span class="sig-paren">(</span><em>P='{P:d}'</em>, <em>T='{T:.2f}'</em>, <em>J='{J:d}'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_name.html#training_data_rho_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_name.training_data_rho_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to allow parameterized search for files
+can pass in any regular expression
+most commonly will just pass in “*” to search for all files of a given argument</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.data.file_structure">
+<span id="pibronic-data-file-structure-module"></span><h2>pibronic.data.file_structure module<a class="headerlink" href="#module-pibronic.data.file_structure" title="Permalink to this headline">¶</a></h2>
+<p>Bookkeeping provided by FileStucture class</p>
+<p>keeps directory structure consistant over the many modules if changes need to be made</p>
+<dl class="class">
+<dt id="pibronic.data.file_structure.FileStructure">
+<em class="property">class </em><code class="descclassname">pibronic.data.file_structure.</code><code class="descname">FileStructure</code><span class="sig-paren">(</span><em>path_root</em>, <em>id_data</em>, <em>id_rho=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_structure.html#FileStructure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_structure.FileStructure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>handles creation and verification of default file structure storing data from/to jobs</p>
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.dir_list">
+<code class="descname">dir_list</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.dir_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO - possibly rename the sampling and coupled paths?
+they are paths but shouldn’t be in the dir_list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.data.file_structure.FileStructure.directories_exist">
+<code class="descname">directories_exist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_structure.html#FileStructure.directories_exist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.directories_exist" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="pibronic.data.file_structure.FileStructure.from_boxdata">
+<em class="property">classmethod </em><code class="descname">from_boxdata</code><span class="sig-paren">(</span><em>path_root</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_structure.html#FileStructure.from_boxdata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.from_boxdata" title="Permalink to this definition">¶</a></dt>
+<dd><p>constructor wrapper that takes a data object from minimal.py</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.data.file_structure.FileStructure.make_directories">
+<code class="descname">make_directories</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_structure.html#FileStructure.make_directories"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.make_directories" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.data.file_structure.FileStructure.make_rho_directories">
+<code class="descname">make_rho_directories</code><span class="sig-paren">(</span><em>id_rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_structure.html#FileStructure.make_rho_directories"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.make_rho_directories" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_rho">
+<code class="descname">template_rho</code><em class="property"> = 'data_set_{:d}/rho_{:d}/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_rho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_rho_output">
+<code class="descname">template_rho_output</code><em class="property"> = 'data_set_{:d}/rho_{:d}/execution_output/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_rho_output" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_rho_params">
+<code class="descname">template_rho_params</code><em class="property"> = 'data_set_{:d}/rho_{:d}/parameters/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_rho_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_rho_plots">
+<code class="descname">template_rho_plots</code><em class="property"> = 'data_set_{:d}/rho_{:d}/plots/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_rho_plots" title="Permalink to this definition">¶</a></dt>
+<dd><p>template_pimc_suffix = “D{D:d}_R{R:d}_P{P:d}_T{T:.2f}_J*_data_points.npz”
+template_jackknife_suffix = “D{D:d}_R{R:d}_P{P:d}_T{T:.2f}_X{X:d}_thermo”
+template_sos_suffix = “sos_B{B:d}.json”</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_rho_results">
+<code class="descname">template_rho_results</code><em class="property"> = 'data_set_{:d}/rho_{:d}/results/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_rho_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_vib">
+<code class="descname">template_vib</code><em class="property"> = 'data_set_{:d}/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_vib" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_vib_output">
+<code class="descname">template_vib_output</code><em class="property"> = 'data_set_{:d}/execution_output/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_vib_output" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_vib_params">
+<code class="descname">template_vib_params</code><em class="property"> = 'data_set_{:d}/parameters/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_vib_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_vib_plots">
+<code class="descname">template_vib_plots</code><em class="property"> = 'data_set_{:d}/plots/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_vib_plots" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.data.file_structure.FileStructure.template_vib_results">
+<code class="descname">template_vib_results</code><em class="property"> = 'data_set_{:d}/results/'</em><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.template_vib_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.data.file_structure.FileStructure.verify_directories_exists">
+<code class="descname">verify_directories_exists</code><span class="sig-paren">(</span><em>id_data</em>, <em>path_root=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/file_structure.html#FileStructure.verify_directories_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.file_structure.FileStructure.verify_directories_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>if directory structure exists does nothing, creates the file structure otherwise</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.data.postprocessing">
+<span id="pibronic-data-postprocessing-module"></span><h2>pibronic.data.postprocessing module<a class="headerlink" href="#module-pibronic.data.postprocessing" title="Permalink to this headline">¶</a></h2>
+<p>Handles all file processing after calculations are run</p>
+<p>Provides functions for collating files for statistical analaysis (such as jackknife) and plotting</p>
+<dl class="function">
+<dt id="pibronic.data.postprocessing.extract_jackknife_parameters">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">extract_jackknife_parameters</code><span class="sig-paren">(</span><em>list_pimc</em>, <em>list_coupled</em>, <em>list_sampling</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#extract_jackknife_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.extract_jackknife_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>make a list of all parameters whose dependencies are satisfied
+note that this function is tightly tied to the file name</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.postprocessing.extract_pimc_parameters">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">extract_pimc_parameters</code><span class="sig-paren">(</span><em>list_pimc</em>, <em>list_coupled</em>, <em>list_sampling</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#extract_pimc_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.extract_pimc_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>make a list of all parameters whose dependencies are satisfied
+note that this function is tightly tied to the file name</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.postprocessing.load_data">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">load_data</code><span class="sig-paren">(</span><em>FS</em>, <em>P</em>, <em>B</em>, <em>T</em>, <em>pimc_results</em>, <em>rhoArgs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>load data from all files with same P and T</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.postprocessing.retrive_all_file_paths">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">retrive_all_file_paths</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#retrive_all_file_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.retrive_all_file_paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>return three lists of the full paths to each data file that might be used</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.postprocessing.retrive_file_paths_for_jackknife">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">retrive_file_paths_for_jackknife</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#retrive_file_paths_for_jackknife"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.retrive_file_paths_for_jackknife" title="Permalink to this definition">¶</a></dt>
+<dd><p>return three lists of the full paths to each data file that might be used</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.postprocessing.retrive_jackknife_file_list">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">retrive_jackknife_file_list</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#retrive_jackknife_file_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.retrive_jackknife_file_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a list of the full path to each jackknife file that might be used</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.postprocessing.retrive_pimc_file_list">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">retrive_pimc_file_list</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#retrive_pimc_file_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.retrive_pimc_file_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a list of the full path to each pimc file that might be used</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.postprocessing.retrive_sos_coupled_file_list">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">retrive_sos_coupled_file_list</code><span class="sig-paren">(</span><em>FS</em>, <em>B='*'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#retrive_sos_coupled_file_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.retrive_sos_coupled_file_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a list of the full path to each sos(coupled) file that might be used</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.postprocessing.retrive_sos_sampling_file_list">
+<code class="descclassname">pibronic.data.postprocessing.</code><code class="descname">retrive_sos_sampling_file_list</code><span class="sig-paren">(</span><em>FS</em>, <em>B='*'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/postprocessing.html#retrive_sos_sampling_file_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.postprocessing.retrive_sos_sampling_file_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a list of the full path to each sos(sampling) file that might be used</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.data.vibronic_model_io">
+<span id="pibronic-data-vibronic-model-io-module"></span><h2>pibronic.data.vibronic_model_io module<a class="headerlink" href="#module-pibronic.data.vibronic_model_io" title="Permalink to this headline">¶</a></h2>
+<p>vibronic_model_io.py should handle the majority of file I/O</p>
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.checkOS">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">checkOS</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#checkOS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.checkOS" title="Permalink to this definition">¶</a></dt>
+<dd><p>define OS dependent paths to files</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.create_basic_sampling_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_basic_sampling_model</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_basic_sampling_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_basic_sampling_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to make the simplest sampling model</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.create_coupling_from_h_file">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_coupling_from_h_file</code><span class="sig-paren">(</span><em>FS</em>, <em>path_file_h</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_coupling_from_h_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_coupling_from_h_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>assumes that the path_file_h is in electronic_structure</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.create_coupling_from_op_file">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_coupling_from_op_file</code><span class="sig-paren">(</span><em>FS</em>, <em>path_file_op</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_coupling_from_op_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_coupling_from_op_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>assumes that the path_file_op is in electronic_structure</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.create_coupling_from_op_hyperlink">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_coupling_from_op_hyperlink</code><span class="sig-paren">(</span><em>FS</em>, <em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_coupling_from_op_hyperlink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_coupling_from_op_hyperlink" title="Permalink to this definition">¶</a></dt>
+<dd><p>assumes that the path_file_op is in electronic_structure</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.create_fake_coupled_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_fake_coupled_model</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_fake_coupled_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_fake_coupled_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.create_harmonic_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_harmonic_model</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_harmonic_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_harmonic_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to refresh harmonic model</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.create_new_execution_directory">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_new_execution_directory</code><span class="sig-paren">(</span><em>path_root=None</em>, <em>id_data=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_new_execution_directory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_new_execution_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>create or overwrite an execution directory</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.generate_vibronic_model_data">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">generate_vibronic_model_data</code><span class="sig-paren">(</span><em>paramDict=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#generate_vibronic_model_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.generate_vibronic_model_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>redo this one but otherwise its fine returns e,w,l,q filled with appropriate values</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.get_nmode_nsurf_from_coupled_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">get_nmode_nsurf_from_coupled_model</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#get_nmode_nsurf_from_coupled_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.get_nmode_nsurf_from_coupled_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.get_nmode_nsurf_from_sampling_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">get_nmode_nsurf_from_sampling_model</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#get_nmode_nsurf_from_sampling_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.get_nmode_nsurf_from_sampling_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.load_model_from_JSON">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">load_model_from_JSON</code><span class="sig-paren">(</span><em>path_full</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#load_model_from_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.load_model_from_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.load_sample_from_JSON">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">load_sample_from_JSON</code><span class="sig-paren">(</span><em>path_full</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#load_sample_from_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.load_sample_from_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.make_rho_directories">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">make_rho_directories</code><span class="sig-paren">(</span><em>path_root</em>, <em>id_rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#make_rho_directories"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.make_rho_directories" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.make_root_directories">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">make_root_directories</code><span class="sig-paren">(</span><em>path_root</em>, <em>id_data</em>, <em>id_rho=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#make_root_directories"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.make_root_directories" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.parse_model_params">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">parse_model_params</code><span class="sig-paren">(</span><em>path_full</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#parse_model_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.parse_model_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>this one could probably be removed? parses model_parameters_source.txt</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.pretty_print_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">pretty_print_model</code><span class="sig-paren">(</span><em>id_data</em>, <em>unitsOfeV=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#pretty_print_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.pretty_print_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>one method of printing the models in a human readable format</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.read_model_auto_file">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">read_model_auto_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#read_model_auto_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.read_model_auto_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read Vibronic Model file (cp.auto) which
+contains all information on the approximate
+Born-Oppenheimer Ground State PES.</p>
+<p>Returns:
+number of electronic states
+number of normal modes</p>
+<p>Excitation energies: (nel, nel)
+frequencies (nmode)
+linear couplings: (nmode, nel, nel)
+quadratic couplings: (nmode, nmode, nel, nel)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.read_model_h_file">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">read_model_h_file</code><span class="sig-paren">(</span><em>path_file_h</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#read_model_h_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.read_model_h_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads/parses molecule_vibron.h file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.read_model_op_file">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">read_model_op_file</code><span class="sig-paren">(</span><em>path_file_op</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#read_model_op_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.read_model_op_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads/parses molecule_vibron.op file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.remove_coupling_from_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">remove_coupling_from_model</code><span class="sig-paren">(</span><em>path_source</em>, <em>path_destination</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#remove_coupling_from_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.remove_coupling_from_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads in a model and sets all the coupling parameters to zero</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.root_directories_exists">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">root_directories_exists</code><span class="sig-paren">(</span><em>path_root</em>, <em>id_data</em>, <em>id_rho=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#root_directories_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.root_directories_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.save_model_to_JSON">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">save_model_to_JSON</code><span class="sig-paren">(</span><em>path_full</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#save_model_to_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.save_model_to_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.save_sample_to_JSON">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">save_sample_to_JSON</code><span class="sig-paren">(</span><em>path_full</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#save_sample_to_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.save_sample_to_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.setup_input_params">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">setup_input_params</code><span class="sig-paren">(</span><em>directory_path</em>, <em>new_directory=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#setup_input_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.setup_input_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>collate the input parameters and write to a file in the execution directory</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.verify_execution_directory_exists">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">verify_execution_directory_exists</code><span class="sig-paren">(</span><em>id_data</em>, <em>path_root=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#verify_execution_directory_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.verify_execution_directory_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>if directory structure exists does nothing, creates the file structure otherwise</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.verify_model_parameters">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">verify_model_parameters</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#verify_model_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.verify_model_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>make sure the provided model parameters follow the file conventions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.verify_sample_parameters">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">verify_sample_parameters</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#verify_sample_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.verify_sample_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>make sure the provided sample parameters follow the file conventions</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.data">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pibronic.data" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="scripts-that-handle-data">
+<h3>Scripts that handle data<a class="headerlink" href="#scripts-that-handle-data" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pibronic.data package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pibronic.data.file_name">pibronic.data.file_name module</a></li>
+<li><a class="reference internal" href="#module-pibronic.data.file_structure">pibronic.data.file_structure module</a></li>
+<li><a class="reference internal" href="#module-pibronic.data.postprocessing">pibronic.data.postprocessing module</a></li>
+<li><a class="reference internal" href="#module-pibronic.data.vibronic_model_io">pibronic.data.vibronic_model_io module</a></li>
+<li><a class="reference internal" href="#module-pibronic.data">Module contents</a><ul>
+<li><a class="reference internal" href="#scripts-that-handle-data">Scripts that handle data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="pibronic.html">pibronic package</a><ul>
+      <li>Previous: <a href="pibronic.html" title="previous chapter">pibronic package</a></li>
+      <li>Next: <a href="pibronic.pimc.html" title="next chapter">pibronic.pimc package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pibronic.data.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/pibronic.data.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

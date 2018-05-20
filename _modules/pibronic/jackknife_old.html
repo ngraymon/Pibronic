@@ -1,0 +1,891 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.jackknife_old &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.jackknife_old</h1><div class="highlight"><pre>
+<span></span><span class="c1"># jackknife.py</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">.data</span> <span class="k">import</span> <span class="n">vibronic_model_io</span> <span class="k">as</span> <span class="n">vIO</span>
+<span class="kn">from</span> <span class="nn">.data</span> <span class="k">import</span> <span class="n">postprocessing</span> <span class="k">as</span> <span class="n">pp</span>
+<span class="kn">from</span> <span class="nn">.data</span> <span class="k">import</span> <span class="n">file_structure</span>
+<span class="kn">from</span> <span class="nn">.data</span> <span class="k">import</span> <span class="n">file_name</span>  <span class="c1"># do we need this?</span>
+<span class="kn">from</span> <span class="nn">.pimc.minimal</span> <span class="k">import</span> <span class="n">BoxResult</span><span class="p">,</span> <span class="n">BoxResultPM</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">.constants</span> <span class="k">import</span> <span class="n">hbar</span>
+
+
+
+<div class="viewcode-block" id="retrive_file_list"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.retrive_file_list">[docs]</a><span class="k">def</span> <span class="nf">retrive_file_list</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;find a list of all files that might be used in jackknife&quot;&quot;&quot;</span>
+    <span class="c1"># retrive pimc files</span>
+    <span class="n">globPath</span> <span class="o">=</span> <span class="n">path_results</span> <span class="o">+</span> <span class="s2">&quot;F</span><span class="si">{:d}</span><span class="s2">_*_data_points.npz&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_data</span><span class="p">)</span>
+    <span class="n">pimcList</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">globPath</span><span class="p">)]</span>
+
+    <span class="c1"># retrive coupled files</span>
+    <span class="n">globPath</span> <span class="o">=</span> <span class="n">path_sos</span> <span class="o">+</span> <span class="s2">&quot;sos_B*.json&quot;</span>
+    <span class="n">coupledList</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">globPath</span><span class="p">)]</span>
+
+    <span class="c1"># retrive sampling files</span>
+    <span class="n">globPath</span> <span class="o">=</span> <span class="n">path_params</span> <span class="o">+</span> <span class="s2">&quot;sos_B*.json&quot;</span>
+    <span class="n">samplingList</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">globPath</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">pimcList</span><span class="p">,</span> <span class="n">coupledList</span><span class="p">,</span> <span class="n">samplingList</span></div>
+
+
+<div class="viewcode-block" id="extract_parameters"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.extract_parameters">[docs]</a><span class="k">def</span> <span class="nf">extract_parameters</span><span class="p">(</span><span class="n">pimcList</span><span class="p">,</span> <span class="n">coupledList</span><span class="p">,</span> <span class="n">samplingList</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;make a list of all parameters whose dependencies are satisfied this list will be used to check what data can be jackknifed&quot;&quot;&quot;</span>
+
+    <span class="c1"># note that the way these splits are coded</span>
+    <span class="c1"># will pose problems if the naming scheme for sos is changed in the future</span>
+    <span class="n">valuesDictionary</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;beads&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;samples&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;basis_fxns&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;temperatures&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+    <span class="n">cL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_B&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">coupledList</span><span class="p">)</span>
+    <span class="n">sL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_B&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">samplingList</span><span class="p">)</span>
+
+    <span class="c1"># parse file paths to find shared #&#39;s&#39; of basis functions</span>
+    <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cL</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">sL</span><span class="p">))</span>
+    <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="c1"># print(valuesDictionary[&quot;basis_fxns&quot;])</span>
+
+    <span class="c1"># parse file paths to find shared temperature values</span>
+    <span class="c1"># for now we will leave this partially undeveloped</span>
+    <span class="n">tempL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_data_points.npz&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">pimcList</span><span class="p">)</span>
+    <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tempL</span><span class="p">))</span>
+    <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="c1"># print(valuesDictionary[&quot;temperatures&quot;])</span>
+
+    <span class="c1"># parse file paths to find shared sample values</span>
+    <span class="n">xL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_X&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_P&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">pimcList</span><span class="p">)</span>
+    <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">xL</span><span class="p">))</span>
+    <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="c1"># print(valuesDictionary[&quot;samples&quot;])</span>
+
+    <span class="c1"># parse file paths to find pimc bead values</span>
+    <span class="n">pL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_P&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">pimcList</span><span class="p">)</span>
+    <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pL</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]:</span>
+            <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">valuesDictionary</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="c1"># print(valuesDictionary[&quot;pimc_beads&quot;])</span>
+
+    <span class="k">return</span> <span class="n">valuesDictionary</span></div>
+
+
+<div class="viewcode-block" id="load_data"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.load_data">[docs]</a><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">pimc_results</span><span class="p">,</span> <span class="n">rhoArgs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; load data from all files with same P and T &quot;&quot;&quot;</span>
+    <span class="c1"># data_points_path = path_results + filePrefix</span>
+    <span class="c1"># data_points_path += fileSuffix.format(X=X, P=P, T=T)</span>
+    <span class="c1"># sos_path = path_params + sosSuffix.format(B=B)</span>
+
+    <span class="n">pimc_results</span><span class="o">.</span><span class="n">load_results</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sos_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">rho_file</span><span class="p">:</span>
+            <span class="n">rho_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">rho_file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="n">input_temp_index</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">T</span> <span class="o">==</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">],</span> <span class="s2">&quot;different temperatures&quot;</span>
+
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;E_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Cv_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling+beta&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling-beta&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="c1"># skip if we cannot obtain all the necessary data</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipped </span><span class="si">{:}</span><span class="s2"> and </span><span class="si">{:}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data_points_path</span><span class="p">,</span> <span class="n">sos_path</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="c1"># We worked</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">data_points_path</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="calculate_difference_terms"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.calculate_difference_terms">[docs]</a><span class="k">def</span> <span class="nf">calculate_difference_terms</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;calculate g_r, sym_d1, sym_d2 given the estimation of the difference&quot;&quot;&quot;</span>
+    <span class="n">delta_beta</span><span class="p">,</span> <span class="n">y_rho</span><span class="p">,</span> <span class="n">y_rhop</span><span class="p">,</span> <span class="n">yp_rhop</span><span class="p">,</span> <span class="n">y_rhom</span><span class="p">,</span> <span class="n">ym_rhom</span><span class="p">,</span> <span class="n">y_g</span><span class="p">,</span> <span class="n">y_gp</span><span class="p">,</span> <span class="n">yp_gp</span><span class="p">,</span> <span class="n">y_gm</span><span class="p">,</span> <span class="n">ym_gm</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="c1"># # Precalculate the 3 terms we will use</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">y_g</span> <span class="o">/</span> <span class="n">y_rho</span>
+
+    <span class="n">first_symmetric_derivative</span> <span class="o">=</span> <span class="p">(</span><span class="n">yp_gp</span> <span class="o">/</span> <span class="n">yp_rhop</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">ym_gm</span> <span class="o">/</span> <span class="n">ym_rhom</span><span class="p">)</span>
+    <span class="n">first_symmetric_derivative</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_beta</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">second_symmetric_derivative</span> <span class="o">=</span> <span class="p">(</span><span class="n">yp_gp</span> <span class="o">/</span> <span class="n">yp_rhop</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ym_gm</span> <span class="o">/</span> <span class="n">ym_rhom</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">/=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[</span><span class="n">ratio</span><span class="p">,</span>
+           <span class="n">first_symmetric_derivative</span><span class="p">,</span>
+           <span class="n">second_symmetric_derivative</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="calculate_alpha_terms"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.calculate_alpha_terms">[docs]</a><span class="k">def</span> <span class="nf">calculate_alpha_terms</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">Uho</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;calculate g_r, sym_d1, sym_d2 given the estimation of the difference + alpha&quot;&quot;&quot;</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">delta_beta</span><span class="p">,</span> <span class="n">kB</span> <span class="o">=</span> <span class="n">constants</span>
+    <span class="n">y_rho</span><span class="p">,</span> <span class="n">y_rhop</span><span class="p">,</span> <span class="n">yp_rhop</span><span class="p">,</span> <span class="n">y_rhom</span><span class="p">,</span> <span class="n">ym_rhom</span><span class="p">,</span> <span class="n">y_g</span><span class="p">,</span> <span class="n">y_gp</span><span class="p">,</span> <span class="n">yp_gp</span><span class="p">,</span> <span class="n">y_gm</span><span class="p">,</span> <span class="n">ym_gm</span><span class="p">,</span> <span class="n">ap</span><span class="p">,</span> <span class="n">am</span> <span class="o">=</span> <span class="n">data</span>
+    <span class="c1"># rho, g, y_gp, y_gm, yp_rhop, ym_rhom, ap, am,  = data</span>
+
+    <span class="c1"># the current alpha method</span>
+    <span class="c1"># # Precalculate the 3 terms we will use</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">y_g</span> <span class="o">/</span> <span class="n">y_rho</span>
+
+    <span class="n">LN</span> <span class="o">=</span> <span class="n">y_gp</span> <span class="o">/</span> <span class="n">y_rho</span>
+    <span class="c1"># LD = np.full(shape=X, fill_value=ap)</span>
+    <span class="n">LD</span> <span class="o">=</span> <span class="n">ap</span>
+    <span class="c1"># print(ap, np.mean(LD))</span>
+    <span class="c1"># LD = y_rho / y_rhop</span>
+    <span class="n">RN</span> <span class="o">=</span> <span class="n">y_gm</span> <span class="o">/</span> <span class="n">y_rho</span>
+    <span class="c1"># RD = np.full(shape=X, fill_value=am)</span>
+    <span class="n">RD</span> <span class="o">=</span> <span class="n">am</span>
+    <span class="c1"># print(am, np.mean(RD))</span>
+    <span class="c1"># RD = y_rho / y_rhom</span>
+    <span class="c1"># pr = np.mean(y_rho / y_rhop)</span>
+    <span class="c1"># mr = np.mean(y_rho / y_rhom)</span>
+
+    <span class="c1"># print((pr - mr) / (2. * delta_beta))</span>
+    <span class="c1"># print((np.mean(y_rhom / y_rho) - np.mean(y_rhop / y_rho)) / (2. * delta_beta))</span>
+    <span class="c1"># print(Uho)</span>
+
+    <span class="c1"># print(np.mean(ratio) * Uho)</span>
+    <span class="c1"># print(np.mean(ratio) * Uho * 2. * delta_beta)</span>
+
+    <span class="n">first_symmetric_derivative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">LN</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">LD</span><span class="p">)</span>
+    <span class="n">first_symmetric_derivative</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RN</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RD</span><span class="p">)</span>
+    <span class="c1"># first_symmetric_derivative = np.mean(LN)</span>
+    <span class="c1"># first_symmetric_derivative -= np.mean(RN)</span>
+    <span class="c1"># first_symmetric_derivative = (y_gp - y_gm) / y_rho</span>
+    <span class="n">first_symmetric_derivative</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_beta</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+    <span class="c1"># print(first_symmetric_derivative)</span>
+
+    <span class="c1"># first_symmetric_derivative += -1. * Uho * np.mean(ratio)</span>
+    <span class="c1"># first_symmetric_derivative += np.mean(ratio) * Uho</span>
+    <span class="c1"># print(first_symmetric_derivative)</span>
+    <span class="c1"># first_symmetric_derivative -= np.mean(ratio) * Uho</span>
+    <span class="c1"># first_symmetric_derivative += np.mean(ratio) * (pr - mr) / (2. * delta_beta)</span>
+    <span class="c1"># print(first_symmetric_derivative)</span>
+    <span class="c1"># first_symmetric_derivative += (2. * delta_beta * np.mean(ratio)) * -1. * (pr - mr)</span>
+
+    <span class="n">second_symmetric_derivative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">LN</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">LD</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">-=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RN</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RD</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">/=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[</span><span class="n">ratio</span><span class="p">,</span>
+           <span class="n">first_symmetric_derivative</span><span class="p">,</span>
+           <span class="n">second_symmetric_derivative</span><span class="p">,</span>
+           <span class="n">LN</span><span class="p">,</span> <span class="n">LD</span><span class="p">,</span> <span class="n">RN</span><span class="p">,</span> <span class="n">RD</span><span class="p">,</span>
+           <span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="calculate_alpha_jackknife_terms"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.calculate_alpha_jackknife_terms">[docs]</a><span class="k">def</span> <span class="nf">calculate_alpha_jackknife_terms</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="n">constants</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">delta_beta</span><span class="p">,</span> <span class="n">kB</span> <span class="o">=</span> <span class="n">constants</span>
+    <span class="n">g_r</span><span class="p">,</span> <span class="n">sym_d1</span><span class="p">,</span> <span class="n">sym_d2</span><span class="p">,</span> <span class="n">LN</span><span class="p">,</span> <span class="n">LD</span><span class="p">,</span> <span class="n">RN</span><span class="p">,</span> <span class="n">RD</span> <span class="o">=</span> <span class="n">terms</span>
+    <span class="c1"># print(&quot;L&quot;, LN,LD,RN,RD, sep=&quot;\n&quot;)</span>
+
+    <span class="c1"># first start with the full sum</span>
+    <span class="n">jk_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">g_r</span><span class="p">))</span>
+
+    <span class="c1"># only this needs special handling</span>
+    <span class="n">jk_LN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">LN</span><span class="p">))</span>
+    <span class="c1"># jk_LD = np.full(shape=X, fill_value=np.sum(LD))</span>
+    <span class="n">jk_RN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">RN</span><span class="p">))</span>
+    <span class="c1"># jk_RD = np.full(shape=X, fill_value=np.sum(RD))</span>
+
+    <span class="c1"># now subtract each term from the sum</span>
+    <span class="n">jk_ratio</span> <span class="o">-=</span> <span class="n">g_r</span>
+    <span class="n">jk_LN</span> <span class="o">-=</span> <span class="n">LN</span>
+    <span class="c1"># jk_LD -= LD</span>
+    <span class="n">jk_RN</span> <span class="o">-=</span> <span class="n">RN</span>
+    <span class="c1"># jk_RD -= RD</span>
+
+    <span class="c1"># pre normalize</span>
+    <span class="n">jk_ratio</span> <span class="o">/=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">jk_LN</span> <span class="o">/=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># jk_LD /= (X - 1)</span>
+    <span class="n">jk_RN</span> <span class="o">/=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># jk_RD /= (X - 1)</span>
+
+    <span class="c1"># now build the first and second symmetric derivative</span>
+    <span class="n">jk_sym_d1</span> <span class="o">=</span> <span class="n">jk_LN</span> <span class="o">*</span> <span class="n">LD</span>
+    <span class="n">jk_sym_d1</span> <span class="o">-=</span> <span class="n">jk_RN</span> <span class="o">*</span> <span class="n">RD</span>
+    <span class="n">jk_sym_d1</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_beta</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+    <span class="c1">#</span>
+    <span class="n">jk_sym_d2</span> <span class="o">=</span> <span class="n">jk_LN</span> <span class="o">*</span> <span class="n">LD</span>
+    <span class="n">jk_sym_d2</span> <span class="o">-=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">jk_ratio</span>
+    <span class="n">jk_sym_d2</span> <span class="o">+=</span> <span class="n">jk_RN</span> <span class="o">*</span> <span class="n">RD</span>
+    <span class="n">jk_sym_d2</span> <span class="o">/=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[</span><span class="n">jk_ratio</span><span class="p">,</span>
+           <span class="n">jk_sym_d1</span><span class="p">,</span>
+           <span class="n">jk_sym_d2</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="calculate_fourth_terms"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.calculate_fourth_terms">[docs]</a><span class="k">def</span> <span class="nf">calculate_fourth_terms</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">constants</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;calculate g_r, sym_d1, sym_d2 given the estimation of the difference in a new way&quot;&quot;&quot;</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">delta_beta</span><span class="p">,</span> <span class="n">kB</span> <span class="o">=</span> <span class="n">constants</span>
+    <span class="n">y_rho</span><span class="p">,</span> <span class="n">y_rhop</span><span class="p">,</span> <span class="n">yp_rhop</span><span class="p">,</span> <span class="n">y_rhom</span><span class="p">,</span> <span class="n">ym_rhom</span><span class="p">,</span> <span class="n">y_g</span><span class="p">,</span> <span class="n">y_gp</span><span class="p">,</span> <span class="n">yp_gp</span><span class="p">,</span> <span class="n">y_gm</span><span class="p">,</span> <span class="n">ym_gm</span><span class="p">,</span> <span class="n">ap</span><span class="p">,</span> <span class="n">am</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="c1"># # Precalculate the 3 terms we will use</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">y_g</span> <span class="o">/</span> <span class="n">y_rho</span>
+
+    <span class="n">LN</span> <span class="o">=</span> <span class="n">y_gp</span> <span class="o">/</span> <span class="n">y_rho</span>
+    <span class="n">LD</span> <span class="o">=</span> <span class="n">y_rhop</span> <span class="o">/</span> <span class="n">y_rho</span>
+    <span class="n">RN</span> <span class="o">=</span> <span class="n">y_gm</span> <span class="o">/</span> <span class="n">y_rho</span>
+    <span class="n">RD</span> <span class="o">=</span> <span class="n">y_rhom</span> <span class="o">/</span> <span class="n">y_rho</span>
+
+    <span class="n">first_symmetric_derivative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">LN</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">LD</span><span class="p">)</span>
+    <span class="n">first_symmetric_derivative</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RN</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RD</span><span class="p">)</span>
+    <span class="n">first_symmetric_derivative</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_beta</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+    <span class="c1"># print(first_symmetric_derivative)</span>
+
+    <span class="n">second_symmetric_derivative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">LN</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">LD</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">-=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RN</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RD</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">/=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+    <span class="c1"># print(second_symmetric_derivative)</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[</span><span class="n">ratio</span><span class="p">,</span>
+           <span class="n">first_symmetric_derivative</span><span class="p">,</span>
+           <span class="n">second_symmetric_derivative</span><span class="p">,</span>
+           <span class="n">LN</span><span class="p">,</span> <span class="n">LD</span><span class="p">,</span> <span class="n">RN</span><span class="p">,</span> <span class="n">RD</span><span class="p">,</span>
+           <span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="calculate_fourth_jackknife_terms"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.calculate_fourth_jackknife_terms">[docs]</a><span class="k">def</span> <span class="nf">calculate_fourth_jackknife_terms</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="n">constants</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;calculate all the jackknife averages&quot;&quot;&quot;</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">delta_beta</span><span class="p">,</span> <span class="n">kB</span> <span class="o">=</span> <span class="n">constants</span>
+    <span class="n">g_r</span><span class="p">,</span> <span class="n">sym_d1</span><span class="p">,</span> <span class="n">sym_d2</span><span class="p">,</span> <span class="n">LN</span><span class="p">,</span> <span class="n">LD</span><span class="p">,</span> <span class="n">RN</span><span class="p">,</span> <span class="n">RD</span> <span class="o">=</span> <span class="n">terms</span>
+    <span class="c1"># print(&quot;L&quot;, LN,LD,RN,RD, sep=&quot;\n&quot;)</span>
+
+    <span class="c1"># first start with the full sum</span>
+    <span class="n">jk_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">g_r</span><span class="p">))</span>
+
+    <span class="c1"># only this needs special handling</span>
+    <span class="n">jk_LN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">LN</span><span class="p">))</span>
+    <span class="n">jk_LD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">LD</span><span class="p">))</span>
+    <span class="n">jk_RN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">RN</span><span class="p">))</span>
+    <span class="n">jk_RD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">RD</span><span class="p">))</span>
+
+    <span class="c1"># now subtract each term from the sum</span>
+    <span class="n">jk_ratio</span> <span class="o">-=</span> <span class="n">g_r</span>
+    <span class="n">jk_LN</span> <span class="o">-=</span> <span class="n">LN</span>
+    <span class="n">jk_LD</span> <span class="o">-=</span> <span class="n">LD</span>
+    <span class="n">jk_RN</span> <span class="o">-=</span> <span class="n">RN</span>
+    <span class="n">jk_RD</span> <span class="o">-=</span> <span class="n">RD</span>
+
+    <span class="c1"># pre normalize</span>
+    <span class="n">jk_ratio</span> <span class="o">/=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">jk_LN</span> <span class="o">/=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">jk_LD</span> <span class="o">/=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">jk_RN</span> <span class="o">/=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">jk_RD</span> <span class="o">/=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># now build the first and second symmetric derivative</span>
+    <span class="n">jk_sym_d1</span> <span class="o">=</span> <span class="n">jk_LN</span> <span class="o">/</span> <span class="n">jk_LD</span>
+    <span class="n">jk_sym_d1</span> <span class="o">-=</span> <span class="n">jk_RN</span> <span class="o">/</span> <span class="n">jk_RD</span>
+    <span class="n">jk_sym_d1</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_beta</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+    <span class="c1">#</span>
+    <span class="n">jk_sym_d2</span> <span class="o">=</span> <span class="n">jk_LN</span> <span class="o">/</span> <span class="n">jk_LD</span>
+    <span class="n">jk_sym_d2</span> <span class="o">-=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">jk_ratio</span>
+    <span class="n">jk_sym_d2</span> <span class="o">+=</span> <span class="n">jk_RN</span> <span class="o">/</span> <span class="n">jk_RD</span>
+    <span class="n">jk_sym_d2</span> <span class="o">/=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[</span><span class="n">jk_ratio</span><span class="p">,</span>
+           <span class="n">jk_sym_d1</span><span class="p">,</span>
+           <span class="n">jk_sym_d2</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+
+    <span class="n">pimc_results</span> <span class="o">=</span> <span class="n">BoxResultPM</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">rhoData</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">load_data</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">pimc_results</span><span class="p">,</span> <span class="n">rhoData</span><span class="p">)</span>
+
+    <span class="n">Z_sampling</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span>
+    <span class="n">E_sampling</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span>
+    <span class="n">Cv_sampling</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span>
+    <span class="n">alpha_plus</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">]</span>
+    <span class="n">alpha_minus</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">]</span>
+
+    <span class="n">y_rho</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;y_rho&quot;</span><span class="p">]</span>
+    <span class="n">y_g</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;y_g&quot;</span><span class="p">]</span>
+    <span class="n">y_rhop</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;y_rhop&quot;</span><span class="p">]</span>
+    <span class="n">y_rhom</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;y_rhom&quot;</span><span class="p">]</span>
+    <span class="n">yp_rhop</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;yp_rhop&quot;</span><span class="p">]</span>
+    <span class="n">ym_rhom</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;ym_rhom&quot;</span><span class="p">]</span>
+    <span class="n">y_gp</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;y_gp&quot;</span><span class="p">]</span>
+    <span class="n">y_gm</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;y_gm&quot;</span><span class="p">]</span>
+    <span class="n">yp_gp</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;yp_gp&quot;</span><span class="p">]</span>
+    <span class="n">ym_gm</span> <span class="o">=</span> <span class="n">pimcData</span><span class="p">[</span><span class="s2">&quot;ym_gm&quot;</span><span class="p">]</span>
+
+    <span class="c1"># # # Begin to calculate properties</span>
+    <span class="c1"># input data</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">y_rho</span><span class="p">,</span> <span class="n">y_g</span><span class="p">,</span> <span class="n">y_gp</span><span class="p">,</span> <span class="n">y_gm</span><span class="p">]</span>    <span class="c1">#</span>
+    <span class="n">data_diff</span> <span class="o">=</span> <span class="p">[</span><span class="n">y_rho</span><span class="p">,</span> <span class="n">y_rhop</span><span class="p">,</span> <span class="n">yp_rhop</span><span class="p">,</span> <span class="n">y_rhom</span><span class="p">,</span> <span class="n">ym_rhom</span><span class="p">,</span>
+                 <span class="n">y_g</span><span class="p">,</span> <span class="n">y_gp</span><span class="p">,</span> <span class="n">yp_gp</span><span class="p">,</span> <span class="n">y_gm</span><span class="p">,</span> <span class="n">ym_gm</span><span class="p">]</span>
+    <span class="c1">#</span>
+    <span class="n">data_alpha</span> <span class="o">=</span> <span class="n">data_diff</span> <span class="o">+</span> <span class="p">[</span><span class="n">alpha_plus</span><span class="p">,</span> <span class="n">alpha_minus</span><span class="p">]</span>
+    <span class="c1">#</span>
+    <span class="n">data_fourth</span> <span class="o">=</span> <span class="n">data_alpha</span>
+    <span class="c1"># data_fourth = data_diff + [alpha_plus, alpha_minus, Z_sampling]</span>
+    <span class="c1">#</span>
+    <span class="c1"># constants = [X, P, T, DELTA_BETA, constants.boltzman]</span>
+    <span class="n">constants</span> <span class="o">=</span> <span class="p">[</span><span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">boltzman</span><span class="p">]</span>
+
+    <span class="c1"># Precalculate</span>
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">calculate_property_terms</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># g_r, sym1, sym2 = terms</span>
+    <span class="n">terms_diff</span> <span class="o">=</span> <span class="n">calculate_difference_terms</span><span class="p">(</span><span class="n">data_diff</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># g_r, sym1, sym2 = terms_diff</span>
+    <span class="n">terms_alpha</span> <span class="o">=</span> <span class="n">calculate_alpha_terms</span><span class="p">(</span><span class="n">data_alpha</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">)</span>
+    <span class="c1"># print(terms_alpha, &quot;\n\n&quot;)</span>
+    <span class="c1"># g_r, sym1, sym2 = terms_delta</span>
+    <span class="n">terms_fourth</span> <span class="o">=</span> <span class="n">calculate_fourth_terms</span><span class="p">(</span><span class="n">data_fourth</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># print(terms_fourth, &quot;\n\n&quot;)</span>
+    <span class="c1"># g_r, sym1, sym2 = terms_fourth</span>
+
+    <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">terms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">terms_diff</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">terms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">terms_alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">terms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">terms_fourth</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="c1"># Calculate the jackknife terms</span>
+    <span class="n">JK_terms</span> <span class="o">=</span> <span class="n">calculate_jackknife_terms</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># jk_f, jk_sym1, jk_sym2 = JK_terms</span>
+    <span class="n">JK_terms_diff</span> <span class="o">=</span> <span class="n">calculate_jackknife_terms</span><span class="p">(</span><span class="n">terms_diff</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># jk_f, jk_sym1, jk_sym2 = JK_terms_diff</span>
+    <span class="n">JK_terms_alpha</span> <span class="o">=</span> <span class="n">calculate_alpha_jackknife_terms</span><span class="p">(</span><span class="n">terms_alpha</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># jk_f, jk_sym1, jk_sym2 = JK_terms_alpha</span>
+    <span class="n">JK_terms_fourth</span> <span class="o">=</span> <span class="n">calculate_fourth_jackknife_terms</span><span class="p">(</span><span class="n">terms_fourth</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># jk_f, jk_sym1, jk_sym2 = JK_terms_fourth</span>
+
+    <span class="c1"># calculate &lt;exp&gt; s.t. (H = &lt;exp&gt;)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">estimate_property</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># Z, Z_err, E, E_err, Cv, Cv_Err = ret</span>
+    <span class="n">JK_ret</span> <span class="o">=</span> <span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">JK_terms</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">ret</span><span class="p">)</span>
+    <span class="c1"># E, E_err, Cv, Cv_Err = JK_ret</span>
+
+    <span class="c1"># calculate &lt;exp&gt; s.t. (H = &lt;exp&gt; + ho)</span>
+    <span class="n">ret_diff</span> <span class="o">=</span> <span class="n">estimate_property</span><span class="p">(</span><span class="n">terms_diff</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># Z, Z_err, E, E_err, Cv, Cv_Err = ret_diff</span>
+    <span class="n">JK_ret_diff</span> <span class="o">=</span> <span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">JK_terms_diff</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">)</span>
+    <span class="c1"># E, E_err, Cv, Cv_Err = JK_ret_diff</span>
+
+    <span class="c1"># calculate &lt;exp&gt; s.t. (H = &lt;exp&gt; + ho)</span>
+    <span class="n">ret_alpha</span> <span class="o">=</span> <span class="n">estimate_property</span><span class="p">(</span><span class="n">terms_alpha</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># Z, Z_err, E, E_err, Cv, Cv_Err = ret_alpha</span>
+    <span class="n">JK_ret_alpha</span> <span class="o">=</span> <span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">JK_terms_alpha</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">)</span>
+    <span class="c1"># E, E_err, Cv, Cv_Err = JK_ret_diff</span>
+
+    <span class="c1"># calculate &lt;exp&gt; s.t. (H = &lt;exp&gt; + ho)</span>
+    <span class="n">ret_fourth</span> <span class="o">=</span> <span class="n">estimate_property</span><span class="p">(</span><span class="n">terms_fourth</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># Z, Z_err, E, E_err, Cv, Cv_Err = ret_fourth</span>
+    <span class="n">JK_ret_fourth</span> <span class="o">=</span> <span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">JK_terms_fourth</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">)</span>
+    <span class="c1"># E, E_err, Cv, Cv_Err = JK_ret_fourth</span>
+
+    <span class="c1"># Remember that we need to handle the difference terms specially</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">ret_diff</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">JK_ret_diff</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">ret_alpha</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">JK_ret_alpha</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">ret_fourth</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">JK_ret_fourth</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+
+    <span class="c1"># print(ret_alpha, &quot;\n\n&quot;)</span>
+    <span class="c1"># print(ret_fourth, &quot;\n\n&quot;)</span>
+
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">path_results</span> <span class="o">+</span> <span class="n">filePrefix</span>
+    <span class="n">output_path</span> <span class="o">+=</span> <span class="s2">&quot;X</span><span class="si">{X:d}</span><span class="s2">_P</span><span class="si">{P:d}</span><span class="s2">_T</span><span class="si">{T:d}</span><span class="s2">_thermo&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">)</span>
+    <span class="c1"># # # Write output to file</span>
+    <span class="k">if</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">fstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%-18.18s</span><span class="s2">&quot;</span><span class="o">+</span><span class="s2">&quot;</span><span class="si">%-+34.30E</span><span class="s2">&quot;</span>
+        <span class="c1"># save the data to the thermo file</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="p">[</span>  <span class="c1"># Partition Function</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Zf/Zh&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Zf/Zh error&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z error&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="c1"># Energy!</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Orig E no JK&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Orig E with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Diff E no JK&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Diff E with JK&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Alpha E no JK&quot;</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Alpha E with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Fourth E no JK&quot;</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Fourth E with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="c1"># Heat capacity</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Orig Cv no JK&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Orig Cv with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Diff Cv no JK&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Diff Cv with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Alpha Cv no JK&quot;</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Alpha Cv with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Fourth Cv no JK&quot;</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Fourth Cv with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="c1"># np.savetxt(output_path, X, fmt=&quot;%s&quot;)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%-+34.30E</span><span class="s2">&quot;</span>
+        <span class="c1"># save the data to the thermo file</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span>
+                   <span class="n">X</span><span class="o">=</span><span class="p">[</span>  <span class="c1"># Partition Function</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">],</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z error&quot;</span><span class="p">],</span>
+                        <span class="c1"># Energy!</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="c1"># Heat capacity</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                    <span class="p">],</span> <span class="n">fmt</span><span class="o">=</span><span class="n">fstr</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="calculate_X"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.calculate_X">[docs]</a><span class="k">def</span> <span class="nf">calculate_X</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; scan for all output files with the same # of PT and calculate the total X &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">total_number_of_samples</span></div>
+
+<span class="c1"># for later</span>
+<div class="viewcode-block" id="perform_jackknife"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.perform_jackknife">[docs]</a><span class="k">def</span> <span class="nf">perform_jackknife</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="n">calculate_X</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+    <span class="n">pimc_results</span> <span class="o">=</span> <span class="n">BoxResultPM</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">rhoData</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">load_data</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">pimc_results</span><span class="p">,</span> <span class="n">rhoData</span><span class="p">)</span>
+
+    <span class="n">Z_sampling</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span>
+    <span class="n">E_sampling</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span>
+    <span class="n">Cv_sampling</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span>
+    <span class="n">alpha_plus</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">]</span>
+    <span class="n">alpha_minus</span> <span class="o">=</span> <span class="n">rhoData</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">]</span>
+
+    <span class="n">y_rho</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">y_rho</span>
+    <span class="n">y_g</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">y_g</span>
+    <span class="n">y_rhop</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">y_rhop</span>
+    <span class="n">y_rhom</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">y_rhom</span>
+    <span class="n">yp_rhop</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">yp_rhop</span>
+    <span class="n">ym_rhom</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">ym_rhom</span>
+    <span class="n">y_gp</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">y_gp</span>
+    <span class="n">y_gm</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">y_gm</span>
+    <span class="n">yp_gp</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">yp_gp</span>
+    <span class="n">ym_gm</span> <span class="o">=</span> <span class="n">pimc_results</span><span class="o">.</span><span class="n">ym_gm</span>
+
+    <span class="c1"># # # Begin to calculate properties</span>
+    <span class="c1"># input data</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">y_rho</span><span class="p">,</span> <span class="n">y_g</span><span class="p">,</span> <span class="n">y_gp</span><span class="p">,</span> <span class="n">y_gm</span><span class="p">]</span>    <span class="c1">#</span>
+    <span class="n">data_diff</span> <span class="o">=</span> <span class="p">[</span><span class="n">y_rho</span><span class="p">,</span> <span class="n">y_rhop</span><span class="p">,</span> <span class="n">yp_rhop</span><span class="p">,</span> <span class="n">y_rhom</span><span class="p">,</span> <span class="n">ym_rhom</span><span class="p">,</span>
+                 <span class="n">y_g</span><span class="p">,</span> <span class="n">y_gp</span><span class="p">,</span> <span class="n">yp_gp</span><span class="p">,</span> <span class="n">y_gm</span><span class="p">,</span> <span class="n">ym_gm</span><span class="p">]</span>
+    <span class="c1">#</span>
+    <span class="n">data_alpha</span> <span class="o">=</span> <span class="n">data_diff</span> <span class="o">+</span> <span class="p">[</span><span class="n">alpha_plus</span><span class="p">,</span> <span class="n">alpha_minus</span><span class="p">]</span>
+    <span class="c1">#</span>
+    <span class="n">data_fourth</span> <span class="o">=</span> <span class="n">data_alpha</span>
+    <span class="c1"># data_fourth = data_diff + [alpha_plus, alpha_minus, Z_sampling]</span>
+    <span class="c1">#</span>
+    <span class="c1"># constants = [X, P, T, DELTA_BETA, constants.boltzman]</span>
+    <span class="n">constants</span> <span class="o">=</span> <span class="p">[</span><span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">boltzman</span><span class="p">]</span>
+
+    <span class="c1"># Precalculate</span>
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">calculate_property_terms</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># g_r, sym1, sym2 = terms</span>
+    <span class="n">terms_diff</span> <span class="o">=</span> <span class="n">calculate_difference_terms</span><span class="p">(</span><span class="n">data_diff</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># g_r, sym1, sym2 = terms_diff</span>
+    <span class="n">terms_alpha</span> <span class="o">=</span> <span class="n">calculate_alpha_terms</span><span class="p">(</span><span class="n">data_alpha</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">)</span>
+    <span class="c1"># print(terms_alpha, &quot;\n\n&quot;)</span>
+    <span class="c1"># g_r, sym1, sym2 = terms_delta</span>
+    <span class="n">terms_fourth</span> <span class="o">=</span> <span class="n">calculate_fourth_terms</span><span class="p">(</span><span class="n">data_fourth</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># print(terms_fourth, &quot;\n\n&quot;)</span>
+    <span class="c1"># g_r, sym1, sym2 = terms_fourth</span>
+
+    <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">terms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">terms_diff</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">terms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">terms_alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">terms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">terms_fourth</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="c1"># Calculate the jackknife terms</span>
+    <span class="n">JK_terms</span> <span class="o">=</span> <span class="n">calculate_jackknife_terms</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># jk_f, jk_sym1, jk_sym2 = JK_terms</span>
+    <span class="n">JK_terms_diff</span> <span class="o">=</span> <span class="n">calculate_jackknife_terms</span><span class="p">(</span><span class="n">terms_diff</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># jk_f, jk_sym1, jk_sym2 = JK_terms_diff</span>
+    <span class="n">JK_terms_alpha</span> <span class="o">=</span> <span class="n">calculate_alpha_jackknife_terms</span><span class="p">(</span><span class="n">terms_alpha</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># jk_f, jk_sym1, jk_sym2 = JK_terms_alpha</span>
+    <span class="n">JK_terms_fourth</span> <span class="o">=</span> <span class="n">calculate_fourth_jackknife_terms</span><span class="p">(</span><span class="n">terms_fourth</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># jk_f, jk_sym1, jk_sym2 = JK_terms_fourth</span>
+
+    <span class="c1"># calculate &lt;exp&gt; s.t. (H = &lt;exp&gt;)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">estimate_property</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># Z, Z_err, E, E_err, Cv, Cv_Err = ret</span>
+    <span class="n">JK_ret</span> <span class="o">=</span> <span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">JK_terms</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">ret</span><span class="p">)</span>
+    <span class="c1"># E, E_err, Cv, Cv_Err = JK_ret</span>
+
+    <span class="c1"># calculate &lt;exp&gt; s.t. (H = &lt;exp&gt; + ho)</span>
+    <span class="n">ret_diff</span> <span class="o">=</span> <span class="n">estimate_property</span><span class="p">(</span><span class="n">terms_diff</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># Z, Z_err, E, E_err, Cv, Cv_Err = ret_diff</span>
+    <span class="n">JK_ret_diff</span> <span class="o">=</span> <span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">JK_terms_diff</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">)</span>
+    <span class="c1"># E, E_err, Cv, Cv_Err = JK_ret_diff</span>
+
+    <span class="c1"># calculate &lt;exp&gt; s.t. (H = &lt;exp&gt; + ho)</span>
+    <span class="n">ret_alpha</span> <span class="o">=</span> <span class="n">estimate_property</span><span class="p">(</span><span class="n">terms_alpha</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># Z, Z_err, E, E_err, Cv, Cv_Err = ret_alpha</span>
+    <span class="n">JK_ret_alpha</span> <span class="o">=</span> <span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">JK_terms_alpha</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">)</span>
+    <span class="c1"># E, E_err, Cv, Cv_Err = JK_ret_diff</span>
+
+    <span class="c1"># calculate &lt;exp&gt; s.t. (H = &lt;exp&gt; + ho)</span>
+    <span class="n">ret_fourth</span> <span class="o">=</span> <span class="n">estimate_property</span><span class="p">(</span><span class="n">terms_fourth</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+    <span class="c1"># Z, Z_err, E, E_err, Cv, Cv_Err = ret_fourth</span>
+    <span class="n">JK_ret_fourth</span> <span class="o">=</span> <span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">JK_terms_fourth</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">)</span>
+    <span class="c1"># E, E_err, Cv, Cv_Err = JK_ret_fourth</span>
+
+    <span class="c1"># Remember that we need to handle the difference terms specially</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">ret_diff</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">JK_ret_diff</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">ret_alpha</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">JK_ret_alpha</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">ret_fourth</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+    <span class="n">postprocess_difference</span><span class="p">(</span><span class="n">JK_ret_fourth</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">)</span>
+
+    <span class="c1"># print(ret_alpha, &quot;\n\n&quot;)</span>
+    <span class="c1"># print(ret_fourth, &quot;\n\n&quot;)</span>
+
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">path_results</span> <span class="o">+</span> <span class="n">filePrefix</span>
+    <span class="n">output_path</span> <span class="o">+=</span> <span class="s2">&quot;X</span><span class="si">{X:d}</span><span class="s2">_P</span><span class="si">{P:d}</span><span class="s2">_T</span><span class="si">{T:d}</span><span class="s2">_thermo&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">)</span>
+    <span class="c1"># # # Write output to file</span>
+    <span class="k">if</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">fstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%-18.18s</span><span class="s2">&quot;</span><span class="o">+</span><span class="s2">&quot;</span><span class="si">%-+34.30E</span><span class="s2">&quot;</span>
+        <span class="c1"># save the data to the thermo file</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="p">[</span>  <span class="c1"># Partition Function</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Zf/Zh&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Zf/Zh error&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z error&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="c1"># Energy!</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Orig E no JK&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Orig E with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Diff E no JK&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Diff E with JK&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Alpha E no JK&quot;</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Alpha E with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Fourth E no JK&quot;</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Fourth E with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="c1"># Heat capacity</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Orig Cv no JK&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Orig Cv with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Diff Cv no JK&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Diff Cv with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Alpha Cv no JK&quot;</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Alpha Cv with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Fourth Cv no JK&quot;</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Fourth Cv with JK&quot;</span><span class="p">,</span> <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]),</span>
+            <span class="n">fstr</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]),</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="c1"># np.savetxt(output_path, X, fmt=&quot;%s&quot;)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%-+34.30E</span><span class="s2">&quot;</span>
+        <span class="c1"># save the data to the thermo file</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span>
+                   <span class="n">X</span><span class="o">=</span><span class="p">[</span>  <span class="c1"># Partition Function</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">],</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z error&quot;</span><span class="p">],</span>
+                        <span class="c1"># Energy!</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">],</span>
+                        <span class="c1"># Heat capacity</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_diff</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_alpha</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">],</span>
+                        <span class="n">JK_ret_fourth</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">],</span>
+                    <span class="p">],</span> <span class="n">fmt</span><span class="o">=</span><span class="n">fstr</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="calculate_estimators_and_variance"><a class="viewcode-back" href="../../pibronic.html#pibronic.jackknife_old.calculate_estimators_and_variance">[docs]</a><span class="k">def</span> <span class="nf">calculate_estimators_and_variance</span><span class="p">(</span><span class="n">FS</span><span class="p">):</span>
+
+    <span class="c1"># catalogue available files</span>
+    <span class="n">pimcList</span><span class="p">,</span> <span class="n">coupledList</span><span class="p">,</span> <span class="n">samplingList</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">retrive_file_paths_for_jackknife</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+
+    <span class="c1"># find shared values</span>
+    <span class="n">arg_dict</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">extract_jackknife_parameters</span><span class="p">(</span><span class="n">pimcList</span><span class="p">,</span> <span class="n">coupledList</span><span class="p">,</span> <span class="n">samplingList</span><span class="p">)</span>
+
+    <span class="c1"># would be nice to have some feedback about what values there are and what are missing</span>
+
+    <span class="c1"># manually select specific values from those available</span>
+    <span class="n">pimc_restriction</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">101</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># at least 12 beads before we plot</span>
+    <span class="c1"># pick number of samples?</span>
+    <span class="c1"># would be useful to have some restriciton on the total number of samples?</span>
+    <span class="c1"># pick the highest number of basis functions</span>
+    <span class="n">basis_restriction</span> <span class="o">=</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># temperature is currently fixed at 300K</span>
+    <span class="n">temperature_restriction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">300.00</span><span class="p">])</span>
+
+    <span class="c1"># intersect returns sorted, unique values that are in both of the input arrays</span>
+    <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">],</span> <span class="n">temperature_restriction</span><span class="p">)</span>
+    <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">],</span> <span class="n">pimc_restriction</span><span class="p">)</span>
+    <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">],</span> <span class="n">basis_restriction</span><span class="p">)</span>
+    <span class="c1"># would be useful to have some restriciton on the total number of samples?</span>
+
+    <span class="c1"># create a list of arguments for multiprocessing pool</span>
+    <span class="c1"># arg_list = []</span>
+    <span class="c1"># for X in arg_dict[&quot;samples&quot;]:</span>
+    <span class="c1">#     for P in arg_dict[&quot;pimc_beads&quot;]:</span>
+    <span class="c1">#         for T in arg_dict[&quot;temperatures&quot;]:</span>
+    <span class="c1">#             for B in arg_dict[&quot;basis_fxns&quot;]:</span>
+    <span class="c1">#                 arg_list.append((X, P, T, B))</span>
+    <span class="n">arg_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">P</span> <span class="ow">in</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">B</span> <span class="ow">in</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span>
+                <span class="p">]</span>
+
+    <span class="c1"># what is this for?</span>
+    <span class="c1"># arg_iterator = iter(arg_list)</span>
+
+    <span class="n">block_size</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="k">return</span>
+
+    <span class="k">with</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">block_size</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">perform_jackknife</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished&quot;</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<span class="k">if</span> <span class="p">(</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">):</span>
+
+    <span class="c1"># catalogue available files</span>
+    <span class="n">pimcList</span><span class="p">,</span> <span class="n">coupledList</span><span class="p">,</span> <span class="n">samplingList</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">retrive_file_paths_for_jackknife</span><span class="p">()</span>
+
+    <span class="c1"># find shared values</span>
+    <span class="n">arg_dict</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">extract_jackknife_parameters</span><span class="p">(</span><span class="n">pimcList</span><span class="p">,</span> <span class="n">coupledList</span><span class="p">,</span> <span class="n">samplingList</span><span class="p">)</span>
+
+    <span class="c1"># would be nice to have some feedback about what values there are and what are missing</span>
+
+    <span class="c1"># manually select specific values from those available</span>
+    <span class="n">pimc_restriction</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">101</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># at least 12 beads before we plot</span>
+    <span class="c1"># pick the highest number of samples</span>
+    <span class="n">sample_restriction</span> <span class="o">=</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># pick the highest number of basis functions</span>
+    <span class="n">basis_restriction</span> <span class="o">=</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># temperature is currently fixed at 300K</span>
+    <span class="n">temperature_restriction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">300.00</span><span class="p">])</span>
+
+    <span class="c1"># intersect returns sorted, unique values that are in both of the input arrays</span>
+    <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">],</span> <span class="n">temperature_restriction</span><span class="p">)</span>
+    <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">],</span> <span class="n">pimc_restriction</span><span class="p">)</span>
+    <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">],</span> <span class="n">basis_restriction</span><span class="p">)</span>
+    <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">],</span> <span class="n">sample_restriction</span><span class="p">)</span>
+
+    <span class="c1"># create a list of arguments for multiprocessing pool</span>
+    <span class="c1"># arg_list = []</span>
+    <span class="c1"># for X in arg_dict[&quot;samples&quot;]:</span>
+    <span class="c1">#     for P in arg_dict[&quot;pimc_beads&quot;]:</span>
+    <span class="c1">#         for T in arg_dict[&quot;temperatures&quot;]:</span>
+    <span class="c1">#             for B in arg_dict[&quot;basis_fxns&quot;]:</span>
+    <span class="c1">#                 arg_list.append((X, P, T, B))</span>
+    <span class="n">arg_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">X</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">P</span> <span class="ow">in</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">B</span> <span class="ow">in</span> <span class="n">arg_dict</span><span class="p">[</span><span class="s2">&quot;basis_fxns&quot;</span><span class="p">]</span>
+                <span class="p">]</span>
+
+    <span class="n">arg_iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">arg_list</span><span class="p">)</span>
+
+    <span class="n">block_size</span> <span class="o">=</span> <span class="mi">10</span>
+
+    <span class="k">with</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">block_size</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished&quot;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
