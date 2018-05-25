@@ -161,8 +161,10 @@
         <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dir_list</span><span class="p">:</span>
             <span class="n">path</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Created directories in </span><span class="si">{self.path_root:s}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="FileStructure.make_rho_directories"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.make_rho_directories">[docs]</a>    <span class="k">def</span> <span class="nf">make_rho_directories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">):</span>

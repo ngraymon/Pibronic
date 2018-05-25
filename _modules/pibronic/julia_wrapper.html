@@ -82,19 +82,36 @@
         <span class="k">if</span> <span class="n">oldKey</span> <span class="ow">in</span> <span class="n">output_dict</span><span class="p">:</span>
             <span class="n">temp_dict</span><span class="p">[</span><span class="n">newKey</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">output_dict</span><span class="p">[</span><span class="n">oldKey</span><span class="p">])</span>
 
-    <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">temperature</span><span class="p">:</span> <span class="n">temp_dict</span><span class="p">}</span>
+    <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">temperature</span><span class="p">):</span> <span class="n">temp_dict</span><span class="p">}</span>
 
     <span class="n">old_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_dict</span><span class="p">)</span>
     <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="analytic_of_sampling_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.analytic_of_sampling_model">[docs]</a><span class="k">def</span> <span class="nf">analytic_of_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span></div>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="n">path_analytic</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="s2">&quot;analytic_results.txt&quot;</span>
+    <span class="n">path_original</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="s2">&quot;sampling_model.json&quot;</span>
+
+    <span class="n">old_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">old_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">path_original</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
+    <span class="n">compute</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">old_dict</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+    <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="analytic_of_original_coupled_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.analytic_of_original_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">analytic_of_original_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="n">path_analytic</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="s2">&quot;analytic_results.txt&quot;</span>
+    <span class="n">path_analytic</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="s2">&quot;original_analytic_results.txt&quot;</span>
     <span class="n">path_original</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="s2">&quot;original_coupled_model.json&quot;</span>
 
     <span class="n">old_dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -114,26 +131,24 @@
     <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="analytic_save_to_sos_file"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.analytic_save_to_sos_file">[docs]</a><span class="k">def</span> <span class="nf">analytic_save_to_sos_file</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+<div class="viewcode-block" id="sos_of_coupled_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.sos_of_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">sos_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
     <span class="n">old_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">basis_size</span> <span class="o">=</span> <span class="mi">80</span>
+
+    <span class="n">path_sos</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_sos_vib</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">B</span><span class="o">=</span><span class="n">basis_size</span><span class="p">)</span>
 
     <span class="c1"># is this a mistake? why check for vib then open rho ??</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">template_sos_vib</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">template_sos_rho</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path_sos</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_sos</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">old_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-    <span class="c1"># print(old_dict,&quot;\n&quot;)</span>
-
-    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">FS</span><span class="o">.</span><span class="n">path_rho_model</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="n">basis_size</span><span class="p">)</span>
     <span class="n">compute</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">old_dict</span><span class="p">)</span>
 
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">template_sos_rho</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
-
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">template_sos_vib</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_sos</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
 
     <span class="k">return</span></div>
@@ -151,11 +166,12 @@
 <div class="viewcode-block" id="construct_command_dictionary"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.construct_command_dictionary">[docs]</a><span class="k">def</span> <span class="nf">construct_command_dictionary</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
     <span class="n">julia</span> <span class="o">=</span> <span class="s2">&quot;julia /home/ngraymon/julia_confirm/VibronicToolkit.jl/bin/&quot;</span>
-    <span class="n">a</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;analytical.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2">&quot;</span>
+    <span class="n">a_c</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;analytical_coupled.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2">&quot;</span>
+    <span class="n">a_s</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;analytical_sampling.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2">&quot;</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;sos.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2"> --basis-size </span><span class="si">{B:}</span><span class="s2">&quot;</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;trotter.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2"> --basis-size </span><span class="si">{B:}</span><span class="s2"> --num-links </span><span class="si">{P:}</span><span class="s2">&quot;</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;sampling.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2"> --num-links </span><span class="si">{P:}</span><span class="s2"> --num-samples </span><span class="si">{X:}</span><span class="s2">&quot;</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;analytic&quot;</span><span class="p">:</span> <span class="n">a</span><span class="p">,</span> <span class="s2">&quot;sos&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span> <span class="s2">&quot;trotter&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">}</span></div>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;analytical_coupled&quot;</span><span class="p">:</span> <span class="n">a_c</span><span class="p">,</span> <span class="s2">&quot;analytical_sampling&quot;</span><span class="p">:</span> <span class="n">a_s</span><span class="p">,</span> <span class="s2">&quot;sos&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span> <span class="s2">&quot;trotter&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">}</span></div>
 
 
 <span class="k">if</span> <span class="p">(</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">):</span>
@@ -176,6 +192,10 @@
     <span class="n">id_rho</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
 
     <span class="n">FS</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">)</span>
+
+    <span class="n">analytic_of_original_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">cmd_dict</span><span class="p">[</span><span class="s2">&quot;analytical_coupled&quot;</span><span class="p">],</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="n">analytic_of_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">cmd_dict</span><span class="p">[</span><span class="s2">&quot;analytical_sampling&quot;</span><span class="p">],</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="c1"># sos_of_coupled_model(FS, cmd_dict[&quot;sos&quot;], beta)</span>
 </pre></div>
 
           </div>

@@ -44,6 +44,8 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
+<span class="c1"># third party imports</span>
+
 <span class="c1"># local imports</span>
 <span class="c1"># import pibronic.data.vibronic_model_io as vIO</span>
 <span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_structure</span>
@@ -51,6 +53,7 @@
 <span class="kn">from</span> <span class="nn">..log_conf</span> <span class="k">import</span> <span class="n">log</span>
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">constants</span>
 <span class="kn">from</span> <span class="nn">..pimc</span> <span class="k">import</span> <span class="n">minimal</span>
+<span class="c1"># from ..server.server import ServerExecutionParameters as SEP</span>
 
 <span class="c1"># lock for asynchronous communication</span>
 <span class="n">job_state_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
@@ -164,8 +167,6 @@
     <span class="sd">&quot;&quot;&quot;craft the job submission command - no error checking&quot;&quot;&quot;</span>
     <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">parameter_dictionary</span><span class="p">)</span>
 
-    <span class="c1"># print(command)</span>
-    <span class="c1"># exit(0)</span>
     <span class="sd">&quot;&quot;&quot; submits the job to the slurm server&quot;&quot;&quot;</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">out</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
@@ -180,7 +181,11 @@
 
 <div class="viewcode-block" id="PimcSubmissionClass"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.PimcSubmissionClass">[docs]</a><span class="k">class</span> <span class="nc">PimcSubmissionClass</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="n">LARGEST_JOB_SAMPLE</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1E5</span><span class="p">)</span>
+    <span class="c1"># LARGEST_JOB_SAMPLE = int(1E5)</span>
+    <span class="n">LARGEST_JOB_SAMPLE</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1E4</span><span class="p">)</span>
+    <span class="c1"># LARGEST_JOB_SAMPLE = int(1E3)</span>
+    <span class="c1"># LARGEST_JOB_SAMPLE = int(1E2)</span>
+    <span class="c1"># LARGEST_JOB_SAMPLE = int(73)</span>
     <span class="c1"># default values</span>
     <span class="n">param_dict</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;delta_beta&quot;</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span><span class="p">,</span>
@@ -222,8 +227,8 @@
                 <span class="s2">&quot;path_root&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_struct</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span>
                 <span class="s2">&quot;path_data&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_struct</span><span class="o">.</span><span class="n">path_data</span><span class="p">,</span>
                 <span class="s2">&quot;path_rho&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_struct</span><span class="o">.</span><span class="n">path_rho</span><span class="p">,</span>
-                <span class="s2">&quot;path_model_vib&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_struct</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="s2">&quot;coupled_model.json&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;path_model_rho&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_struct</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="s2">&quot;sampling_model.json&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;path_vib_model&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_struct</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="s2">&quot;coupled_model.json&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;path_rho_model&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_struct</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="s2">&quot;sampling_model.json&quot;</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new</span><span class="p">)</span>
@@ -267,6 +272,7 @@
                     <span class="nb">print</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">beads</span><span class="p">,</span> <span class="n">sample_index</span><span class="p">)</span>
                     <span class="n">module_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span>
                     <span class="n">job_id</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module_name</span><span class="p">]</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Job ID:</span><span class="si">{job_id:}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="c1"># sys.exit(0)</span>
         <span class="k">return</span></div>
 
@@ -320,7 +326,7 @@
     <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_to&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_to</span>
     <span class="c1"># TODO - remove circular dependancy?</span>
     <span class="kn">from</span> <span class="nn">..pimc.minimal</span> <span class="k">import</span> <span class="n">BoxData</span>
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BoxData</span><span class="o">.</span><span class="n">json_encode</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_dict</span><span class="p">)</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BoxData</span><span class="o">.</span><span class="n">json_serialize</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_dict</span><span class="p">)</span>
 
     <span class="n">export_options</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span>
                       <span class="s2">&quot; --export=&quot;</span>
@@ -377,23 +383,30 @@
 
     <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;job_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_name</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
 
-    <span class="n">template_copy</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">mv --force </span><span class="se">\&quot;</span><span class="si">{:}</span><span class="s2">results/</span><span class="si">{:}</span><span class="se">\&quot;</span><span class="s2">* </span><span class="se">\&quot;</span><span class="si">{:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2"> </span><span class="se">\&quot;</span><span class="s2">&quot;</span>
-    <span class="n">template_copy</span> <span class="o">=</span> <span class="n">template_copy</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;path_scratch&quot;</span><span class="p">],</span>
-                                         <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;job_name&quot;</span><span class="p">],</span>
-                                         <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;path_rho&quot;</span><span class="p">],</span>
+    <span class="c1"># template_from = &quot;\&quot;{:}results/&quot;</span>
+    <span class="n">template_from</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+    <span class="n">template_from</span> <span class="o">=</span> <span class="n">template_from</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;path_scratch&quot;</span><span class="p">],</span>
+                                         <span class="c1"># param_dict[&quot;job_name&quot;],</span>
+                                         <span class="c1"># param_dict[&quot;path_rho&quot;],</span>
                                          <span class="p">)</span>
+    <span class="n">template_to</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;path_rho&quot;</span><span class="p">])</span>
 
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_commands&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_copy</span>
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">minimal</span><span class="o">.</span><span class="n">BoxData</span><span class="o">.</span><span class="n">json_encode</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_dict</span><span class="p">)</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_from&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_from</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_to&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_to</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">template_from</span><span class="p">,</span> <span class="n">template_to</span><span class="p">)</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">minimal</span><span class="o">.</span><span class="n">BoxData</span><span class="o">.</span><span class="n">json_serialize</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_dict</span><span class="p">)</span>
 
     <span class="n">export_options</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span>
                       <span class="s2">&quot; --export=&quot;</span>
                       <span class="s2">&quot;ROOT_DIR=</span><span class="si">{path_rho:s}</span><span class="s2">&quot;</span>
                       <span class="s2">&quot;,SCRATCH_DIR=</span><span class="si">{path_scratch:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,COPY_COMMANDS=</span><span class="si">{copy_commands:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,COPY_FROM=</span><span class="si">{copy_from:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,COPY_TO=</span><span class="si">{copy_to:s}</span><span class="s2">&quot;</span>
                       <span class="s2">&quot;,EXECUTION_PARAMETERS=</span><span class="se">\&#39;</span><span class="si">{execution_parameters:s}</span><span class="se">\&#39;</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3&quot;</span>
-                      <span class="s2">&quot;,SAMPLING_SCRIPT=/home/ngraymon/pibronic/pibronic/server/pimc.py&quot;</span>
+                      <span class="c1"># &quot;,PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3&quot;</span>
+                      <span class="s2">&quot;,PYTHON3_PATH=/home/ngraymon/test/local/bin/python3&quot;</span>
+                      <span class="s2">&quot;,SAMPLING_SCRIPT=/home/ngraymon/test/Pibronic/pibronic/server/pimc.py&quot;</span>
                       <span class="p">)</span>
     <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;export_options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">export_options</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
 
@@ -413,7 +426,7 @@
                <span class="c1"># &quot; --mem-per-cpu={memory_per_cpu:}G&quot; # mutually exclusive with --mem</span>
                <span class="s2">&quot; </span><span class="si">{wait_param:s}</span><span class="s2">&quot;</span>  <span class="c1"># optional wait parameter</span>
                <span class="s2">&quot; </span><span class="si">{export_options:s}</span><span class="s2">&quot;</span>
-               <span class="s2">&quot; /home/ngraymon/pibronic/pibronic/server/pimc_job.sh&quot;</span>
+               <span class="s2">&quot; /home/ngraymon/test/Pibronic/pibronic/server/pimc_job.sh&quot;</span>
                <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">sbatch</span></div>

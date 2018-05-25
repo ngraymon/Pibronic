@@ -190,13 +190,13 @@
     <span class="c1"># ---------------------------------------------------------------------------------------------</span>
     <span class="c1"># SUBMIT PIMC JOBS</span>
 
-    <span class="n">modes_data</span><span class="p">,</span> <span class="n">states_data</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">get_nmode_nsurf_from_coupled_model</span><span class="p">(</span><span class="n">id_data</span><span class="p">)</span>
+    <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_coupled_model</span><span class="p">(</span><span class="n">id_data</span><span class="p">)</span>
 
     <span class="c1"># this is the minimum amount of data needed to run an execution</span>
     <span class="n">parameter_dictionary</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;number_of_samples&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e6</span><span class="p">),</span>
-        <span class="s2">&quot;number_of_states&quot;</span><span class="p">:</span> <span class="n">states_data</span><span class="p">,</span>
-        <span class="s2">&quot;number_of_modes&quot;</span><span class="p">:</span> <span class="n">modes_data</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_states&quot;</span><span class="p">:</span> <span class="n">A</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_modes&quot;</span><span class="p">:</span> <span class="n">N</span><span class="p">,</span>
         <span class="s2">&quot;bead_list&quot;</span><span class="p">:</span> <span class="n">bead_list</span><span class="p">,</span>
         <span class="s2">&quot;temperature_list&quot;</span><span class="p">:</span> <span class="n">temperature_list</span><span class="p">,</span>
         <span class="s2">&quot;delta_beta&quot;</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span><span class="p">,</span>

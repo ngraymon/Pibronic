@@ -45,9 +45,8 @@ Keeps file naming consistant over the many modules if changes need to be made</p
 <dl class="data">
 <dt id="pibronic.data.file_name.coupled_model">
 <code class="descclassname">pibronic.data.file_name.</code><code class="descname">coupled_model</code><em class="property"> = 'coupled_model.json'</em><a class="headerlink" href="#pibronic.data.file_name.coupled_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>contains the parameters which describe the harmonic operator
-this is all the Kinetic terms + any diagonal terms that can be described by a Harmonic oscillator
-this can be used as a simplistic sampling distribution rho_0</p>
+<dd><p>contains the original parameters (diagonal) which describe the systems Hamiltonian
+before we did a unitary transformation</p>
 </dd></dl>
 
 <dl class="data">
@@ -63,6 +62,14 @@ this can be anything which is diagonal in the electronic states</p>
 <dd><p>wrapper function to allow parameterized search for files
 can pass in any regular expression
 most commonly will just pass in “*” to search for all files of a given argument</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pibronic.data.file_name.original_model">
+<code class="descclassname">pibronic.data.file_name.</code><code class="descname">original_model</code><em class="property"> = 'original_coupled_model.json'</em><a class="headerlink" href="#pibronic.data.file_name.original_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>contains the parameters which describe the harmonic operator
+this is all the Kinetic terms + any diagonal terms that can be described by a Harmonic oscillator
+this can be used as a simplistic sampling distribution rho_0</p>
 </dd></dl>
 
 <dl class="function">
@@ -273,9 +280,69 @@ note that this function is tightly tied to the file name</p>
 <span id="pibronic-data-vibronic-model-io-module"></span><h2>pibronic.data.vibronic_model_io module<a class="headerlink" href="#module-pibronic.data.vibronic_model_io" title="Permalink to this headline">¶</a></h2>
 <p>vibronic_model_io.py should handle the majority of file I/O</p>
 <dl class="function">
-<dt id="pibronic.data.vibronic_model_io.checkOS">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">checkOS</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#checkOS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.checkOS" title="Permalink to this definition">¶</a></dt>
-<dd><p>define OS dependent paths to files</p>
+<dt id="pibronic.data.vibronic_model_io.Uniform">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">Uniform</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pibronic.data.vibronic_model_io.Uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>uniform(low=0.0, high=1.0, size=None)</p>
+<p>Draw samples from a uniform distribution.</p>
+<p>Samples are uniformly distributed over the half-open interval
+<code class="docutils literal notranslate"><span class="pre">[low,</span> <span class="pre">high)</span></code> (includes low, but excludes high).  In other words,
+any value within the given interval is equally likely to be drawn
+by <cite>uniform</cite>.</p>
+<dl class="docutils">
+<dt>low <span class="classifier-delimiter">:</span> <span class="classifier">float or array_like of floats, optional</span></dt>
+<dd>Lower boundary of the output interval.  All values generated will be
+greater than or equal to low.  The default value is 0.</dd>
+<dt>high <span class="classifier-delimiter">:</span> <span class="classifier">float or array_like of floats</span></dt>
+<dd>Upper boundary of the output interval.  All values generated will be
+less than high.  The default value is 1.0.</dd>
+<dt>size <span class="classifier-delimiter">:</span> <span class="classifier">int or tuple of ints, optional</span></dt>
+<dd>Output shape.  If the given shape is, e.g., <code class="docutils literal notranslate"><span class="pre">(m,</span> <span class="pre">n,</span> <span class="pre">k)</span></code>, then
+<code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">*</span> <span class="pre">k</span></code> samples are drawn.  If size is <code class="docutils literal notranslate"><span class="pre">None</span></code> (default),
+a single value is returned if <code class="docutils literal notranslate"><span class="pre">low</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code> are both scalars.
+Otherwise, <code class="docutils literal notranslate"><span class="pre">np.broadcast(low,</span> <span class="pre">high).size</span></code> samples are drawn.</dd>
+</dl>
+<dl class="docutils">
+<dt>out <span class="classifier-delimiter">:</span> <span class="classifier">ndarray or scalar</span></dt>
+<dd>Drawn samples from the parameterized uniform distribution.</dd>
+</dl>
+<p>randint : Discrete uniform distribution, yielding integers.
+random_integers : Discrete uniform distribution over the closed</p>
+<blockquote>
+<div>interval <code class="docutils literal notranslate"><span class="pre">[low,</span> <span class="pre">high]</span></code>.</div></blockquote>
+<p>random_sample : Floats uniformly distributed over <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1)</span></code>.
+random : Alias for <cite>random_sample</cite>.
+rand : Convenience function that accepts dimensions as input, e.g.,</p>
+<blockquote>
+<div><code class="docutils literal notranslate"><span class="pre">rand(2,2)</span></code> would generate a 2-by-2 array of floats,
+uniformly distributed over <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1)</span></code>.</div></blockquote>
+<p>The probability density function of the uniform distribution is</p>
+<div class="math notranslate nohighlight">
+\[p(x) = \frac{1}{b - a}\]</div>
+<p>anywhere within the interval <code class="docutils literal notranslate"><span class="pre">[a,</span> <span class="pre">b)</span></code>, and zero elsewhere.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">high</span></code> == <code class="docutils literal notranslate"><span class="pre">low</span></code>, values of <code class="docutils literal notranslate"><span class="pre">low</span></code> will be returned.
+If <code class="docutils literal notranslate"><span class="pre">high</span></code> &lt; <code class="docutils literal notranslate"><span class="pre">low</span></code>, the results are officially undefined
+and may eventually raise an error, i.e. do not rely on this
+function to behave when passed arguments satisfying that
+inequality condition.</p>
+<p>Draw samples from the distribution:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>All values are within the given interval:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">s</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">s</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Display the histogram of the samples, along with the
+probability density function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">count</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">ignored</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">bins</span><span class="p">),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="function">
@@ -304,7 +371,7 @@ note that this function is tightly tied to the file name</p>
 
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.create_fake_coupled_model">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_fake_coupled_model</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_fake_coupled_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_fake_coupled_model" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_fake_coupled_model</code><span class="sig-paren">(</span><em>FS</em>, <em>tuning_parameter=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_fake_coupled_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_fake_coupled_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix</p>
 </dd></dl>
 
@@ -315,9 +382,35 @@ note that this function is tightly tied to the file name</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pibronic.data.vibronic_model_io.create_new_execution_directory">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_new_execution_directory</code><span class="sig-paren">(</span><em>path_root=None</em>, <em>id_data=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_new_execution_directory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_new_execution_directory" title="Permalink to this definition">¶</a></dt>
-<dd><p>create or overwrite an execution directory</p>
+<dt id="pibronic.data.vibronic_model_io.create_orthonormal_matrix_lambda_close_to_identity">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_orthonormal_matrix_lambda_close_to_identity</code><span class="sig-paren">(</span><em>A</em>, <em>tuning_parameter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_orthonormal_matrix_lambda_close_to_identity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_orthonormal_matrix_lambda_close_to_identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a orthonormal matrix which is identity if lambda is 0
+the larger the value of lambda the ‘farther’ away the matrix is from identity
+takes: number of surfaces and lambda value</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.create_random_orthonormal_matrix">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">create_random_orthonormal_matrix</code><span class="sig-paren">(</span><em>A</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#create_random_orthonormal_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.create_random_orthonormal_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a orthonormal matrix, just a wrapper for scipy.stats.ortho_group.rvs()</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.extract_dimensions_of_coupled_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">extract_dimensions_of_coupled_model</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#extract_dimensions_of_coupled_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.extract_dimensions_of_coupled_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.extract_dimensions_of_sampling_model">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">extract_dimensions_of_sampling_model</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#extract_dimensions_of_sampling_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.extract_dimensions_of_sampling_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.data.vibronic_model_io.generate_default_root">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">generate_default_root</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#generate_default_root"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.generate_default_root" title="Permalink to this definition">¶</a></dt>
+<dd><p>backwards compatibility fix for functions that rely on having a predefined default_root</p>
 </dd></dl>
 
 <dl class="function">
@@ -327,57 +420,51 @@ note that this function is tightly tied to the file name</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pibronic.data.vibronic_model_io.get_nmode_nsurf_from_coupled_model">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">get_nmode_nsurf_from_coupled_model</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#get_nmode_nsurf_from_coupled_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.get_nmode_nsurf_from_coupled_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.data.vibronic_model_io.get_nmode_nsurf_from_sampling_model">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">get_nmode_nsurf_from_sampling_model</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#get_nmode_nsurf_from_sampling_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.get_nmode_nsurf_from_sampling_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="pibronic.data.vibronic_model_io.load_model_from_JSON">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">load_model_from_JSON</code><span class="sig-paren">(</span><em>path_full</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#load_model_from_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.load_model_from_JSON" title="Permalink to this definition">¶</a></dt>
-<dd><p>if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values</p>
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">load_model_from_JSON</code><span class="sig-paren">(</span><em>path</em>, <em>dictionary=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#load_model_from_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.load_model_from_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path</p>
+<p>if kwargs is provided then all values are overwritten (in place) with the values stored in the .json file located at path</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.load_sample_from_JSON">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">load_sample_from_JSON</code><span class="sig-paren">(</span><em>path_full</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#load_sample_from_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.load_sample_from_JSON" title="Permalink to this definition">¶</a></dt>
-<dd><p>if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values</p>
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">load_sample_from_JSON</code><span class="sig-paren">(</span><em>path</em>, <em>dictionary=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#load_sample_from_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.load_sample_from_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path</p>
+<p>if kwargs is provided then all values are overwritten (in place) with the values stored in the .json file located at path</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pibronic.data.vibronic_model_io.make_rho_directories">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">make_rho_directories</code><span class="sig-paren">(</span><em>path_root</em>, <em>id_rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#make_rho_directories"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.make_rho_directories" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
+<dt id="pibronic.data.vibronic_model_io.model_array_diagonal_in_surfaces">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">model_array_diagonal_in_surfaces</code><span class="sig-paren">(</span><em>array</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#model_array_diagonal_in_surfaces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.model_array_diagonal_in_surfaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>boolean function that returns true if the provided numpy array is diagonal in the surface dimension
+where the surface dimensions (A) are by convention the last two dimensions
+this function assumes that the array is properly formatted</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pibronic.data.vibronic_model_io.make_root_directories">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">make_root_directories</code><span class="sig-paren">(</span><em>path_root</em>, <em>id_data</em>, <em>id_rho=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#make_root_directories"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.make_root_directories" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
+<dt id="pibronic.data.vibronic_model_io.model_shape_dict">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">model_shape_dict</code><span class="sig-paren">(</span><em>A</em>, <em>N</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#model_shape_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.model_shape_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
+Takes A - number of surfaces and N - number of modes</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pibronic.data.vibronic_model_io.parse_model_params">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">parse_model_params</code><span class="sig-paren">(</span><em>path_full</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#parse_model_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.parse_model_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>this one could probably be removed? parses model_parameters_source.txt</p>
+<dt id="pibronic.data.vibronic_model_io.model_zeros_template_json_dict">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">model_zeros_template_json_dict</code><span class="sig-paren">(</span><em>A</em>, <em>N</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#model_zeros_template_json_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.model_zeros_template_json_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a dictionary that is a valid model, where all values (other than states and modes) are set to 0</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.pretty_print_model">
 <code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">pretty_print_model</code><span class="sig-paren">(</span><em>id_data</em>, <em>unitsOfeV=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#pretty_print_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.pretty_print_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>one method of printing the models in a human readable format</p>
+<dd><p>one method of printing the models in a human readable format - outdated and should probably be removed or modified</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.read_model_auto_file">
 <code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">read_model_auto_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#read_model_auto_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.read_model_auto_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read Vibronic Model file (cp.auto) which
+<dd><p>if the shift to MCTDH file structure is permananent this function will no longer be needed</p>
+<p>Read Vibronic Model file (cp.auto) which
 contains all information on the approximate
 Born-Oppenheimer Ground State PES.</p>
 <p>Returns:
@@ -404,48 +491,41 @@ quadratic couplings: (nmode, nmode, nel, nel)</p>
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.remove_coupling_from_model">
 <code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">remove_coupling_from_model</code><span class="sig-paren">(</span><em>path_source</em>, <em>path_destination</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#remove_coupling_from_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.remove_coupling_from_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>reads in a model and sets all the coupling parameters to zero</p>
+<dd><p>reads in a model from path_source whose values can have dimensionality (…, A, A)
+creates a new model whose values have dimensionality (…, A) from the diagonal of the A dimension of the input model
+saves the new model to the provided path_destination</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pibronic.data.vibronic_model_io.root_directories_exists">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">root_directories_exists</code><span class="sig-paren">(</span><em>path_root</em>, <em>id_data</em>, <em>id_rho=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#root_directories_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.root_directories_exists" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
+<dt id="pibronic.data.vibronic_model_io.sample_shape_dict">
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">sample_shape_dict</code><span class="sig-paren">(</span><em>A</em>, <em>N</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#sample_shape_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.sample_shape_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
+Takes A - number of surfaces and N - number of modes</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.save_model_to_JSON">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">save_model_to_JSON</code><span class="sig-paren">(</span><em>path_full</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#save_model_to_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.save_model_to_JSON" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">save_model_to_JSON</code><span class="sig-paren">(</span><em>path</em>, <em>dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#save_model_to_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.save_model_to_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for _save_to_JSON
+calls verify_model_parameters() before calling _save_to_JSON()</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.save_sample_to_JSON">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">save_sample_to_JSON</code><span class="sig-paren">(</span><em>path_full</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#save_sample_to_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.save_sample_to_JSON" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.data.vibronic_model_io.setup_input_params">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">setup_input_params</code><span class="sig-paren">(</span><em>directory_path</em>, <em>new_directory=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#setup_input_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.setup_input_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>collate the input parameters and write to a file in the execution directory</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.data.vibronic_model_io.verify_execution_directory_exists">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">verify_execution_directory_exists</code><span class="sig-paren">(</span><em>id_data</em>, <em>path_root=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#verify_execution_directory_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.verify_execution_directory_exists" title="Permalink to this definition">¶</a></dt>
-<dd><p>if directory structure exists does nothing, creates the file structure otherwise</p>
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">save_sample_to_JSON</code><span class="sig-paren">(</span><em>path</em>, <em>dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#save_sample_to_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.save_sample_to_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for _save_to_JSON
+calls verify_sample_parameters() before calling _save_to_JSON()</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.verify_model_parameters">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">verify_model_parameters</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#verify_model_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.verify_model_parameters" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">verify_model_parameters</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#verify_model_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.verify_model_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>make sure the provided model parameters follow the file conventions</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.data.vibronic_model_io.verify_sample_parameters">
-<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">verify_sample_parameters</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#verify_sample_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.verify_sample_parameters" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pibronic.data.vibronic_model_io.</code><code class="descname">verify_sample_parameters</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/data/vibronic_model_io.html#verify_sample_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.data.vibronic_model_io.verify_sample_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>make sure the provided sample parameters follow the file conventions</p>
 </dd></dl>
 

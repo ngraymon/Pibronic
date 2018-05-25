@@ -86,7 +86,7 @@ which will be transformed to bead dependent co-ordinates by self.transform_sampl
 <dl class="method">
 <dt id="pibronic.pimc.minimal.BoxData.encode_self">
 <code class="descname">encode_self</code><span class="sig-paren">(</span><em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.encode_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.encode_self" title="Permalink to this definition">¶</a></dt>
-<dd><p>encodes a json_obj with member values or given params</p>
+<dd><p>encodes json str with member values or given params</p>
 </dd></dl>
 
 <dl class="classmethod">
@@ -97,13 +97,13 @@ which will be transformed to bead dependent co-ordinates by self.transform_sampl
 
 <dl class="classmethod">
 <dt id="pibronic.pimc.minimal.BoxData.from_json_file">
-<em class="property">classmethod </em><code class="descname">from_json_file</code><span class="sig-paren">(</span><em>path_full</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.from_json_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.from_json_file" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="descname">from_json_file</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.from_json_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.from_json_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>constructor wrapper</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxData.from_json_object">
-<em class="property">classmethod </em><code class="descname">from_json_object</code><span class="sig-paren">(</span><em>json_obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.from_json_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.from_json_object" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.minimal.BoxData.from_json_string">
+<em class="property">classmethod </em><code class="descname">from_json_string</code><span class="sig-paren">(</span><em>json_str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.from_json_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.from_json_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>constructor wrapper</p>
 </dd></dl>
 
@@ -112,6 +112,18 @@ which will be transformed to bead dependent co-ordinates by self.transform_sampl
 <code class="descname">generate_random_R_values</code><span class="sig-paren">(</span><em>result</em>, <em>storage_array</em>, <em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.generate_random_R_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.generate_random_R_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Randomly generates R values that have no relation to the distribution rho or g
 they only have the correct dimensions BANP and are shifted appropriately</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.minimal.BoxData.hacky_dmitri_load_sample">
+<code class="descname">hacky_dmitri_load_sample</code><span class="sig-paren">(</span><em>path</em>, <em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.hacky_dmitri_load_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.hacky_dmitri_load_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.minimal.BoxData.hacky_dmitri_sampling_function">
+<code class="descname">hacky_dmitri_sampling_function</code><span class="sig-paren">(</span><em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.hacky_dmitri_sampling_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.hacky_dmitri_sampling_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>the cake is a lie</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -130,14 +142,14 @@ they only have the correct dimensions BANP and are shifted appropriately</p>
 <dd></dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxData.json_encode">
-<em class="property">classmethod </em><code class="descname">json_encode</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.json_encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.json_encode" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.minimal.BoxData.json_serialize">
+<em class="property">classmethod </em><code class="descname">json_serialize</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.json_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.json_serialize" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.load_json_object">
-<code class="descname">load_json_object</code><span class="sig-paren">(</span><em>json_obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.load_json_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.load_json_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>decodes the json_obj and sets member parameters</p>
+<dt id="pibronic.pimc.minimal.BoxData.load_json_string">
+<code class="descname">load_json_string</code><span class="sig-paren">(</span><em>json_str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.load_json_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.load_json_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>decodes the json_str and sets member parameters</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -200,7 +212,7 @@ they only have the correct dimensions BANP and are shifted appropriately</p>
 
 <dl class="class">
 <dt id="pibronic.pimc.minimal.BoxDataPM">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">BoxDataPM</code><span class="sig-paren">(</span><em>delta_beta</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxDataPM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">BoxDataPM</code><span class="sig-paren">(</span><em>delta_beta=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxDataPM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.minimal.BoxData" title="pibronic.pimc.minimal.BoxData"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.minimal.BoxData</span></code></a></p>
 <p>plus minus version of BoxData</p>
 <dl class="attribute">
@@ -407,8 +419,7 @@ they only have the correct dimensions BANP and are shifted appropriately</p>
 <dl class="method">
 <dt id="pibronic.pimc.minimal.ModelSampling.compute_weight_for_each_state">
 <code class="descname">compute_weight_for_each_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.compute_weight_for_each_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.compute_weight_for_each_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>these are the weights for the oscillators associated with each state</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="pibronic.pimc.minimal.ModelSampling.draw_sample">
@@ -602,6 +613,12 @@ for block_size # of sampled points in each loop</p>
 <dt id="pibronic.pimc.minimal.diagonalize_coupling_matrix">
 <code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">diagonalize_coupling_matrix</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#diagonalize_coupling_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.diagonalize_coupling_matrix" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="function">
+<dt id="pibronic.pimc.minimal.draw_histogram">
+<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">draw_histogram</code><span class="sig-paren">(</span><em>data</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#draw_histogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.draw_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>debug shit</p>
+</dd></dl>
 
 <dl class="data">
 <dt id="pibronic.pimc.minimal.float_tolerance">
