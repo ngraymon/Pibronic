@@ -86,7 +86,7 @@ rho_cmd += (" -m n"  # this stops all mail from being sent
 def submit_sos_job(FS, param_dict):
     """x"""
 
-    N, A = vIO.get_nmode_nsurf_from_coupled_model(FS=FS)
+    A, N = vIO.extract_dimensions_of_coupled_model(FS=FS)
     param_dict["coupled_modes"] = N
     param_dict["coupled_surfs"] = A
 
@@ -146,7 +146,7 @@ def submit_rho_job(FS=None, path_root=None, id_data=None, id_rho=None, recalcula
                       }
 
     # read in the model parameters from the JSON files
-    N, A = vIO.get_nmode_nsurf_from_sampling_model(FS=FS)
+    A, N = vIO.extract_dimensions_of_sampling_model(FS=FS)
     param_dict["uncoupled_modes"] = N
     param_dict["uncoupled_surfaces"] = A
 

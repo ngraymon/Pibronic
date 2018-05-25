@@ -11,6 +11,8 @@ import time
 import sys
 import os
 
+# third party imports
+
 # local imports
 # import pibronic.data.vibronic_model_io as vIO
 from ..data import file_structure
@@ -18,6 +20,7 @@ from ..data import file_structure
 from ..log_conf import log
 from .. import constants
 from ..pimc import minimal
+# from ..server.server import ServerExecutionParameters as SEP
 
 # lock for asynchronous communication
 job_state_lock = threading.Lock()
@@ -131,8 +134,6 @@ def submit_job(command, parameter_dictionary):
     """craft the job submission command - no error checking"""
     command = command.format(**parameter_dictionary)
 
-    # print(command)
-    # exit(0)
     """ submits the job to the slurm server"""
     p = Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     out, error = p.communicate()
@@ -147,7 +148,11 @@ def submit_job(command, parameter_dictionary):
 
 class PimcSubmissionClass:
     """x"""
-    LARGEST_JOB_SAMPLE = int(1E5)
+    # LARGEST_JOB_SAMPLE = int(1E5)
+    LARGEST_JOB_SAMPLE = int(1E4)
+    # LARGEST_JOB_SAMPLE = int(1E3)
+    # LARGEST_JOB_SAMPLE = int(1E2)
+    # LARGEST_JOB_SAMPLE = int(73)
     # default values
     param_dict = {
         "delta_beta": constants.delta_beta,
@@ -189,8 +194,8 @@ class PimcSubmissionClass:
                 "path_root": self.file_struct.path_root,
                 "path_data": self.file_struct.path_data,
                 "path_rho": self.file_struct.path_rho,
-                "path_model_vib": self.file_struct.path_vib_params + "coupled_model.json",
-                "path_model_rho": self.file_struct.path_rho_params + "sampling_model.json",
+                "path_vib_model": self.file_struct.path_vib_params + "coupled_model.json",
+                "path_rho_model": self.file_struct.path_rho_params + "sampling_model.json",
         }
 
         self.param_dict.update(new)
@@ -234,6 +239,7 @@ class PimcSubmissionClass:
                     print(temp, beads, sample_index)
                     module_name = self.__class__.__module__
                     job_id, out, error = sys.modules[module_name].submit_job(command, params)
+                    print(f"Job ID:{job_id:}")
                     # sys.exit(0)
         return
 
@@ -287,7 +293,7 @@ def prepare_job_feynman(param_dict):
     param_dict["copy_to"] = template_to
     # TODO - remove circular dependancy?
     from ..pimc.minimal import BoxData
-    param_dict["execution_parameters"] = BoxData.json_encode(params=param_dict)
+    param_dict["execution_parameters"] = BoxData.json_serialize(params=param_dict)
 
     export_options = (""
                       " --export="
@@ -344,23 +350,30 @@ def prepare_job_nlogn(param_dict):
 
     param_dict["job_name"] = template_name.format(**param_dict)
 
-    template_copy = "\"mv --force \"{:}results/{:}\"* \"{:}results/\" \""
-    template_copy = template_copy.format(param_dict["path_scratch"],
-                                         param_dict["job_name"],
-                                         param_dict["path_rho"],
+    # template_from = "\"{:}results/"
+    template_from = "\"{:}results/\""
+    template_from = template_from.format(param_dict["path_scratch"],
+                                         # param_dict["job_name"],
+                                         # param_dict["path_rho"],
                                          )
+    template_to = "\"{:}results/\"".format(param_dict["path_rho"])
 
-    param_dict["copy_commands"] = template_copy
-    param_dict["execution_parameters"] = minimal.BoxData.json_encode(params=param_dict)
+    param_dict["copy_from"] = template_from
+    param_dict["copy_to"] = template_to
+
+    print(template_from, template_to)
+    param_dict["execution_parameters"] = minimal.BoxData.json_serialize(params=param_dict)
 
     export_options = (""
                       " --export="
                       "ROOT_DIR={path_rho:s}"
                       ",SCRATCH_DIR={path_scratch:s}"
-                      ",COPY_COMMANDS={copy_commands:s}"
+                      ",COPY_FROM={copy_from:s}"
+                      ",COPY_TO={copy_to:s}"
                       ",EXECUTION_PARAMETERS=\'{execution_parameters:s}\'"
-                      ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3"
-                      ",SAMPLING_SCRIPT=/home/ngraymon/pibronic/pibronic/server/pimc.py"
+                      # ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3"
+                      ",PYTHON3_PATH=/home/ngraymon/test/local/bin/python3"
+                      ",SAMPLING_SCRIPT=/home/ngraymon/test/Pibronic/pibronic/server/pimc.py"
                       )
     param_dict["export_options"] = export_options.format(**param_dict)
 
@@ -380,7 +393,7 @@ def prepare_job_nlogn(param_dict):
                # " --mem-per-cpu={memory_per_cpu:}G" # mutually exclusive with --mem
                " {wait_param:s}"  # optional wait parameter
                " {export_options:s}"
-               " /home/ngraymon/pibronic/pibronic/server/pimc_job.sh"
+               " /home/ngraymon/test/Pibronic/pibronic/server/pimc_job.sh"
                )
 
     return sbatch

@@ -37,8 +37,11 @@ echo "if there are no values it means the job didn't run long enough to record v
 # ls -al "${SCRATCH_DIR}execution_output/"
 ls -al "${SCRATCH_DIR}results/"
 
-echo mv --force "${COPY_FROM}${SLURM_JOBID}"* "${COPY_TO}"
-mv --force "${COPY_FROM}${SLURM_JOBID}"* "${COPY_TO}"
+echo mv --force "${COPY_FROM}"* "${COPY_TO}"
+mv --force "${COPY_FROM}"* "${COPY_TO}"
+# HACKS
+# echo mv --force "${COPY_FROM}${SLURM_JOBID}"* "${COPY_TO}"
+# mv --force "${COPY_FROM}${SLURM_JOBID}"* "${COPY_TO}"
 
 # some user feedback
 echo "Output file was here: $SLURMD_NODENAME:${SCRATCH_DIR}results/${SLURM_JOB_NAME}"

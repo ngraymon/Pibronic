@@ -1,10 +1,10 @@
 """x"""
 
+# note that this script is not ready!!!
 # submission script for jobs on nlogn
 import numpy as np
 import sys, os, socket, subprocess
 import pibronic.data.vibronic_model_io as vIO
-
 
 if (__name__ == "__main__"):
     pass
@@ -12,10 +12,10 @@ if (__name__ == "__main__"):
     assert(len(sys.argv) == 2)
     assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
 
-    #workspace_dir = "/home/ngraymon/thesis_code/pimc/workspace/"
+    # workspace_dir = "/home/ngraymon/thesis_code/pimc/workspace/"
     workspace_dir = "/work/ngraymon/pimc/"
     data_set_id = int(sys.argv[1])
-    data_set_dir  = "data_set_{:d}/".format(data_set_id)
+    data_set_dir = "data_set_{:d}/".format(data_set_id)
 
     # unsafe
     # os.system("rm -r {:}*".format(workspace_dir+data_set_dir + "execution_output/"))
@@ -30,17 +30,16 @@ if (__name__ == "__main__"):
     delta_beta = 2.0E-4
 
     # read in the model parameters from the vibronic_model_dictionary.JSON file
-    number_of_modes, number_of_surfaces = vIO.get_nmode_nsurf_from_coupled_model(data_set_id)
+    number_of_surfaces, number_of_modes = vIO.extract_dimensions_of_coupled_model(data_set_id)
 
     # we read all appropriate parameters from the model_parameters_source.txt
     source_file = "./model_parameters_source.txt"
     parameter_dictionary = vIO.parse_model_params(source_file)
-    temperature_list     = parameter_dictionary["temperature_list"]
+    temperature_list = parameter_dictionary["temperature_list"]
     # sample_list          = parameter_dictionary["sample_list"] # we dont need this anymore?
     # bead_list = np.sort(np.array([1,4,8,16,32,64,128] + [2, 6, 10, 12, 14, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]))
     bead_list = np.array([4, 8, 16, 32, 64])
-    memory_list          = np.ones_like(bead_list, dtype=int) + (bead_list // 20)
-
+    memory_list = np.ones_like(bead_list, dtype=int) + (bead_list // 20)
 
     hostname = socket.gethostname()
 
@@ -114,4 +113,4 @@ if (__name__ == "__main__"):
             p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, error = p.communicate()
             print(out.decode(),error.decode())
-            #JOB_ARRAY_ROOT = out.split(sep=b'.', maxsplit=1)[0].decode()
+            # JOB_ARRAY_ROOT = out.split(sep=b'.', maxsplit=1)[0].decode()

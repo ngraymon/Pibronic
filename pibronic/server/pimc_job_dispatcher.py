@@ -87,16 +87,16 @@ def submit_pimc_job(FS=None, path_root=None, id_data=None, id_rho=None, param_di
                       }
 
     # read in the model parameters from the JSON files
-    N, A = vIO.get_nmode_nsurf_from_coupled_model(FS=FS)
+    A, N = vIO.extract_dimensions_of_coupled_model(FS=FS)
     param_dict["coupled_modes"] = N
     param_dict["coupled_surfaces"] = A
     # read in the model parameters from the JSON files
-    N, A = vIO.get_nmode_nsurf_from_sampling_model(FS=FS)
+    A, N = vIO.extract_dimensions_of_sampling_model(FS=FS)
     param_dict["uncoupled_modes"] = N
     param_dict["uncoupled_surfaces"] = A
 
-    # coupled_modes, coupled_surfaces = vIO.get_nmode_nsurf_from_coupled_model(id_data)
-    # rho_modes, rho_surfaces = vIO.get_nmode_nsurf_from_sampling_model(id_data, id_rho)
+    # coupled_modes, coupled_surfaces = vIO.extract_dimensions_of_coupled_model(id_data)
+    # rho_surfaces, rho_modes  = vIO.extract_dimensions_of_sampling_model(id_data, id_rho)
 
     temperature_list = param_dict["temperature_list"]
     # sample_list          = param_dict["sample_list"] # we dont need this anymore?
