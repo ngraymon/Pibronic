@@ -4,7 +4,7 @@
 import numpy as np
 import sys, os, socket, subprocess
 from hurry.filesize import size, si
-import pibronic.data.vibronic_model_io as vIO
+from .. import vibronic
 
 assert(len(sys.argv) == 3)
 assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)

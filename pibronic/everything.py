@@ -18,14 +18,14 @@ import os
 from . import constants
 from .log_conf import log
 from . import electronic_structure as ES
-from .data import vibronic_model_io as vIO
+from .vibronic import vIO
 from .data import file_structure
-from .pimc import minimal
+from . import pimc
 from .server import job_boss
 
 # source for generating vibronic models
-import pibronic.input_files
-
+sys.path.append("..")
+from examples import input_files
 
 # -------------------------------------------------------------------------------------------------
 # REFERENCE DATA
@@ -59,7 +59,7 @@ model_dict = {
 
 def copyInput(FS, file_name):
     """x"""
-    path_root = os.path.abspath(pibronic.input_files.__file__)
+    path_root = os.path.abspath(input_files.__file__)
 
     src_params = path_root + file_name + "_params.txt"
     src_zmat = path_root + file_name + "_zmat.txt"

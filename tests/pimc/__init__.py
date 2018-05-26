@@ -1,6 +1,6 @@
 """x"""
 
 # let's copy numpy's style for the moment
-from . import test_minimal
+from . import test_pimc
 
-__all__ = ['test_minimal']
+__all__ = ['test_pimc']

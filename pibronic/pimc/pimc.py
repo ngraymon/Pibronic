@@ -1,4 +1,4 @@
-# minimal.py
+# pimc.py
 
 # system imports
 import itertools as it
@@ -21,8 +21,9 @@ from .. import constants
 from ..constants import hbar
 from ..data import file_structure
 from ..data import file_name  # do we need this?
-from ..data import vibronic_model_io as vIO
-from ..data.vibronic_model_keys import VibronicModelKeys as VMK
+# from ..data import vibronic_model_io as vIO
+# from ..data.vibronic_model_keys import VibronicModelKeys as VMK
+from ..vibronic import vIO, VMK
 # from ..server import job_boss
 from ..server.server import ServerExecutionParameters as SEP
 
@@ -33,6 +34,20 @@ and - https://stackoverflow.com/questions/32172054/how-can-i-retrieve-the-curren
 
 Will have to think carefully about recording the random inputs that are sampled in a robust and cohesive manner
 """
+
+__all__ = [
+           "ModelClass",
+           "ModelVibronic",
+           "ModelVibronicPM",
+           "ModelSampling",
+           "BoxData",
+           "BoxDataPM",
+           "BoxResult",
+           "BoxResultPM",
+           "block_compute",
+           "block_compute_pm",
+           ]
+
 
 float_tolerance = 1e-23
 

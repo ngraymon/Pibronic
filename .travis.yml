@@ -10,7 +10,7 @@ install:
 cache: pip
 
 before_script:
-  - pytest tests/pimc/test_minimal.py
+  - pytest tests/pimc/test_pimc.py
 
 script:
   - pytest --cov=./

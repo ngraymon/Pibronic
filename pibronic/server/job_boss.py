@@ -19,7 +19,7 @@ from ..data import file_structure
 # from ..constants import GB_per_byte, maximum_memory_per_node
 from ..log_conf import log
 from .. import constants
-from ..pimc import minimal
+from .. import pimc
 # from ..server.server import ServerExecutionParameters as SEP
 
 # lock for asynchronous communication
@@ -292,7 +292,7 @@ def prepare_job_feynman(param_dict):
     param_dict["copy_from"] = template_from
     param_dict["copy_to"] = template_to
     # TODO - remove circular dependancy?
-    from ..pimc.minimal import BoxData
+    from ..pimc import BoxData
     param_dict["execution_parameters"] = BoxData.json_serialize(params=param_dict)
 
     export_options = (""
@@ -362,7 +362,7 @@ def prepare_job_nlogn(param_dict):
     param_dict["copy_to"] = template_to
 
     print(template_from, template_to)
-    param_dict["execution_parameters"] = minimal.BoxData.json_serialize(params=param_dict)
+    param_dict["execution_parameters"] = pimc.BoxData.json_serialize(params=param_dict)
 
     export_options = (""
                       " --export="

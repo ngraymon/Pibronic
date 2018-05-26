@@ -7,8 +7,8 @@ import os
 
 
 # local imports
-from .context import pibronic
-import pibronic.jackknife as jk
+from ..context import pibronic
+import pibronic.stats.jackknife as jk
 import pibronic.data.file_structure as fs
 from pibronic.constants import boltzman
 

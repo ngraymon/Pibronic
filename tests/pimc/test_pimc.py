@@ -1,4 +1,4 @@
-"""A basic test of the minimal module
+"""A basic test of the pimc module
 """
 
 # system imports
@@ -8,8 +8,8 @@ import inspect
 
 # local imports
 from ..context import pibronic
+from pibronic import pimc
 import pibronic.data.file_structure as fs
-import pibronic.pimc.minimal as minimal
 
 # third party imports
 import pytest
@@ -34,7 +34,7 @@ def random_model():
     N = 4
     B = 10
     P = 15
-    model = minimal.ModelClass(states=A, modes=N)
+    model = pimc.ModelClass(states=A, modes=N)
     model.energy = np.random.rand(A)
     model.omega = np.random.rand(N)
     model.linear = np.random.rand(N, A, A)
@@ -53,13 +53,13 @@ def random_model():
 def test_TemperatureDependentClass(FS, random_model):
     """very basic test just to ensure minimal requirements are met, doesn't check math output"""
     tau = pibronic.constants.beta(300.00)
-    minimal.TemperatureDependentClass(random_model, tau)
+    pibronic.pimc.pimc.TemperatureDependentClass(random_model, tau)
     return
 
 
 @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])
 def data(request):
-    data = minimal.BoxData()
+    data = pimc.BoxData()
     data.id_data = request.param[0]
     data.id_rho = request.param[1]
     return data
@@ -91,16 +91,16 @@ def test_simple_block_compute(FS, data):
     data.preprocess()
 
     # store results here
-    results = minimal.BoxResult(data=data)
+    results = pimc.BoxResult(data=data)
     results.path_root = FS.path_rho_results
 
-    minimal.block_compute(data, results)
+    pimc.block_compute(data, results)
     return
 
 
 @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])
 def dataPM(request):
-    data = minimal.BoxDataPM(pibronic.constants.delta_beta)
+    data = pimc.BoxDataPM(pibronic.constants.delta_beta)
     data.id_data = request.param[0]
     data.id_rho = request.param[1]
     return data
@@ -138,11 +138,11 @@ def test_simple_block_compute_pm(FS_pm, dataPM, job_id):
     dataPM.preprocess()
 
     # store results here
-    results = minimal.BoxResultPM(data=dataPM)
+    results = pimc.BoxResultPM(data=dataPM)
     results.path_root = FS_pm.path_rho_results
     results.id_job = job_id
 
-    minimal.block_compute_pm(dataPM, results)
+    pimc.block_compute_pm(dataPM, results)
     return
 
 

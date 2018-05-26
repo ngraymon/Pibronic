@@ -4,7 +4,7 @@
 # submission script for jobs on nlogn
 import numpy as np
 import sys, os, socket, subprocess
-import pibronic.data.vibronic_model_io as vIO
+from .. import vibronic
 
 if (__name__ == "__main__"):
     pass

@@ -13,12 +13,12 @@ import json
 
 # local imports
 # from .data import vibronic_model_io as vIO
-from .data import postprocessing as pp
+from ..data import postprocessing as pp
 # from .data import file_structure
 # from .data import file_name  # do we need this?
-from .pimc.minimal import BoxResultPM
-from . import constants
-from .constants import boltzman
+from ..pimc import BoxResultPM
+from .. import constants
+from ..constants import boltzman
 
 # third party imports
 import numpy as np

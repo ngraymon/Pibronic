@@ -6,6 +6,9 @@ tests/test_models/**/*.npz
 tests/test_models/data_set_*/rho_*/results/*
 # Ignore output files from examples
 examples/data_set_*/*
+# Ignore the development folder
+dev/*
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

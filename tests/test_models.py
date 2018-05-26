@@ -1,14 +1,13 @@
-"""A basic test of the minimal module
-"""
+"""A basic test of the multiple modules"""
 
 # system imports
 import os
 
 # local imports
 from .context import pibronic
-import pibronic.data.vibronic_model_io as vIO
+from pibronic import pimc
+from pibronic.vibronic import vIO
 import pibronic.data.file_structure as fs
-import pibronic.pimc.minimal as minimal
 import pibronic.constants
 
 # third party imports
@@ -83,7 +82,7 @@ class TestProcessingVibronicModel():
     #     return
 
 
-class TestMinimalNatively():
+class TestPimcNatively():
     samples = int(1e1)
     block_size = int(1e1)
     np.random.seed(242351)  # pick our seed
@@ -91,7 +90,7 @@ class TestMinimalNatively():
     test_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "test_models/")
 
     def test_create_BoxData_inline(self):
-        data = minimal.BoxData()
+        data = pimc.BoxData()
         return
 
     def test_create_BoxData_from_file(self):
@@ -102,7 +101,7 @@ class TestMinimalNatively():
 
     @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
     def data(self, request):
-        data = minimal.BoxData()
+        data = pimc.BoxData()
         data.id_data = request.param[0]
         data.id_rho = request.param[1]
         return data
@@ -128,15 +127,15 @@ class TestMinimalNatively():
         data.preprocess()
 
         # store results here
-        results = minimal.BoxResult(data=data)
+        results = pimc.BoxResult(data=data)
         results.path_root = files.path_rho_results
 
-        minimal.block_compute(data, results)
+        pimc.block_compute(data, results)
         return
 
     @pytest.fixture(scope="class", params=[(0, 0), (0, 1), (1, 0), (1, 1)])
     def dataPM(self, request):
-        data = minimal.BoxDataPM(pibronic.constants.delta_beta)
+        data = pimc.BoxDataPM(pibronic.constants.delta_beta)
         data.id_data = request.param[0]
         data.id_rho = request.param[1]
         return data
@@ -168,9 +167,9 @@ class TestMinimalNatively():
         dataPM.preprocess()
 
         # store results here
-        results = minimal.BoxResultPM(data=dataPM)
+        results = pimc.BoxResultPM(data=dataPM)
         results.path_root = filesPM.path_rho_results
         results.id_job = job_id
 
-        minimal.block_compute_pm(dataPM, results)
+        pimc.block_compute_pm(dataPM, results)
         return

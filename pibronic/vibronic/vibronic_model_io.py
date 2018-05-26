@@ -25,8 +25,8 @@ import parse
 from ..log_conf import log
 from .. import constants
 from .. import helper
-from . import file_structure
-from . import file_name
+from ..data import file_structure
+from ..data import file_name
 from .vibronic_model_keys import VibronicModelKeys as VMK
 
 np.set_printoptions(precision=8, suppress=True)  # Print Precision!

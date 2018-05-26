@@ -7,7 +7,7 @@ import socket
 # import os
 
 # local imports
-import pibronic.data.vibronic_model_io as vIO
+from .. import vibronic
 from ..data import file_structure
 from ..constants import delta_beta
 
