@@ -157,13 +157,13 @@ def execute(file_path, id_model):
     # ---------------------------------------------------------------------------------------------
     # SUBMIT PIMC JOBS
 
-    modes_data, states_data = vIO.get_nmode_nsurf_from_coupled_model(id_data)
+    A, N = vIO.extract_dimensions_of_coupled_model(id_data)
 
     # this is the minimum amount of data needed to run an execution
     parameter_dictionary = {
         "number_of_samples": int(1e6),
-        "number_of_states": states_data,
-        "number_of_modes": modes_data,
+        "number_of_states": A,
+        "number_of_modes": N,
         "bead_list": bead_list,
         "temperature_list": temperature_list,
         "delta_beta": constants.delta_beta,

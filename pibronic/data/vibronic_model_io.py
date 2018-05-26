@@ -18,6 +18,7 @@ import fortranformat as ff  # Fortran format for VIBRON
 import numpy as np
 # from numpy import newaxis as NEW
 from numpy import float64 as F64
+from numpy.random import uniform as Uniform
 import parse
 
 # local imports
@@ -26,137 +27,131 @@ from .. import constants
 from .. import helper
 from . import file_structure
 from . import file_name
+from .vibronic_model_keys import VibronicModelKeys as VMK
+
+np.set_printoptions(precision=8, suppress=True)  # Print Precision!
+
+# TODO - made the design decision that if a key is not present in the json file that implies all the values are zero
+# - need to make sure this is enforced across all the code
 
 
-# this function should most likely be removed
-def checkOS():
-    """define OS dependent paths to files"""
-    global kernel, path_default_root, dir_workspace
+def model_shape_dict(A, N):
+    """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
+    Takes A - number of surfaces and N - number of modes
+    """
+    dictionary = {
+                  VMK.E:  (A, A),
+                  VMK.w:  (N, ),
+                  VMK.G1: (N, A, A),
+                  VMK.G2: (N, N, A, A),
+                  VMK.G3: (N, N, N, A, A),
+                  VMK.G4: (N, N, N, N, A, A),
+                  }
 
-    if sys.platform.startswith('linux'):
-        kernel = "linux"
-        # identify between different versions of linux
-        proc = subprocess.Popen('hostid', stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        hostid = proc.stdout.read().decode()
-        if hostid[0:4] == "007f":
-            path_default_root = "/home/neil/Desktop/pimc/"
-            # dir_workspace = "~"
-        elif hostid[0:4] == "360a":
-            path_default_root = "/work/ngraymon/pimc/"
-            # dir_workspace = "~""
-    elif sys.platform.startswith('darwin'):
-        kernel = "darwin"
-        # path_default_root = "~"
-        # dir_workspace = "~"
-    else:
-        raise OSError("not linux or OSX, problem with filestructure")
-    return
+    return dictionary
 
 
-# Print Precision!
-np.set_printoptions(precision=8, suppress=True)
+def sample_shape_dict(A, N):
+    """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
+    Takes A - number of surfaces and N - number of modes
+    """
+    dictionary = {
+                  VMK.E:  (A, ),
+                  VMK.w:  (N, ),
+                  VMK.G1: (N, A),
+                  VMK.G2: (N, N, A),
+                  VMK.G3: (N, N, N, A),
+                  VMK.G4: (N, N, N, N, A),
+                  }
 
-# by default the following name is used for the json file
-# json_filename = "coupled_model.json"
-
-
-# Number of minima [energy wells]
-nel = 2
-# Number of normal modes
-nmode = 12  # default value
-
-mode_range = range(nmode)
-el_range = range(nel)
-
-
-dir_vib = "data_set_{:d}/"
-dir_rho = "rho_{:d}/"
-
-# the names of the sub directories
-list_sub_dirs = [
-    "parameters/",
-    "results/",
-    "execution_output/",
-    "plots/",
-    ]
+    return dictionary
 
 
-# current template for all possible parameters
-template_dict = {"number of modes": 0,
-                 "number of surfaces": 0,
-                 "energies": None,
-                 "frequencies": None,
-                 "linear couplings": None,
-                 "quadratic couplings": None,
-                 "cubic couplings": None,
-                 "quartic couplings": None,
-                 }
+def model_array_diagonal_in_surfaces(array):
+    """ boolean function that returns true if the provided numpy array is diagonal in the surface dimension
+    where the surface dimensions (A) are by convention the last two dimensions
+    this function assumes that the array is properly formatted
+    """
+
+    new_dims = list(range(array.ndim))
+    # swap the last two dimensions, which by convention are the surface dimensions
+    new_dims[-1], new_dims[-2] = new_dims[-2], new_dims[-1]
+
+    return np.allclose(array, array.transpose(new_dims))
 
 
-def verify_model_parameters(**kwargs):
+def model_zeros_template_json_dict(A, N):
+    """ returns a dictionary that is a valid model, where all values (other than states and modes) are set to 0
+    """
+    shape = model_shape_dict(A, N)
+    dictionary = {
+                  VMK.N: N,
+                  VMK.A: A,
+                  VMK.E: np.zeros(shape[VMK.E], dtype=F64),
+                  VMK.w: np.zeros(shape[VMK.w], dtype=F64),
+                  VMK.G1: np.zeros(shape[VMK.G1], dtype=F64),
+                  VMK.G2: np.zeros(shape[VMK.G2], dtype=F64),
+                  VMK.G3: np.zeros(shape[VMK.G3], dtype=F64),
+                  VMK.G4: np.zeros(shape[VMK.G4], dtype=F64),
+                  }
+
+    return dictionary
+
+
+def verify_model_parameters(kwargs):
     """make sure the provided model parameters follow the file conventions"""
-    assert "number of modes" in kwargs, "need the number of modes"
-    assert "number of surfaces" in kwargs, "need the number of surfaces"
-    assert "energies" in kwargs, "energies are required"
-    assert "frequencies" in kwargs, "frequencies are required"
+    assert VMK.N in kwargs, "need the number of modes"
+    assert VMK.A in kwargs, "need the number of surfaces"
 
-    N = int(kwargs["number of modes"])
-    A = int(kwargs["number of surfaces"])
+    A, N = _extract_dimensions_from_dictionary(kwargs)
+    shape_dict = model_shape_dict(A, N)
 
     for key, value in kwargs.items():
-        if key == "energies":
-            assert kwargs[key].shape == (A, A), "energies have incorrect shape"
-        if key == "frequencies":
-            assert kwargs[key].shape == (N, ), "frequencies have incorrect shape"
-        if key == "linear couplings":
-            assert kwargs[key].shape == (N, A, A), "linear couplings have incorrect shape"
-        if key == "quadratic couplings":
-            assert kwargs[key].shape == (N, N, A, A), "quadratic couplings have incorrect shape"
-        if key == "cubic couplings":
-            assert kwargs[key].shape == (N, N, N, A, A), "cubic couplings have incorrect shape"
-        if key == "quartic couplings":
-            assert kwargs[key].shape == (N, N, N, N, A, A), "quartic couplings have incorrect shape"
+        if key in shape_dict:
+            assert kwargs[key].shape == shape_dict[key], f"{key} have incorrect shape"
+        else:
+            log.debug(f"Found key {key} which is not present in the default dictionary")
+
     return
 
 
-def verify_sample_parameters(**kwargs):
+def verify_sample_parameters(kwargs):
     """make sure the provided sample parameters follow the file conventions"""
-    assert "number of modes" in kwargs, "need the number of modes"
-    assert "number of surfaces" in kwargs, "need the number of surfaces"
-    assert "energies" in kwargs, "energies are required"
-    assert "frequencies" in kwargs, "frequencies are required"
+    assert VMK.N in kwargs, "need the number of modes"
+    assert VMK.A in kwargs, "need the number of surfaces"
 
-    N = int(kwargs["number of modes"])
-    A = int(kwargs["number of surfaces"])
+    A, N = _extract_dimensions_from_dictionary(kwargs)
+    shape_dict = sample_shape_dict(A, N)
 
     for key, value in kwargs.items():
-        if key == "energies":
-            assert kwargs[key].shape == (A, ), "energies have incorrect shape"
-        if key == "frequencies":
-            assert kwargs[key].shape == (N, ), "frequencies have incorrect shape"
-        if key == "linear couplings":
-            assert kwargs[key].shape == (N, A), "linear couplings have incorrect shape"
-        if key == "quadratic couplings":
-            assert kwargs[key].shape == (N, N, A), "quadratic couplings have incorrect shape"
-        if key == "cubic couplings":
-            assert kwargs[key].shape == (N, N, N, A), "cubic couplings have incorrect shape"
-        if key == "quartic couplings":
-            assert kwargs[key].shape == (N, N, N, N, A), "quartic couplings have incorrect shape"
+        if key in shape_dict:
+            assert kwargs[key].shape == shape_dict[key], f"{key} have incorrect shape"
+        else:
+            log.debug(f"Found key {key} which is not present in the default dictionary")
+
     return
+
+
+def generate_default_root():
+    """backwards compatibility fix for functions that rely on having a predefined default_root"""
+    return "/work/ngraymon/pimc/"
 
 
 def pretty_print_model(id_data, unitsOfeV=False):
-    """one method of printing the models in a human readable format"""
-    # checkOS()
-    import pandas as pd
+    """one method of printing the models in a human readable format - outdated and should probably be removed or modified"""
+
+    # import pandas as pd
     from xarray import DataArray as dArr
 
+    path_root = generate_default_root()
+    FS = file_structure.FileStructure(path_root, id_data)
+    kwargs = load_model_from_JSON(FS.path_vib_model)
+
     # parameter values
-    N, A = get_nmode_nsurf_from_coupled_model(id_data)
-    numStates = A
-    numModes = N
-    States = range(numStates)
-    Modes = range(numModes)
+    A = kwargs[VMK.A]
+    N = kwargs[VMK.N]
+    States = range(A)
+    Modes = range(N)
 
     # formatting
     a_labels = ['a%d' % a for a in range(1, A+1)]
@@ -164,17 +159,11 @@ def pretty_print_model(id_data, unitsOfeV=False):
     i_labels = ['i%d' % j for j in range(1, N+1)]
     j_labels = ['j%d' % j for j in range(1, N+1)]
 
-    # load the data
-    path = path_default_root + dir_vib + "parameters/" + "coupled_model.json"
-    path = path.format(id_data)
-    target_file = open(path, mode='r', encoding='UTF8')
-    input_dictionary = json.loads(target_file.read())
-
-    # isolate the lists
-    energy = input_dictionary["energies"]
-    omega = input_dictionary["frequencies"]
-    linear = input_dictionary["linear couplings"]
-    quadratic = input_dictionary["quadratic couplings"]
+    # label the arrays for readability
+    energy = kwargs[VMK.E].view()
+    omega = kwargs[VMK.w].view()
+    linear = kwargs[VMK.G1].view()
+    quadratic = kwargs[VMK.G2].view()
 
     # by default convert the output to wavenumbers
     conversionFactor = 1 if unitsOfeV else constants.wavenumber_per_eV
@@ -197,91 +186,31 @@ def pretty_print_model(id_data, unitsOfeV=False):
         quadratic[i][j][a][b] = str(quadratic[i][j][a][b])
 
     # load the data into xarray's DataArrays
-    omegaArray = dArr(omega,
+    omegaArray = dArr(omega, name=VMK.w,
                       coords=[i_labels],
-                      dims=['mode i'],
-                      name="Frequencies"
-                      )
+                      dims=['mode i'],)
 
-    energyArray = dArr(energy,
+    energyArray = dArr(energy, name=VMK.E,
                        coords=[a_labels, b_labels],
-                       dims=['surface a', 'surface b'],
-                       name="Energies"
-                       )
+                       dims=['surface a', 'surface b'],)
 
-    linArray = dArr(linear,
+    linArray = dArr(linear, name=VMK.G1,
                     coords=[i_labels, a_labels, b_labels],
-                    dims=['mode i', 'surface a', 'surface b'],
-                    name="linear terms"
-                    )
+                    dims=['mode i', 'surface a', 'surface b'],)
 
-    quadArray = dArr(quadratic,
+    quadArray = dArr(quadratic, name=VMK.G2,
                      coords=[i_labels, j_labels, a_labels, b_labels],
-                     dims=['mode i', 'mode j ', 'surface a', 'surface b'],
-                     name="quadratic terms"
-                     )
+                     dims=['mode i', 'mode j ', 'surface a', 'surface b'],)
 
-    # print the data, relying on panda's DataArrays
-    # to printin a human legible manner
+    # print the data, relying on panda's DataArrays to printin a human legible manner
     print(omegaArray.to_dataframe(),
           energyArray.to_dataframe(),
           linArray.to_dataframe(),
           quadArray.to_dataframe(),
-          sep="\n")
+          sep="\n",
+          )
 
     return
-
-
-# this function should probably be removed - no longer needed
-def parse_model_params(path_full):
-    """this one could probably be removed? parses model_parameters_source.txt"""
-    # does the file exist?
-    helper.verify_file_exists(path_full)
-
-    parameter_dictionary = {
-        "number_of_surfaces": None,
-        "number_of_modes": None,
-        "energy_range": None,
-        "frequency_range": None,
-        "quadratic_scaling": None,
-        "linear_scaling": None,
-        "temperature_list": None,
-        "sample_list": None,
-        "bead_list": None,
-        }
-
-    with open(path_full, 'r') as source_file:
-        while not source_file.readline() == "":
-            header = source_file.readline().strip()
-            data = source_file.readline().strip()
-
-            if(    header == "quadratic_scaling"
-                or header == "linear_scaling"
-                ):
-                parameter_dictionary[header] = float(data)
-
-            elif(  header == "number_of_surfaces"
-                or header == "number_of_modes"
-                ):
-                parameter_dictionary[header] = int(data)
-
-            elif(  header == "temperature_list"
-                or header == "memory_list"
-                or header == "sample_list"
-                or header == "bead_list"
-                ):
-                parameter_dictionary[header] = np.fromstring(data, sep=',').astype(int)
-
-            elif(  header == "frequency_range"
-                or header == "energy_range"
-                ):
-                parameter_dictionary[header] = np.fromstring(data, dtype=F64, sep=',')
-            else:
-                raise ValueError("header {:} is not valid\n"
-                                 "Check that your model_parameters_source.txt"
-                                 "has the correct formatting".format(header)
-                                 )
-    return parameter_dictionary
 
 
 def generate_vibronic_model_data(paramDict=None):
@@ -331,7 +260,7 @@ def generate_vibronic_model_data(paramDict=None):
                            num=numModes, endpoint=True, dtype=F64)
 
     # generate energy
-    energy[:] = np.random.uniform(minE, maxE, size['AA'])
+    energy[:] = Uniform(minE, maxE, size['AA'])
     # force the energy to be symmetric
     energy[:] = np.tril(energy) + np.tril(energy, k=-1).T
 
@@ -340,7 +269,7 @@ def generate_vibronic_model_data(paramDict=None):
 
     # generate linear terms
     for i in Modes:
-        upTri = np.random.uniform(-l_shift[i], l_shift[i], size['AA'])
+        upTri = Uniform(-l_shift[i], l_shift[i], size['AA'])
         # force the linear terms to be symmetric
         linear[:] = np.tril(upTri) + np.tril(upTri, k=-1).T
 
@@ -350,7 +279,7 @@ def generate_vibronic_model_data(paramDict=None):
     # generate quadratic terms
     for i in Modes:
         for j in range(i, numModes):
-            upTri = np.random.uniform(-q_shift[i,j], q_shift[i,j], size['AA'])
+            upTri = Uniform(-q_shift[i,j], q_shift[i,j], size['AA'])
             # force the quadratic terms to be symmetric
             quadratic[i, j, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
             quadratic[j, i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
@@ -376,12 +305,12 @@ def generate_vibronic_model_data(paramDict=None):
 
     return energy, omega, linear, quadratic
     # and we are done
-    return_dict = {"number of modes": numModes,
-                   "number of surfaces": numStates,
-                   "energies": energy,
-                   "frequencies": omega,
-                   "linear couplings": linear,
-                   "quadratic couplings": quadratic,
+    return_dict = {VMK.N: numModes,
+                   VMK.A: numStates,
+                   VMK.E: energy,
+                   VMK.w: omega,
+                   VMK.G1: linear,
+                   VMK.G2: quadratic,
                    }
     return return_dict
 
@@ -677,12 +606,12 @@ def read_model_h_file(path_file_h):
     assert(np.allclose(quadratic_couplings, quadratic_couplings.transpose(1, 0, 2, 3)))
 
     # and we are done
-    return_dict = {"number of modes": numModes,
-                   "number of surfaces": numStates,
-                   "energies": excitation_energies,
-                   "frequencies": frequencies,
-                   "linear couplings": linear_couplings,
-                   "quadratic couplings": quadratic_couplings,
+    return_dict = {VMK.N: numModes,
+                   VMK.A: numStates,
+                   VMK.E: excitation_energies,
+                   VMK.w: frequencies,
+                   VMK.G1: linear_couplings,
+                   VMK.G2: quadratic_couplings,
                    }
     return return_dict
 
@@ -1048,14 +977,14 @@ def read_model_op_file(path_file_op):
     assert np.allclose(quartic_couplings, quartic_couplings.transpose(0, 1, 3, 2, 4, 5))
 
     # and we are done
-    maximal_dict = {"number of modes": numModes,
-                    "number of surfaces": numStates,
-                    "energies": excitation_energies,
-                    "frequencies": frequencies,
-                    "linear couplings": linear_couplings,
-                    "quadratic couplings": quadratic_couplings,
-                    "cubic couplings": cubic_couplings,
-                    "quartic couplings": quartic_couplings,
+    maximal_dict = {VMK.N: numModes,
+                    VMK.A: numStates,
+                    VMK.E: excitation_energies,
+                    VMK.w: frequencies,
+                    VMK.G1: linear_couplings,
+                    VMK.G2: quadratic_couplings,
+                    VMK.G3: cubic_couplings,
+                    VMK.G4: quartic_couplings,
                     }
 
     # if the arrays only have zeros then we might not need to store them?
@@ -1068,7 +997,7 @@ def create_coupling_from_h_file(FS, path_file_h):
     """assumes that the path_file_h is in electronic_structure"""
     # A, N, E, w, l, q = read_model_h_file(path_file_h)
     model_dict = read_model_h_file(path_file_h)
-    save_model_to_JSON(FS.path_vib_model, **model_dict)
+    save_model_to_JSON(FS.path_vib_model, model_dict)
     log.debug("Created \n{:s}\nfrom\n{:s}\n".format(FS.path_vib_model, path_file_h))
     return FS.path_vib_model
 
@@ -1077,15 +1006,16 @@ def create_coupling_from_op_file(FS, path_file_op):
     """assumes that the path_file_op is in electronic_structure"""
     # A, N, E, w, l, q = read_model_h_file(path_file_op)
     model_dict = read_model_op_file(path_file_op)
-    save_model_to_JSON(FS.path_vib_model, **model_dict)
+    save_model_to_JSON(FS.path_vib_model, model_dict)
     log.debug("Created \n{:s}\nfrom\n{:s}\n".format(FS.path_vib_model, path_file_op))
     return FS.path_vib_model
 
 
-# not working ATM
 def create_coupling_from_op_hyperlink(FS, url):
     """assumes that the path_file_op is in electronic_structure"""
     import urllib
+
+    assert False, "This function is currently unfinished"
 
     request = urllib.request.Request(url)
     try:
@@ -1104,6 +1034,8 @@ def create_coupling_from_op_hyperlink(FS, url):
 
 def read_model_auto_file(filename):
     """
+    if the shift to MCTDH file structure is permananent this function will no longer be needed
+
     Read Vibronic Model file (cp.auto) which
     contains all information on the approximate
     Born-Oppenheimer Ground State PES.
@@ -1117,6 +1049,10 @@ def read_model_auto_file(filename):
     linear couplings: (nmode, nel, nel)
     quadratic couplings: (nmode, nmode, nel, nel)
     """
+    nel = 2  # Number of minima [energy wells]
+    nmode = 12  # Number of normal modes
+    mode_range = range(nmode)
+    el_range = range(nel)
 
     # Read file (Iterator object)
     file_object = open(filename, 'r')
@@ -1240,337 +1176,191 @@ def read_model_auto_file(filename):
     return nel, nmode, excitation_energies, frequencies, linear_couplings, quadratic_couplings
 
 
-def save_model_to_JSON(path_full, **kwargs):
+def _extract_dimensions_from_dictionary(dictionary):
     """x"""
-
-    verify_model_parameters(**kwargs)
-
-    log.debug("Saving model to {:s}".format(path_full))
-
-    # convert each numpy array to a list
-    for key, value in kwargs.items():
-        if isinstance(value, (np.ndarray, np.generic)):
-            kwargs[key] = value.tolist()
-
-    # the old way involved passing in each parameter as nonkeyword argument
-    # output_dictionary = {
-    #     "number of modes":     N,
-    #     "number of surfaces":  A,
-    #     "energies":            kwargs["energies"].tolist(),
-    #     "frequencies":         kwargs["frequencies"].tolist(),
-    #     "linear couplings":    kwargs["linear_couplings"].tolist(),
-    #     "quadratic couplings": kwargs["quadratic_couplings"].tolist(),
-    # }
-
-    with open(path_full, mode='w', encoding='UTF8') as target_file:
-        target_file.write(json.dumps(kwargs))
-
-    return
+    N = int(dictionary[VMK.N])
+    A = int(dictionary[VMK.A])
+    return A, N
 
 
-def save_sample_to_JSON(path_full, **kwargs):
+def _extract_dimensions_from_file(path):
     """x"""
-
-    # base case
-    verify_sample_parameters(**kwargs)
-
-    log.debug("Saving model to {:s}".format(path_full))
-
-    # convert each numpy array to a list
-    for key, value in kwargs.items():
-        if isinstance(value, (np.ndarray, np.generic)):
-            kwargs[key] = value.tolist()
-
-    # the old way involved passing in each parameter as nonkeyword argument
-    # output_dictionary = {
-    #     "number of modes":     N,
-    #     "number of surfaces":  A,
-    #     "energies":            kwargs["energies"].tolist(),
-    #     "frequencies":         kwargs["frequencies"].tolist(),
-    #     "linear couplings":    kwargs["linear_couplings"].tolist(),
-    #     "quadratic couplings": kwargs["quadratic_couplings"].tolist(),
-    # }
-
-    with open(path_full, mode='w', encoding='UTF8') as target_file:
-        target_file.write(json.dumps(kwargs))
-
-    return
-# ------------------------------------------------------------------------
+    assert os.path.isfile(path), f"invalid path:\n{path:s}"
+    with open(path, mode='r', encoding='UTF8') as file:
+        input_dictionary = json.loads(file.read())
+    VMK.change_dictionary_keys_from_strings_to_enum_members(input_dictionary)
+    return _extract_dimensions_from_dictionary(input_dictionary)
 
 
-def root_directories_exists(path_root, id_data, id_rho=0):
-    """x"""
-    path_data = (path_root + dir_vib).format(id_data)
-    dir_list = [path_data]
-    dir_list = [path_data + "electronic_structure/"]
-    dir_list.extend([path_data + x for x in list_sub_dirs])
-    dir_list.extend([path_data + dir_rho.format(id_rho) + x for x in list_sub_dirs])
-    if False in map(os.path.isdir, dir_list):
-        return False
-    return True
-
-
-def make_root_directories(path_root, id_data, id_rho=0):
-    """x"""
-    dir_list = [path_root]
-    dir_list = [path_data + "electronic_structure/"]
-    dir_list.extend([path_root + x for x in list_sub_dirs])
-    dir_list.extend([path_root + dir_rho.format(id_rho) + x for x in list_sub_dirs])
-    for directory in dir_list:
-        os.makedirs(directory, exist_ok=True)
-    return
-
-
-def make_rho_directories(path_root, id_rho):
-    """x"""
-    dir_list = [path_root + dir_rho.format(id_rho) + x for x in list_sub_dirs]
-    for directory in dir_list:
-        os.makedirs(directory, exist_ok=True)
-    return
-
-
-def load_model_from_JSON(path_full, **kwargs):
-    """ if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values
-    """
-    log.debug("Loading model {:s}".format(path_full))
-
-    # open the JSON file
-    with open(path_full, mode='r', encoding='UTF8') as target_file:
-        input_dictionary = json.loads(target_file.read())
-
-    # no arrays were provided so return newly created
-    # arrays after filling them with the approriate values
-    if not kwargs:
-        _dict = template_dict.copy()
-        _dict["number of modes"] = int(input_dictionary["number of modes"])
-        _dict["number of surfaces"] = int(input_dictionary["number of surfaces"])
-        _dict["energies"] = np.array(input_dictionary["energies"], dtype=F64)
-        _dict["frequencies"] = np.array(input_dictionary["frequencies"], dtype=F64)
-
-        if "linear couplings" in input_dictionary:
-            _dict["linear couplings"] = np.array(input_dictionary["linear couplings"], dtype=F64)
-            # if we don't predefine the shape, can we run into problems?
-            # linear_couplings = np.empty((N, A, A), dtype=F64)
-
-        if "quadratic couplings" in input_dictionary:
-            _dict["quadratic couplings"] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
-            # if we don't predefine the shape, can we run into problems?
-            # quadratic_couplings = np.empty((N, N, A, A), dtype=F64)
-
-        if "cubic couplings" in input_dictionary:
-            _dict["cubic couplings"] = np.array(input_dictionary["cubic couplings"], dtype=F64)
-
-        if "quartic couplings" in input_dictionary:
-            _dict["quartic couplings"] = np.array(input_dictionary["quartic couplings"], dtype=F64)
-
-        # if the arrays only have zeros then we might not need to store them?
-        return_dict = dict((k, v) for k, v in _dict.items() if not (np.all(v == 0) or v is None))
-
-        return return_dict
-
-    # arrays were provided so fill them with the appropriate values
-    else:
-        verify_model_parameters(**kwargs)
-
-        # it might also be good to have some way to calculate the "shape" based on the name?
-        # maybe we should make an enum module that contains the naming conventions for the values in the json files?! - future work
-
-        for key, value in kwargs.items():
-            if isinstance(value, (np.ndarray, np.generic)):
-                # this is a safer way of forcing the input arrays that have no corresponding key in the input_dictionary to have zero values
-                # although this might not be necessary, it is a safer alternative at the moment
-                if key not in input_dictionary:
-                    kwargs[key][:] = 0.0
-                else:
-                    kwargs[key][:] = np.array(input_dictionary[key], dtype=F64)
-
-    return
-
-
-def load_sample_from_JSON(path_full, **kwargs):
-    """if only a path to the file is provided, arrays are returned othwerise provided arrays are filled with appropriate values
-    """
-    log.debug("Loading rho model (sampling model) {:s}".format(path_full))
-    with open(path_full, mode='r', encoding='UTF8') as target_file:
-        input_dictionary = json.loads(target_file.read())
-
-    # no arrays were provided so return newly created
-    # arrays after filling them with the approriate values
-    if not kwargs:
-        _dict = template_dict.copy()
-        _dict["number of modes"] = int(input_dictionary["number of modes"])
-        _dict["number of surfaces"] = int(input_dictionary["number of surfaces"])
-        _dict["energies"] = np.array(input_dictionary["energies"], dtype=F64)
-        _dict["frequencies"] = np.array(input_dictionary["frequencies"], dtype=F64)
-
-        if "linear couplings" in input_dictionary:
-            _dict["linear couplings"] = np.array(input_dictionary["linear couplings"], dtype=F64)
-            # if we don't predefine the shape, can we run into problems?
-            # linear_couplings = np.empty((N, A, A), dtype=F64)
-
-        if "quadratic couplings" in input_dictionary:
-            _dict["quadratic couplings"] = np.array(input_dictionary["quadratic couplings"], dtype=F64)
-            # if we don't predefine the shape, can we run into problems?
-            # quadratic_couplings = np.empty((N, N, A, A), dtype=F64)
-
-        if "cubic couplings" in input_dictionary:
-            _dict["cubic couplings"] = np.array(input_dictionary["cubic couplings"], dtype=F64)
-
-        if "quartic couplings" in input_dictionary:
-            _dict["quartic couplings"] = np.array(input_dictionary["quartic couplings"], dtype=F64)
-
-        # if the arrays only have zeros then we might not need to store them?
-        return_dict = dict((k, v) for k, v in _dict.items() if not (np.all(v == 0) or v is None))
-        return return_dict
-
-    # arrays were provided so fill them with the appropriate values
-    else:
-        verify_sample_parameters(**kwargs)
-
-        # it might also be good to have some way to calculate the "shape" based on the name?
-        # maybe we should make an enum module that contains the naming conventions for the values in the json files?! - future work
-        for key, value in kwargs.items():
-            if isinstance(value, (np.ndarray, np.generic)):
-                # this is a safer way of forcing the input arrays that have no corresponding key in the input_dictionary to have zero values
-                # although this might not be necessary, it is a safer alternative at the moment
-                if key not in input_dictionary:
-                    kwargs[key][:] = 0.0
-                else:
-                    kwargs[key][:] = np.array(input_dictionary[key], dtype=F64)
-    return
-
-
-# this should not be used for the moment
-def setup_input_params(directory_path, new_directory=False):
-    """collate the input parameters and write to a file in the execution directory"""
-    print("Preparing the {} directory\nIt is {} that I am a new directory".format(directory_path, new_directory))
-
-    # some default file paths
-    path_params = directory_path + "parameters/"
-    path_results = directory_path + "results/"
-    path_output = directory_path + "execution_output/"
-    path_plots = directory_path + "plots/"
-    path_rho_params = directory_path + "rho_0/" + "parameters/"
-    path_rho_results = directory_path + "rho_0/" + "results/"
-    path_rho_output = directory_path + "rho_0/" + "execution_output/"
-    path_rho_plots = directory_path + "rho_0/" + "plots/"
-    json_filename = "coupled_model.json"
-
-    # where we store the input parameters
-    division_quadratic_term = None
-    division_linear_term = None
-    frequency_range = None
-    number_of_surfaces = None
-    number_of_modes = None
-    temperature_list = None
-    sample_list = None
-    bead_list = None
-
-    def create_dirs(dir_path):
-        """x"""
-        os.makedirs(path_params,  exist_ok=True)
-        os.makedirs(path_results, exist_ok=True)
-        os.makedirs(path_output,  exist_ok=True)
-        os.makedirs(path_plots,   exist_ok=True)
-        os.makedirs(path_rho_params,  exist_ok=True)
-        os.makedirs(path_rho_results, exist_ok=True)
-        os.makedirs(path_rho_output,  exist_ok=True)
-        os.makedirs(path_rho_plots,   exist_ok=True)
-        return
-
-    def cleanup_dirs(dir_path):
-        """x"""
-        os.system("rm -r {:}*".format(path_results))
-        os.system("rm -r {:}*".format(path_output))
-        os.system("rm -r {:}*".format(path_plots))
-        return
-
-    if new_directory:
-        create_dirs(directory_path)
-    else:
-        print("Do you want to remove all data in {:}? (Y/N) ".format(directory_path))
-        choice = input().lower()
-        if choice in set(["yes", "y", "ye"]):
-            cleanup_dirs(directory_path)
-            print("Cleaned up {:}".format(directory_path))
-        else:
-            print("Proceedeing to only overwrite the JSON parameter file\n")
-
-    # copy the model_parameters_source.txt file to the new directory
-    # shutil.copy(filename_source, path_params + filename_source[2:])
-
-    generating_test_data = False
-
-    if(generating_test_data):
-        energies, frequencies, linear_terms, quadratic_terms = generate_vibronic_model_data(source_file="./model_parameters_source.txt", nonadiabatic=True)
-    else:
-        # nsurf, nmode, energies, frequencies, linear_terms, quadratic_terms = read_model_auto_file("./vibron_data/cp.auto")
-        path = '/home/ngraymon/chem740/work_dir/scripting/ammonia/ammonia_vibron'
-        nsurf, nmode, energies, frequencies, linear_terms, quadratic_terms = read_model_h_file(path)
-
-    kwargs = {"number of modes": frequencies.shape[0],
-              "number of surfaces": energies.shape[0],
-              "energies": energies,
-              "frequencies": frequencies,
-              "linear couplings": linear_terms,
-              "quadratic couplings": quadratic_terms,
-              }
-    save_model_to_JSON(path_params+json_filename, **kwargs)
-
-
-def _get_nmode_nsurf_from_file(path):
-    """x"""
-    assert os.path.isfile(path), "invalid path:\n{:s}".format(path)
-    with open(path, mode='r', encoding='UTF8') as target_file:
-        input_dictionary = json.loads(target_file.read())
-
-    number_of_modes = input_dictionary["number of modes"]
-    number_of_surfaces = input_dictionary["number of surfaces"]
-    return number_of_modes, number_of_surfaces
-
-
-def get_nmode_nsurf_from_coupled_model(FS=None, path=None):
+def extract_dimensions_of_coupled_model(FS=None, path=None):
     """return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file"""
     if FS is None:
         assert path is not None, "no arguments provided"
     else:
         path = FS.path_vib_model
-    return _get_nmode_nsurf_from_file(path)
+    return _extract_dimensions_from_file(path)
 
 
-#it might be nice to have the ability to specify id_data or id_rho, although this should be done in a way that queries file_structure so as to not "leak" the file structure out to other areas of the code
-def get_nmode_nsurf_from_sampling_model(FS=None, path=None):
-    """return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file"""
+def extract_dimensions_of_sampling_model(FS=None, path=None):
+    """return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file
+    """
+
+    """ TODO - it might be nice to have the ability to specify id_data or id_rho, although this should be done in a way that queries file_structure so as to not "leak" the file structure out to other areas of the code
+    """
+
     if FS is None:
         assert path is not None, "no arguments provided"
     else:
         path = FS.path_rho_model
-    return _get_nmode_nsurf_from_file(path)
+    return _extract_dimensions_from_file(path)
+
+
+def _save_to_JSON(path, dictionary):
+    VMK.change_dictionary_keys_from_enum_members_to_strings(dictionary)
+    """ converts each numpy array to a list so that json can serialize them properly"""
+    for key, value in list(dictionary.items()):
+        if isinstance(value, (np.ndarray, np.generic)):
+            if np.count_nonzero(value) > 0:
+                dictionary[key] = value.tolist()
+            else:
+                del dictionary[key]
+        else:
+            log.debug(f"Value {value} with Key {key} does not appear to be an ndarray")
+
+    with open(path, mode='w', encoding='UTF8') as target_file:
+        target_file.write(json.dumps(dictionary))
+
+    return
+
+
+def save_model_to_JSON(path, dictionary):
+    """ wrapper for _save_to_JSON
+    calls verify_model_parameters() before calling _save_to_JSON()
+    """
+    verify_model_parameters(dictionary)
+    log.debug(f"Saving model to {path:s}")
+    _save_to_JSON(path, dictionary)
+    return
+
+
+def save_sample_to_JSON(path, dictionary):
+    """ wrapper for _save_to_JSON
+    calls verify_sample_parameters() before calling _save_to_JSON()
+    """
+    verify_sample_parameters(dictionary)
+    log.debug(f"Saving sample to {path:s}")
+    _save_to_JSON(path, dictionary)
+    return
+
+
+def _load_inplace_from_JSON(path, dictionary):
+    """overwrites all provided values in place with the values stored in the .json file located at path"""
+
+    with open(path, mode='r', encoding='UTF8') as file:
+        input_dictionary = json.loads(file.read())
+
+    VMK.change_dictionary_keys_from_strings_to_enum_members(input_dictionary)
+
+    for key, value in dictionary.items():
+        if isinstance(value, (np.ndarray, np.generic)):
+            # this is a safer way of forcing the input arrays that have no corresponding key in the input_dictionary to have zero values
+            # although this might not be necessary, it is a safer alternative at the moment
+            if key not in input_dictionary:
+                dictionary[key].fill(0.0)
+            else:
+                dictionary[key][:] = np.array(input_dictionary[key], dtype=F64)
+    return
+
+
+def _load_from_JSON(path):
+    """returns a dictionary filled with the values stored in the .json file located at path"""
+
+    with open(path, mode='r', encoding='UTF8') as file:
+        input_dictionary = json.loads(file.read())
+
+    VMK.change_dictionary_keys_from_strings_to_enum_members(input_dictionary)
+
+    for key, value in input_dictionary.items():
+        if isinstance(value, list):
+            # if we don't predefine the shape, can we run into problems?
+            input_dictionary[key] = np.array(value, dtype=F64)
+
+    # special case to always create an array of energies that are 0.0 if not provided in the .json file
+    if VMK.E not in input_dictionary:
+        A, N = _extract_dimensions_from_dictionary(input_dictionary)
+        shape = model_shape_dict(A, N)
+        input_dictionary[VMK.E] = np.zeros(shape[VMK.E], dtype=F64)
+
+    # TODO - design decision about which arrays to fill with zeros by default?
+
+    return input_dictionary
+
+
+def load_model_from_JSON(path, dictionary=None):
+    """
+    if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path
+
+    if kwargs is provided then all values are overwritten (in place) with the values stored in the .json file located at path
+    """
+    log.debug(f"Loading model from {path:s}")
+
+    # no arrays were provided so return newly created arrays after filling them with the approriate values
+    if not bool(dictionary):
+        new_model_dict = _load_from_JSON(path)
+
+        # TODO - we might want to make sure that none of the values in the dictionary have all zero values or are None
+
+        verify_model_parameters(new_model_dict)
+        return new_model_dict
+
+    # arrays were provided so fill them with the appropriate values
+    else:
+        verify_model_parameters(dictionary)
+        _load_inplace_from_JSON(path, dictionary)
+        # check twice? might as well be cautious for the moment until test cases are written
+        verify_model_parameters(dictionary)
+
+    return
+
+
+def load_sample_from_JSON(path, dictionary=None):
+    """
+    if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path
+
+    if kwargs is provided then all values are overwritten (in place) with the values stored in the .json file located at path
+    """
+    log.debug(f"Loading rho model (sampling model) from {path:s}")
+
+    # no arrays were provided so return newly created arrays after filling them with the approriate values
+    if not bool(dictionary):
+        new_model_dict = _load_from_JSON(path)
+
+        # TODO - we might want to make sure that none of the values in the dictionary have all zero values or are None
+
+        verify_sample_parameters(new_model_dict)
+        return new_model_dict
+
+    # arrays were provided so fill them with the appropriate values
+    else:
+        verify_sample_parameters(dictionary)
+        _load_inplace_from_JSON(path, dictionary)
+        # check twice? might as well be cautious for the moment until test cases are written
+        verify_sample_parameters(dictionary)
+    return
+# ------------------------------------------------------------------------
 
 
 def remove_coupling_from_model(path_source, path_destination):
-    """reads in a model and sets all the coupling parameters to zero"""
+    """reads in a model from path_source whose values can have dimensionality (..., A, A)
+    creates a new model whose values have dimensionality (..., A) from the diagonal of the A dimension of the input model
+    saves the new model to the provided path_destination"""
     kwargs = load_model_from_JSON(path_source)
 
-    kwargs["energies"] = np.diagonal(kwargs["energies"]).copy()
-
-    key = "linear couplings"
-    if key in kwargs:
-        kwargs[key] = np.diagonal(kwargs[key], axis1=1, axis2=2).copy()
-
-    key = "quadratic couplings"
-    if key in kwargs:
-        kwargs[key] = np.diagonal(kwargs[key], axis1=2, axis2=3).copy()
-
-    key = "cubic couplings"
-    if key in kwargs:
-        kwargs[key] = np.diagonal(kwargs[key], axis1=3, axis2=4).copy()
-
-    key = "quartic couplings"
-    if key in kwargs:
-        kwargs[key] = np.diagonal(kwargs[key], axis1=4, axis2=5).copy()
-
-    save_sample_to_JSON(path_destination, **kwargs)
+    for key, value in kwargs.items():
+        if hasattr(value, 'shape') and len(value.shape) >= 2:
+            ndims = len(value.shape)
+            kwargs[key] = np.diagonal(kwargs[key], axis1=ndims-2, axis2=ndims-1).copy()
+    save_sample_to_JSON(path_destination, kwargs)
     return
 
 
@@ -1600,167 +1390,93 @@ def create_basic_sampling_model(FS):
     return dest
 
 
-def create_fake_coupled_model(FS):
-    """ take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix """
-
-    assert os.path.isfile(FS.path_vib_model), "coupled_model file doesn't exist!"
-    model_dict = load_model_from_JSON(FS.path_vib_model)
-    A = model_dict["number of surfaces"]
-    N = model_dict["number of modes"]
-
-    # generate_orthogonal_matrix
+def create_random_orthonormal_matrix(A):
+    """returns a orthonormal matrix, just a wrapper for scipy.stats.ortho_group.rvs()"""
     from scipy.stats import ortho_group
-    U = ortho_group.rvs(A)
-    # print("U\n", U)
-    # print("1\n", U.dot(U.T))
+    return ortho_group.rvs(A)
 
-    if "linear couplings" in model_dict:
-        c1 = model_dict["linear couplings"].view()
-        assert np.allclose(c1, c1.transpose(0, 2, 1)), "c1 not diagonal in surfaces"
-        new_dense_matrix = np.einsum('bj,ajk,ck->abc', U, c1, U)
 
-        for j in range(N):
-            # print(c1[j, ...], '\n')
-            # print(np.einsum(U, [3, 1], c1, [0, 1, 2], U, [2, 4], [0, 3, 4]), '\n')
-            # print(U.dot(c1[j, ...]), '\n')
-            # print(np.einsum('bj,ajk->abk', U, c1)[j, ...], '\n')
-            # print("\n\n\n")
-            # print(U.dot(c1[j, ...].dot(U.T)), '\n')
-            # print(np.einsum('bj,ajk,ck->abc', U, c1, U)[j, ...], '\n')
-            # # print(np.einsum(U, [0, 1], c1[j, ...], [0, 1], [0, 1]), '\n')
-            # assert False
-            # print(new_dense_matrix[j, ...])
-            # print(U.dot(c1[j, ...].dot(U.T)))
-            assert np.allclose(new_dense_matrix[j, ...], U.dot(c1[j, ...].dot(U.T)))
-        c1[:] = new_dense_matrix
+def create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter):
+    """returns a orthonormal matrix which is identity if lambda is 0
+    the larger the value of lambda the 'farther' away the matrix is from identity
+    takes: number of surfaces and lambda value
+    """
+    from scipy.linalg import expm
 
-    if "quadratic couplings" in model_dict:
-        c2 = model_dict["quadratic couplings"].view()
-        assert np.allclose(c2, c2.transpose(0, 1, 3, 2)), "c2 not diagonal in surfaces"
-        new_dense_matrix = np.einsum('cj,abjk,dk->abcd', U, c1, U)
-        for j1, j2, in zip(range(N), range(N)):
-            assert np.allclose(new_dense_matrix[j1, j2, ...], U.dot(c1[j1, j2, ...].dot(U.T)))
-        c2[:] = new_dense_matrix
+    # TODO - this function should probably be in another module that provides general math
+    # functions for all modules
 
-    if "cubic couplings" in model_dict:
-        c3 = model_dict["cubic couplings"].view()
-        assert np.allclose(c3, c3.transpose(0, 1, 2, 4, 3)), "c3 not diagonal in surfaces"
-        new_dense_matrix = np.einsum('dj,abcjk,ek->abcde', U, c1, U)
-        for j1, j2, j3 in zip(range(N), range(N), range(N)):
-            assert np.allclose(new_dense_matrix[j1, j2, j3, ...], U.dot(c1[j1, j2, j3, ...].dot(U.T)))
-        c3[:] = new_dense_matrix
+    # scale the tuning parameter by the size of the matrix
+    tuning_parameter /= A
+    # create a random matrix
+    rand_matrix = np.random.rand(A, A)
+    # generate a skew symmetric matrix
+    skew_matrix = rand_matrix - rand_matrix.T
+    # generate an orthonormal matrix, which depends on the tuning parameter
+    ortho_matrix = expm(tuning_parameter * skew_matrix)
+    assert np.allclose(ortho_matrix.dot(ortho_matrix.T), np.eye(A)), "matrix is not orthonormal"
+    return ortho_matrix
 
-    if "quartic couplings" in model_dict:
-        c4 = model_dict["quartic couplings"].view()
-        assert np.allclose(c4, c4.transpose(0, 1, 2, 3, 5, 4)), "c4 not diagonal in surfaces"
-        new_dense_matrix = np.einsum('ej,abcdjk,fk->abcdef', U, c1, U)
-        for j1, j2, j3, j4 in zip(range(N), range(N), range(N), range(N)):
-            assert np.allclose(new_dense_matrix[j1, j2, j3, j4, ...], U.dot(c1[j1, j2, j3, j4, ...].dot(U.T)))
-        c4[:] = new_dense_matrix
+
+def create_fake_coupled_model(FS, tuning_parameter=0.01):
+    """ take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix """
+    assert os.path.isfile(FS.path_vib_model), "coupled_model file doesn't exist!"
+
+    model_dict = load_model_from_JSON(FS.path_vib_model)
+    A, N = _extract_dimensions_from_dictionary(model_dict)
+    U = create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter)
+    # print("U ", U)
+
+    # TODO - all the for loops are just hard checks, they should be factored out into test cases
+    # in the long term
+
+    for key in VMK.key_list():
+        if key not in model_dict:
+            continue
+
+        array = model_dict[key].view()
+        assert model_array_diagonal_in_surfaces(array), f"{key} not diagonal in surfaces"
+
+        if key is VMK.E:
+            new_values = np.einsum('bj,jk,ck->bc', U, array, U)
+
+        elif key is VMK.G1:
+            new_values = np.einsum('bj,ajk,ck->abc', U, array, U)
+            for j in range(N):
+                assert np.allclose(new_values[j, ...], U.dot(array[j, ...].dot(U.T)))
+
+        elif key is VMK.G2:
+            new_values = np.einsum('cj,abjk,dk->abcd', U, array, U)
+            for j1, j2, in zip(range(N), range(N)):
+                assert np.allclose(new_values[j1, j2, ...], U.dot(array[j1, j2, ...].dot(U.T)))
+
+        elif key is VMK.G3:
+            new_values = np.einsum('dj,abcjk,ek->abcde', U, array, U)
+            for j1, j2, j3 in zip(range(N), range(N), range(N)):
+                assert np.allclose(new_values[j1, j2, j3, ...],
+                                   U.dot(array[j1, j2, j3, ...].dot(U.T)))
+
+        elif key is VMK.G4:
+            new_values = np.einsum('ej,abcdjk,fk->abcdef', U, array, U)
+            for j1, j2, j3, j4 in zip(range(N), range(N), range(N), range(N)):
+                assert np.allclose(new_values[j1, j2, j3, j4, ...],
+                                   U.dot(array[j1, j2, j3, j4, ...].dot(U.T)))
+
+        # overwrite the previous array with the new values
+        array[:] = new_values
 
     # now we need to backup the old model and save the new one
     source = FS.path_vib_model
     dest = FS.path_vib_params + file_name.original_model
+    # backup the old model
     shutil.copyfile(source, dest)
+    # save the new one
+    save_model_to_JSON(FS.path_vib_model, model_dict)
 
-    save_model_to_JSON(FS.path_vib_model, **model_dict)
-    return
-
-
-# this should not be used for the moment
-def create_new_execution_directory(path_root=None, id_data=None):
-    """create or overwrite an execution directory"""
-    # checkOS()
-
-    # data directories are named "data_set_XXX" where XXX can be an integer
-    # from 1 to DIR_MAX
-    DIR_MAX = int(1e6)
-    DIR_RANGE = range(1, DIR_MAX)
-
-    # DIR_ARRAY = np.core.defchararray.add(np.full(shape=DIR_MAX, fill_value="data_set_", dtype=string_), np.arange(start=1, stop=DIR_MAX), dtype=string_)
-    # print(DIR_ARRAY)
-
-    if path_root is None and id_data is None:
-        counter = it.count(1)
-        dir_base = path_default_root + dir_vib
-        for directory_exists in map(os.path.isdir, map(dir_base.format, counter)):
-            if not directory_exists:
-                free_dir_id = next(counter)-1
-                new_directory = dir_base.format(free_dir_id)
-                s = "It appears {:} is available, writing model ..."
-                print(s.format(new_directory))
-                setup_input_params(new_directory, new_directory=True)
-                break
-        else:
-            raise Exception("Okay... we had issues, you used up the 1e6 possible "
-                            "data set names?????"
-                            )
-
-    elif path_root is None:
-        full_path = (path_default_root + dir_vib).format(id_data)
-
-        if os.path.isdir(full_path):
-            print("We discovered a previous execution at {:}, "
-                  "do you wish to proceed? (Y/N)".format(full_path)
-                  )
-            choice = input().lower()
-            if choice in set(["yes", "y", "ye"]):
-                setup_input_params(full_path)
-                print("Successfully created new model parameters at:{:}".format(full_path))
-                return
-            print("Stopping\n")
-            return
-
-        setup_input_params(full_path, new_directory=True)
-        print("Successfully created model params at:\n{:}".format(full_path))
-        return
-
-    else:
-        full_path = (path_root + dir_vib).format(id_data)
-        if os.path.isdir(full_path):
-            print("We discovered a previous execution at {:}, "
-                  "do you wish to proceed? (Y/N)".format(full_path)
-                  )
-            choice = input().lower()
-            if choice in set(["yes", "y", "ye"]):
-                setup_input_params(full_path)
-                print("Successfully created new model parameters at:{:}".format(full_path))
-                return
-            print("Stopping\n")
-            return
-
-        setup_input_params(full_path, new_directory=True)
-        print("Successfully created model params at:\n{:}".format(full_path))
-        return
-
-
-def verify_execution_directory_exists(id_data, path_root=None):
-    """ if directory structure exists does nothing, creates the file structure otherwise"""
-    # checkOS()
-
-    # assume default
-    if path_root is None:
-        path_root = path_default_root
-
-    files = file_structure.FileStructure(path_root, id_data)
-    if files.directories_exist():
-        return
-
-    files.make_directories()
+    # save the Orthogonal matrix in case we need to use it later
+    np.save(FS.path_vib_params + "orthogonal_matrix", U)
     return
 
 
 if (__name__ == "__main__"):
-    if len(sys.argv) == 3:
-        path_root = sys.argv[1]
-        assert(sys.argv[2].isnumeric() and int(sys.argv[2]) >= 1)
-        id_data = int(sys.argv[2])
-        create_new_execution_directory(path_root=path_root, id_data=id_data)
-    elif len(sys.argv) == 2:
-        assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
-        id_data = int(sys.argv[1])
-        create_new_execution_directory(id_data=id_data)
-    else:
-        create_new_execution_directory()
-
-    # read_model_h_file('/home/ngraymon/chem740/work_dir/scripting/ammonia/ammonia_vibron')
+    print("Currently does nothing")

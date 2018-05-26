@@ -3,10 +3,10 @@
 # system imports
 import itertools as it
 from functools import partial
-import cProfile
+# import cProfile
 import json
-import time
-import sys
+# import time
+# import sys
 import os
 
 # third party imports
@@ -22,7 +22,9 @@ from ..constants import hbar
 from ..data import file_structure
 from ..data import file_name  # do we need this?
 from ..data import vibronic_model_io as vIO
-from ..server import job_boss
+from ..data.vibronic_model_keys import VibronicModelKeys as VMK
+# from ..server import job_boss
+from ..server.server import ServerExecutionParameters as SEP
 
 """
 For future thought:
@@ -37,14 +39,13 @@ float_tolerance = 1e-23
 """ TODO - eventually this should be replaced so that each time a sample is drawn
 a new seed is generated and stored in the results file indexed with the fraction it generated
 """
-np.random.seed()# random
-# np.random.seed(232942) # pick our seed
+np.random.seed()  # random
+# np.random.seed(232942)  # pick our seed
 
 
 class TemperatureDependentClass:
     """store temperture dependent constants here"""
     def __init__(self, model, tau):
-
         # construct the coth and csch tensors
         omega = np.broadcast_to(model.omega, model.size['AN'])
         self.cothAN = np.tanh(hbar*tau*omega)**(-1.)
@@ -57,12 +58,12 @@ class TemperatureDependentClass:
         self.cothBANP = self.cothAN.copy().reshape(1, *self.cothAN.shape, 1)
         self.cschBANP = self.cschAN.copy().reshape(1, *self.cschAN.shape, 1)
 
-        # this is the constant prefactor that doesn't depend on
-        # sampled co-ordinates
+        # this is the constant prefactor that doesn't depend on sampled co-ordinates
         energy = np.diag(model.energy) if len(model.energy.shape) > 1 else model.energy
-        prefactor = energy + model.delta_weight
-        prefactor = np.broadcast_to(prefactor, model.size['BPA'])
+        tilde_energy = energy + model.delta_weight  # this is \tilde{E} from equation 34 on page 4
+        prefactor = np.broadcast_to(tilde_energy, model.size['BPA'])
         self.omatrix_prefactor = np.exp(-tau * prefactor.copy())
+        # this prefactor is F^P in equation 41 on page 5 where F is defined in equation 32
         prefactor = np.broadcast_to(self.cschAN, model.size['BPAN'])
         self.omatrix_prefactor *= np.prod(prefactor.copy(), axis=3)**0.5
 
@@ -98,30 +99,40 @@ class ModelClass:
     def from_json_file(cls, path):
         """constructor wrapper"""
         with open(path, mode='r', encoding='UTF8') as target_file:
-            json_obj = target_file.read()
-        return cls.load_model(cls, json_obj)
+            file_data = target_file.read()
+        return cls.load_model(cls, file_data)
 
     def load_model(self, path):
         """x"""
         # I think this fails if the list elements are multidimensional numpy arrays
         # carefully check this
         # lazy way of assuming that if one array is empty this is the first time
-        if None in map(type, [self.omega, self.energy, self.linear, self.quadratic]):
-            (self.energy,
-             self.omega,
-             self.linear,
-             self.quadratic,
-             ) = vIO.load_model_from_JSON(path)
+        if type(None) in map(type, [self.omega, self.energy, self.linear, self.quadratic]):
+            kwargs = vIO.load_model_from_JSON(path)
+            self.energy = kwargs[VMK.E]
+            self.omega = kwargs[VMK.w]
+            self.linear = kwargs[VMK.G1]
+            A = self.states
+            N = self.modes
+            shape = vIO.model_shape_dict(A, N)
+            self.linear = kwargs[VMK.G1] if VMK.G1 in kwargs else np.zeros(shape[VMK.G1], dtype=F64)
+            self.quadratic = kwargs[VMK.G2] if VMK.G2 in kwargs else np.zeros(shape[VMK.G2], dtype=F64)
         else:
             kwargs = {}
-            kwargs["number of modes"] = self.modes
-            kwargs["number of surfaces"] = self.states
-            kwargs["energies"] = self.energy
-            kwargs["frequencies"] = self.omega
-            kwargs["linear couplings"] = self.linear
-            kwargs["quadratic couplings"] = self.quadratic
-            vIO.load_model_from_JSON(path, **kwargs)
+            kwargs[VMK.N] = self.modes
+            kwargs[VMK.A] = self.states
+            kwargs[VMK.E] = self.energy
+            kwargs[VMK.w] = self.omega
+            kwargs[VMK.G1] = self.linear
+            kwargs[VMK.G2] = self.quadratic
+            vIO.load_model_from_JSON(path, kwargs)
         # should we update the states and modes after loading the model?
+        self.modes = kwargs[VMK.N]
+        self.states = kwargs[VMK.A]
+        self.energy = kwargs[VMK.E]
+        self.omega = kwargs[VMK.w]
+        self.linear = kwargs[VMK.G1]
+        self.quadratic = kwargs[VMK.G2]
         return
 
 
@@ -141,18 +152,20 @@ class ModelVibronic(ModelClass):
 
         # sampling parameters
         self.delta_weight = np.zeros(self.size['A'], dtype=F64)
-        self.state_weight = np.zeros(self.size['A'], dtype=F64)
+        # self.state_weight = np.zeros(self.size['A'], dtype=F64)
         self.state_shift = np.zeros(self.size['AN'], dtype=F64)
         return
 
     def compute_linear_displacement(self, data):
         """compute the energy shift equivalent to a linear displacement"""
         for a in range(data.states):
+            # UNDO - we would have to untransform the prefactor here
             self.delta_weight[a] = -0.5 * (self.linear[:, a, a]**2. / self.omega).sum(axis=0)
         return
 
     def compute_weight_for_each_state(self, modified_energy):
         """these are the weights for the oscillators associated with each state"""
+        assert False, "you shall not pass"  # haha it doesn't do anything anymore
         self.state_weight = -self.beta * (modified_energy + self.delta_weight)
         self.state_weight = np.exp(self.state_weight)
         self.state_weight /= 2. * np.prod(np.sinh((self.beta * self.omega) / 2.))
@@ -201,7 +214,7 @@ class ModelVibronic(ModelClass):
 
         self.optimize_energy()
 
-        self.compute_weight_for_each_state(energyDiag)
+        # self.compute_weight_for_each_state(energyDiag)
 
         self.initialize_TDP_object()
 
@@ -254,7 +267,7 @@ class ModelSampling(ModelClass):
         return
 
     def load_model(self, filePath):
-        sameModes, newStates = vIO.get_nmode_nsurf_from_sampling_model(path=filePath)
+        newStates, sameModes = vIO.extract_dimensions_of_sampling_model(path=filePath)
 
         # replace the vibronic models state size with rho's state size
         self.param_dict['A'] = self.states = newStates
@@ -280,13 +293,21 @@ class ModelSampling(ModelClass):
 
         # this brings up the good point that we might want to load a JSON file without providing the number of modes and surfaces
         kwargs = {}
-        kwargs["number of modes"] = self.modes
-        kwargs["number of surfaces"] = self.states
-        kwargs["energies"] = self.energy
-        kwargs["frequencies"] = self.omega
-        kwargs["linear couplings"] = self.linear
-        kwargs["quadratic couplings"] = self.quadratic
-        vIO.load_sample_from_JSON(filePath, **kwargs)
+        kwargs[VMK.N] = self.modes
+        kwargs[VMK.A] = self.states
+        kwargs[VMK.E] = self.energy
+        kwargs[VMK.w] = self.omega
+        kwargs[VMK.G1] = self.linear
+        # print(kwargs[VMK.G1], "\n", self.linear)
+        kwargs[VMK.G2] = self.quadratic
+        vIO.load_sample_from_JSON(filePath, kwargs)
+        self.modes = kwargs[VMK.N]
+        self.states = kwargs[VMK.A]
+        self.energy = kwargs[VMK.E]
+        self.omega = kwargs[VMK.w]
+        self.linear = kwargs[VMK.G1]
+        # print(kwargs[VMK.G1], "\n", self.linear)
+        self.quadratic = kwargs[VMK.G2]
         return
 
     def draw_sample(self, sample_view):
@@ -305,11 +326,17 @@ class ModelSampling(ModelClass):
         return
 
     def compute_weight_for_each_state(self):
+        print(self.beta, self.energy, self.omega, sep='\n')
         """these are the weights for the oscillators associated with each state"""
-        self.state_weight = np.exp(-self.beta * self.energy)
-        self.state_weight /= 2. * np.prod(np.sinh((self.beta * self.omega) / 2.))
+        self.state_weight = np.exp(-self.beta * (self.energy + self.delta_weight))
+        # self.state_weight /= 2. * np.prod(np.sinh((self.beta * self.omega) / 2.))
+
+        # we believe the factor of 2 on the outside cancels out in equation 49.
+        self.state_weight /= np.prod(np.sinh((self.beta * self.omega) / 2.))
+
         # normalize the weights
         self.state_weight /= self.state_weight.sum()
+        print("weights", self.state_weight)
         return
 
     def optimize_energy(self):
@@ -385,6 +412,7 @@ class ModelSampling(ModelClass):
     def precompute(self, data):
         """precompute some constants"""
 
+        # HACKS - TEMPORARY CHANGE
         self.compute_linear_displacement()
 
         self.optimize_energy()
@@ -449,7 +477,7 @@ class BoxData:
         data.path_vib_model = FS.path_vib_model
         data.path_rho_model = FS.path_rho_model
 
-        N, A = vIO.get_nmode_nsurf_from_coupled_model(FS)
+        A, N = vIO.extract_dimensions_of_coupled_model(FS)
         data.states = A
         data.modes = N
 
@@ -464,89 +492,94 @@ class BoxData:
         return data
 
     @classmethod
-    def from_json_file(cls, path_full):
+    def from_json_file(cls, path):
         """constructor wrapper"""
-        with open(path_full, mode='r', encoding='UTF8') as target_file:
-            json_obj = target_file.read()
-        return cls.from_json_object(cls, json_obj)
+        with open(path, mode='r', encoding='UTF8') as target_file:
+            file_data = target_file.read()
+        return cls.from_json_string(cls, file_data)
 
     @classmethod
-    def from_json_object(cls, json_obj):
+    def from_json_string(cls, json_str):
         """constructor wrapper"""
         data = cls()
-        data.load_json(json_obj)
+        data.load_json_string(json_str)
         return data
 
     def __init__(self):
         return
 
     @classmethod
-    def json_encode(cls, params):
-        json_obj = json.dumps(params, separators=cls._SEPARATORS)
-        return json_obj
+    def json_serialize(cls, params):
+        json_str = json.dumps(params, separators=cls._SEPARATORS)
+        return json_str
 
     def encode_self(self, params=None):
-        """encodes a json_obj with member values or given params"""
-        log.debug("Encoding data to JSON".format(path_full))
+        """encodes json str with member values or given params"""
+        log.debug("Encoding data to JSON")
 
         if params is None:
+            log.flow("params was none")
             params = {
-                "number_of_samples": self.samples,
-                "number_of_blocks": self.blocks,
-                "number_of_states": self.states,
-                "number_of_beads": self.beads,
-                "number_of_modes": self.modes,
-                "temperature": self.temperature,
-                # "rho_states": self.rho_states,
-                "block_size": self.block_size,
-                "delta_beta": self.delta_beta,
-                "path_vib_model": self.path_vib_model,
-                "path_rho_model": self.path_rho_model,
-                "id_data": self.id_data,
-                "id_rho": self.id_rho,
-                "beta": self.beta,
-                "tau": self.tau,
+                SEP.X: self.samples,
+                SEP.nBlk: self.blocks,
+                SEP.A: self.states,
+                SEP.P: self.beads,
+                SEP.N: self.modes,
+                SEP.T: self.temperature,
+                SEP.BlkS: self.block_size,
+                SEP.dB: self.delta_beta,
+                SEP.D: self.id_data,
+                SEP.R: self.id_rho,
+                SEP.beta: self.beta,
+                SEP.tau: self.tau,
             }
+        log.flow(params)
+        return self.json_serialize(params)
 
-        return self.json_encode(params)
-
-    def load_json_object(self, json_obj):
-        """decodes the json_obj and sets member parameters"""
+    # is this still used?
+    def load_json_string(self, json_str):
+        """decodes the json_str and sets member parameters"""
         log.debug("Decoding JSON obj")
-        json_obj = json_obj.replace(self._COMMA_REPLACEMENT, ",")
-        params = json.loads(json_obj)
+        json_str = json_str.replace(self._COMMA_REPLACEMENT, ",")
+        params = json.loads(json_str)
+        # We should only set the value if they are not none?
 
         # replace with dictionary update?
         # def setVar(self, var):
         # for key, value in var.items():
         # setattr(self, key, value)
-        self.samples = params["number_of_samples"]
-        self.blocks = params["number_of_blocks"]
-        self.states = params["number_of_states"]
-        self.beads = params["number_of_beads"]
-        self.modes = params["number_of_modes"]
-        self.temperature = params["temperature"]
-        # self.rho_states = params["rho_states"]
-        self.block_size = params["block_size"]
-        self.delta_beta = params["delta_beta"]
-        self.path_vib_model = params["path_vib_model"]
-        self.path_rho_model = params["path_rho_model"]
-        self.id_data = params["id_data"]
-        self.id_rho = params["id_rho"]
+        self.samples = params[SEP.X.value]
+        self.blocks = params[SEP.nBlk.value]
+        self.states = params[SEP.A.value]
+        self.beads = params[SEP.P.value]
+        self.modes = params[SEP.N.value]
+        self.temperature = params[SEP.T.value]
+        self.block_size = params[SEP.BlkS.value]
+        self.id_data = params[SEP.D.value]
+        self.id_rho = params[SEP.R.value]
 
         # dumb hacks
-        if "beta" in params.keys():
-            self.beta = params["beta"]
+        if SEP.beta.value in params.keys():
+            self.beta = params[SEP.beta.value]
         else:
             self.beta = 1.0 / (constants.boltzman * self.temperature)
         # dumb hacks
-        if "tau" in params.keys():
-            self.tau = params["tau"]
+        if SEP.tau.value in params.keys():
+            self.tau = params[SEP.tau.value]
         else:
             self.tau = self.beta / self.beads
+        # dumb hacks
+        if SEP.dB.value in params.keys():
+            if type(params[SEP.dB.value]) is float:
+                self.delta_beta = params[SEP.dB.value]
+
+        # fill the paths
+        FS = file_structure.FileStructure(params["path_root"], self.id_data, self.id_rho)
+        self.path_vib_model = FS.path_vib_model
+        self.path_rho_model = FS.path_rho_model
 
         for k, v in params.items():
-            print(type(v), k, v)
+            log.debug(type(v), k, v)
 
         return
 
@@ -591,7 +624,6 @@ class BoxData:
         self.vib.precompute(self)
 
         self.rho = ModelSampling(self)
-        # print(self.path_rho_model)
         self.rho.load_model(self.path_rho_model)
         self.rho.precompute(self)
         return
@@ -605,7 +637,7 @@ class BoxData:
                            'P': self.beads,
                            'B': self.block_size, }
 
-        self.size_list = ['X', 'P', 'N', 'A', 'B',
+        self.size_list = ['X', 'P', 'N', 'A', 'B', 'XP',
                           'BP', 'AN', 'NA', 'AA',
                           'BNP', 'BPA', 'BAA', 'XNP',
                           'NAA', 'NNA', 'ANP',
@@ -631,7 +663,7 @@ class BoxData:
         self.numerator = np.zeros(self.size['BAA'])
 
         # construct the circulant matrix
-        assert self.beads >= 3, "circulant matrix requires 3 or more beads"# hard check
+        assert self.beads >= 3, "circulant matrix requires 3 or more beads"  # hard check
         defining_vector = [0, 1] + [0]*(self.beads-3) + [1]
         self.circulant_matrix = scipy.linalg.circulant(defining_vector)
 
@@ -651,11 +683,13 @@ class BoxDataPM(BoxData):
     tau_plus = 0.0
     tau_minus = 0.0
 
-    def __init__(self, delta_beta):
+    def __init__(self, delta_beta=None):
         # -TODO -
         # consider removing the requirement of providing a delta_beta
         # could use a default value from constant module
         # with the ability to optionally override
+        if delta_beta is None:
+            delta_beta = constants.delta_beta
         self.delta_beta = delta_beta
         super().__init__()
         return
@@ -705,8 +739,8 @@ class BoxResult:
                 raise AssertionError(s.foramt(k, path))
 
     def initialize_arrays(self):
-        self.scaled_g = np.empty(self.samples, dtype=F64)
-        self.scaled_rho = np.empty(self.samples, dtype=F64)
+        self.scaled_g = np.full(self.samples, np.nan, dtype=F64)
+        self.scaled_rho = np.full(self.samples, np.nan, dtype=F64)
         return
 
     def __init__(self, data=None, X=None):
@@ -728,7 +762,7 @@ class BoxResult:
         if self.samples is 0:
             raise AssertionError("{:s} still has 0 samples - this should not happen".format(self.__class__.__name__))
         elif self.id_job is not None:
-            self.name = self.partial_name(J=self.id_job)
+            self.name = self.partial_name(J=int(self.id_job))  # why was this a str?
         else:
             """ TODO - this could be dangerous on the server if a BoxResult object is created
             but not assigned a job id - need to create a test to prevent this from happening
@@ -745,6 +779,7 @@ class BoxResult:
     def save_results(self, number_of_samples):
         """x"""
         path = self.compute_path_to_file()
+        print(path)
 
         # save raw data points
         np.savez(path,
@@ -977,6 +1012,8 @@ def diagonalize_coupling_matrix(data):
     # reference hamiltonian (energy shifts)
     data.coupling_matrix += data.vib.energy[NEW, NEW, :, :]
 
+    # print("V\n", data.coupling_matrix[0, 0, :, :])
+
     # shift back to surface dependent co-ordinates
     data.qTensor -= data.vib.state_shift[NEW, :, :, NEW]
     # ------------------------------------------------------------------------
@@ -1018,12 +1055,14 @@ def build_numerator(data, vib, outputArray, idx):
             # this is twice as fast
             # data.numerator[b, ...].dot(np.diag(vib.omatrix[b, p, :]))
             # this is even faster
-            data.numerator[b, ...].dot(vib.omatrix[b, p, :, :], out=data.numerator[b, :, :])
             data.numerator[b, ...].dot(data.M_matrix[b, p, ...], out=data.numerator[b, :, :])
+            data.numerator[b, ...].dot(vib.omatrix[b, p, :, :], out=data.numerator[b, :, :])
 
     # trace over the surfaces
     outputArray[idx] = np.trace(data.numerator, axis1=1, axis2=2)
-    assert np.all(outputArray[idx] >= 0), "g(R) must always be positive"
+    # if np.any(outputArray[idx] < 0.):
+    #     log.warning("g(R) had negative values!!!")
+    # assert np.all(outputArray[idx] >= 0.), "g(R) must always be positive"
     return
 
 
@@ -1170,7 +1209,6 @@ def block_compute(data, result):
     S12 = np.zeros(data.size['BP'])
 
     for block_index in range(0, data.blocks):
-
         # indicies
         start = block_index * data.block_size
         end = (block_index + 1) * data.block_size
@@ -1190,15 +1228,10 @@ def block_compute(data, result):
         # compute parts with normal scaling factor
         build_scaling_factors(S12, rho.const, vib.const)
         scale_o_matricies(S12, rho.const, vib.const)
+
         build_denominator(rho.const, y_rho, sample_view)
         diagonalize_coupling_matrix(data)
         build_numerator(data, vib.const, y_g, sample_view)
-
-        # # periodically save results to file
-        # if (block_index + 1) in block_index_list:
-        #     s = "Block index: {:d}\nNumber of samples: {:d}"
-        #     log.info(s.format(block_index + 1, end))
-        #     result.save_results(end)
 
     result.save_results(end)
 

@@ -128,8 +128,10 @@ class FileStructure:
         """x"""
         for directory in self.dir_list:
             path = getattr(self, directory)
-            log.flow(path)
+            log.debug(path)
             os.makedirs(path, exist_ok=True)
+
+        log.flow(f"Created directories in {self.path_root:s}")
         return
 
     def make_rho_directories(self, id_rho):

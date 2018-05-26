@@ -114,6 +114,11 @@ this is the full model
 """
 coupled_model = "coupled_model.json"
 
+""" contains the original parameters (diagonal) which describe the systems Hamiltonian
+before we did a unitary transformation
+"""
+original_model = "original_coupled_model.json"
+
 """ contains the parameters which describe the harmonic operator
 this is all the Kinetic terms + any diagonal terms that can be described by a Harmonic oscillator
 this can be used as a simplistic sampling distribution rho_0

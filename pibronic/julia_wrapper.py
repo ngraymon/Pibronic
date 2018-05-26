@@ -49,7 +49,7 @@ def compute(command, old_dict):
         if oldKey in output_dict:
             temp_dict[newKey] = float(output_dict[oldKey])
 
-    new_dict = {temperature: temp_dict}
+    new_dict = {str(temperature): temp_dict}
 
     old_dict.update(new_dict)
     return
@@ -57,11 +57,28 @@ def compute(command, old_dict):
 
 def analytic_of_sampling_model(FS, command, beta):
     """x"""
+    path_analytic = FS.path_rho_params + "analytic_results.txt"
+    path_original = FS.path_rho_params + "sampling_model.json"
+
+    old_dict = {}
+
+    if os.path.isfile(path_analytic):
+        with open(path_analytic, 'r') as file:
+            data = file.read()
+            if len(data) > 1:
+                old_dict = json.loads(data)
+
+    command = command.format(F=path_original, T=beta)
+    compute(command, old_dict)
+
+    with open(path_analytic, 'w') as file:
+        json.dump(old_dict, file)
+    return
 
 
 def analytic_of_original_coupled_model(FS, command, beta):
     """x"""
-    path_analytic = FS.path_rho_params + "analytic_results.txt"
+    path_analytic = FS.path_vib_params + "original_analytic_results.txt"
     path_original = FS.path_vib_params + "original_coupled_model.json"
 
     old_dict = {}
@@ -81,26 +98,24 @@ def analytic_of_original_coupled_model(FS, command, beta):
     return
 
 
-def analytic_save_to_sos_file(FS, command, beta):
+def sos_of_coupled_model(FS, command, beta):
     """x"""
     old_dict = {}
+    basis_size = 80
+
+    path_sos = FS.template_sos_vib.format(B=basis_size)
 
     # is this a mistake? why check for vib then open rho ??
-    if os.path.isfile(FS.template_sos_vib):
-        with open(FS.template_sos_rho, 'r') as file:
+    if os.path.isfile(path_sos):
+        with open(path_sos, 'r') as file:
             data = file.read()
             if len(data) > 1:
                 old_dict = json.loads(data)
 
-    # print(old_dict,"\n")
-
-    command = command.format(F=FS.path_rho_model, T=beta)
+    command = command.format(F=FS.path_vib_model, T=beta, B=basis_size)
     compute(command, old_dict)
 
-    with open(FS.template_sos_rho, 'w') as file:
-        json.dump(old_dict, file)
-
-    with open(FS.template_sos_vib, 'w') as file:
+    with open(path_sos, 'w') as file:
         json.dump(old_dict, file)
 
     return
@@ -118,11 +133,12 @@ def prepare_julia():
 def construct_command_dictionary():
     """x"""
     julia = "julia /home/ngraymon/julia_confirm/VibronicToolkit.jl/bin/"
-    a = julia + "analytical.jl --conf {F:} --beta {T:}"
+    a_c = julia + "analytical_coupled.jl --conf {F:} --beta {T:}"
+    a_s = julia + "analytical_sampling.jl --conf {F:} --beta {T:}"
     s = julia + "sos.jl --conf {F:} --beta {T:} --basis-size {B:}"
     t = julia + "trotter.jl --conf {F:} --beta {T:} --basis-size {B:} --num-links {P:}"
     x = julia + "sampling.jl --conf {F:} --beta {T:} --num-links {P:} --num-samples {X:}"
-    return {"analytic": a, "sos": s, "trotter": t, "sampling": x}
+    return {"analytical_coupled": a_c, "analytical_sampling": a_s, "sos": s, "trotter": t, "sampling": x}
 
 
 if (__name__ == "__main__"):
@@ -143,3 +159,7 @@ if (__name__ == "__main__"):
     id_rho = int(sys.argv[3])
 
     FS = fs.FileStructure(path_root, id_data, id_rho)
+
+    analytic_of_original_coupled_model(FS, cmd_dict["analytical_coupled"], beta)
+    analytic_of_sampling_model(FS, cmd_dict["analytical_sampling"], beta)
+    # sos_of_coupled_model(FS, cmd_dict["sos"], beta)
