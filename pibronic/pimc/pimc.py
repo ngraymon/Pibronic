@@ -593,6 +593,10 @@ class BoxData:
         self.path_vib_model = FS.path_vib_model
         self.path_rho_model = FS.path_rho_model
 
+        FS.generate_model_hashes()
+        self.hash_vib = FS.hash_vib
+        self.hash_rho = FS.hash_rho
+
         for k, v in params.items():
             log.debug(type(v), k, v)
 
@@ -633,7 +637,7 @@ class BoxData:
         return
 
     def initialize_models(self):
-        """"""
+        """x"""
         self.vib = ModelVibronic(self)
         self.vib.load_model(self.path_vib_model)
         self.vib.precompute(self)
@@ -644,7 +648,7 @@ class BoxData:
         return
 
     def preprocess(self):
-        """"""
+        """x"""
         # for readability and clarity we use these letters
         self.param_dict = {'X': self.samples,
                            'A': self.states,
@@ -741,7 +745,7 @@ class BoxResult:
     @classmethod
     def read_number_of_samples(cls, path_full):
         """x"""
-        with np.load(path_full) as data:
+        with np.load(path_full, mmap_mode='r') as data:
             return data["number_of_samples"]
 
     @classmethod
@@ -769,6 +773,11 @@ class BoxResult:
             self.samples = 0
             log.debug("The BoxResult object has been initialized with 0 samples this could be an issue?")
             # raise AssertionError("data or X must be provided to BoxResult __init__")
+
+        # FS.generate_model_hashes()  # TODO - possibly remove this in the future?
+        # TODO - better way of passing the hashes around
+        self.hash_vib = data.hash_vib
+        self.hash_rho = data.hash_rho
         self.initialize_arrays()
         return
 
@@ -798,6 +807,9 @@ class BoxResult:
 
         # save raw data points
         np.savez(path,
+                 # TODO - fix the hash situation - this is hacky
+                 hash_vib=self.hash_vib,
+                 hash_rho=self.hash_rho,
                  number_of_samples=self.samples,
                  s_rho=self.scaled_rho,
                  s_g=self.scaled_g,
@@ -808,8 +820,10 @@ class BoxResult:
 
     def load_results(self, path_full):
         """x"""
-        with np.load(path_full) as data:
+        with np.load(path_full, mmap_mode="r") as data:
             BoxResult.verify_result_keys_are_present(path_full, data)
+            # TODO - check hashes here? - or do we assume they've already been checked?
+            # BoxResult.verify_hashes_are_valid()
             if self.samples is 0:
                 self.samples = data["number_of_samples"]
             elif data["number_of_samples"] is not self.samples:
@@ -828,6 +842,8 @@ class BoxResult:
         for path in list_of_paths:
             # should verify path is correct?
             with np.load(path, mmap_mode="r") as data:
+                # TODO - check hashes here? - or do we assume they've already been checked?
+                # BoxResult.verify_hashes_are_valid()
                 # should verify file is not empty?
                 number_of_samples += data["number_of_samples"]
 
@@ -877,6 +893,9 @@ class BoxResultPM(BoxResult):
 
         # save raw data points
         np.savez(path,
+                 # TODO - fix the hash situation - this is hacky
+                 hash_vib=self.hash_vib,
+                 hash_rho=self.hash_rho,
                  number_of_samples=self.samples,
                  s_rho=self.scaled_rho,
                  s_g=self.scaled_g,
@@ -902,6 +921,8 @@ class BoxResultPM(BoxResult):
         for path in list_of_paths:
             # should verify path is correct?
             with np.load(path, mmap_mode="r") as data:
+                # TODO - check hashes here? - or do we assume they've already been checked?
+                # BoxResult.verify_hashes_are_valid()
                 # should verify file is not empty?
                 number_of_samples += data["number_of_samples"]
 

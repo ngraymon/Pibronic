@@ -26,6 +26,7 @@ echo
 # execute the job - 100% necessary for execution_parameters to be interpreted as a string
 ${PYTHON3_PATH} ${SAMPLING_SCRIPT} "${EXECUTION_PARAMETERS}" ${SCRATCH_DIR} ${SLURM_JOB_ID}
 
+sleep 5
 # retrive useful information about the job's execution and then print that info
 EXECSTATS=$(ssh $SLURM_CLUSTER_NAME sacct -j $SLURM_JOBID --format=CPUTime,CPUTimeRAW,AveVMSize)
 

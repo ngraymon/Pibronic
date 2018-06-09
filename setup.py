@@ -61,7 +61,7 @@ setup(
         'Topic :: Scientific/Engineering :: Chemistry',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
+        'License :: OSI Approved :: MIT License',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.

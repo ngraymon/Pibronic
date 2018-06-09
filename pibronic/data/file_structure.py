@@ -14,6 +14,7 @@ from os.path import join
 # local imports
 from . import file_name
 from ..log_conf import log
+from ..vibronic import vIO
 
 
 # the names of the sub directories
@@ -158,4 +159,9 @@ class FileStructure:
             return
 
         files.make_directories()
+        return
+
+    def generate_model_hashes(self):
+        self.hash_vib = vIO.create_model_hash(FS=self)
+        self.hash_rho = vIO.create_sampling_hash(FS=self)
         return

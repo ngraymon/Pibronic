@@ -10,6 +10,7 @@ import subprocess
 import shutil
 import sys
 import os
+from os.path import join
 
 # third party imports
 
@@ -61,11 +62,11 @@ def copyInput(FS, file_name):
     """x"""
     path_root = os.path.abspath(input_files.__file__)
 
-    src_params = path_root + file_name + "_params.txt"
-    src_zmat = path_root + file_name + "_zmat.txt"
+    src_params = join(path_root, file_name, "_params.txt")
+    src_zmat = join(path_root, file_name, "_zmat.txt")
 
-    dst_params = FS.path_es + file_name + "_params.txt"
-    dst_zmat = FS.path_es + file_name + "_zmat.txt"
+    dst_params = join(FS.path_es, file_name, "_params.txt")
+    dst_zmat = join(FS.path_es, file_name, "_zmat.txt")
 
     shutil.copyfile(src_params, dst_params)
     shutil.copyfile(src_zmat, dst_zmat)
@@ -84,7 +85,8 @@ def generate_analytical_results(id_data, id_rho, temperature_list):
         # this should also be generalized
         command = "python3 ~/pibronic/pibronic/julia_wrapper.py {:d} {:d} {:.2f}\n"
         # should replace this with a function call that isn't dependent on our server
-        sshProcess = subprocess.Popen(["ssh", "-t", "dev002"],
+        # sshProcess = subprocess.Popen(["ssh", "-t", "dev002"],
+        sshProcess = subprocess.Popen(["srun", "--pty"],  # dev002 is out of commission
                                       universal_newlines=True,
                                       stdin=subprocess.PIPE,
                                       stdout=subprocess.PIPE,

@@ -6,6 +6,7 @@ import itertools as it
 # import functools as ft
 import subprocess
 # import fileinput
+import hashlib
 import shutil
 import json
 # import math
@@ -130,6 +131,43 @@ def verify_sample_parameters(kwargs):
             log.debug(f"Found key {key} which is not present in the default dictionary")
 
     return
+
+
+def _hash(string):
+    """creates a sha512 hash of the input string and returns the byte representation"""
+    m = hashlib.sha512()
+    m.update(string.encode('utf-8'))
+    return m.hexdigest()
+
+
+def create_model_hash(FS=None, path=None):
+    """ create a has of the coupled_model.json file's contents
+    this is used to confirm that result files were generated for the current model and not an older one
+    uses a FileStructure or an absolute path to the file"""
+    if FS is None:
+        assert path is not None, "no arguments provided"
+    else:
+        path = FS.path_vib_model
+
+    with open(path, mode='r', encoding='utf8') as file:
+        string = file.read()
+
+    return _hash(string)
+
+
+def create_sampling_hash(FS=None, path=None):
+    """ create a has of the sampling_model.json file's contents
+    this is used to confirm that result files were generated for the current model and not an older one
+    uses a FileStructure or an absolute path to the file"""
+    if FS is None:
+        assert path is not None, "no arguments provided"
+    else:
+        path = FS.path_rho_model
+
+    with open(path, mode='r', encoding='utf8') as file:
+        string = file.read()
+
+    return _hash(string)
 
 
 def generate_default_root():

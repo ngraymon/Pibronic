@@ -9,7 +9,7 @@ import sys
 # local imports
 import pibronic
 from pibronic.log_conf import log
-from pibronic.pimc import minimal as engine
+from pibronic.pimc import pimc as engine
 from pibronic.data import file_structure
 
 if (__name__ == '__main__'):

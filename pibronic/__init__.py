@@ -4,6 +4,8 @@ Pibronic
 ========
 """
 
+name = "Pibronic"
+
 # let's copy numpy's style for the moment
 from . import pimc
 from . import data
