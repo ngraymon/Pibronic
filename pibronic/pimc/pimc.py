@@ -482,6 +482,10 @@ class BoxData:
     _COMMA_REPLACEMENT = ";"
     _SEPARATORS = (_COMMA_REPLACEMENT, ':')
 
+    # the hash values for the vibronic model and the gaussian mixture distribution
+    hash_vib = None
+    hash_rho = None
+
     @classmethod
     def from_FileStructure(cls, FS):
         """constructor wrapper"""
@@ -547,6 +551,8 @@ class BoxData:
                 SEP.R: self.id_rho,
                 SEP.beta: self.beta,
                 SEP.tau: self.tau,
+                # "s": self.hash_vib,
+                # "x": self.hash_rho,
             }
         log.flow(params)
         return self.json_serialize(params)
@@ -572,6 +578,8 @@ class BoxData:
         self.block_size = params[SEP.BlkS.value]
         self.id_data = params[SEP.D.value]
         self.id_rho = params[SEP.R.value]
+        # self.hash_vib = params[]
+        # self.hash_rho = params[]
 
         # dumb hacks
         if SEP.beta.value in params.keys():
@@ -741,6 +749,11 @@ class BoxResult:
     """use this to pass results back and forth between methods"""
 
     id_job = None
+    # TODO - temporary solution, the preference is to be able to loosely create the object and provide the necessary information later
+    hash_vib = None
+    hash_rho = None
+
+    key_list = ["number_of_samples", "s_rho", "s_g"]
 
     @classmethod
     def read_number_of_samples(cls, path_full):
@@ -751,11 +764,18 @@ class BoxResult:
     @classmethod
     def verify_result_keys_are_present(cls, path, fileObj):
         """x"""
-        key_list = ["number_of_samples, s_rho", "s_g"]
-        for k in key_list:
+        for k in cls.key_list:
             if k not in fileObj.keys():
                 s = "Expected key ({:s}) not present in result file\n{:s}\n"
-                raise AssertionError(s.foramt(k, path))
+                raise AssertionError(s.format(k, path))
+
+    @classmethod
+    def result_keys_are_present_in(cls, iterable):
+        """ x """
+        for k in cls.key_list:
+            if k not in iterable:
+                return False
+        return True
 
     def initialize_arrays(self):
         self.scaled_g = np.full(self.samples, np.nan, dtype=F64)
@@ -767,6 +787,8 @@ class BoxResult:
         if data is not None:
             self.partial_name = partial(file_name.pimc().format, P=data.beads, T=data.temperature)
             self.samples = data.samples
+            self.hash_vib = data.hash_vib
+            self.hash_rho = data.hash_rho
         elif X is not None:
             self.samples = X
         else:
@@ -774,10 +796,11 @@ class BoxResult:
             log.debug("The BoxResult object has been initialized with 0 samples this could be an issue?")
             # raise AssertionError("data or X must be provided to BoxResult __init__")
 
+        # assert data is not None, "we can't take data's hash values if they don't exist!"
         # FS.generate_model_hashes()  # TODO - possibly remove this in the future?
         # TODO - better way of passing the hashes around
-        self.hash_vib = data.hash_vib
-        self.hash_rho = data.hash_rho
+        # self.hash_vib = data.hash_vib
+        # self.hash_rho = data.hash_rho
         self.initialize_arrays()
         return
 
@@ -803,8 +826,8 @@ class BoxResult:
     def save_results(self, number_of_samples):
         """x"""
         path = self.compute_path_to_file()
-        print(path)
 
+        assert self.hash_vib is not None and self.hash_rho is not None, "we save hash values if they don't exist!"
         # save raw data points
         np.savez(path,
                  # TODO - fix the hash situation - this is hacky
@@ -818,10 +841,10 @@ class BoxResult:
                  )
         return
 
-    def load_results(self, path_full):
-        """x"""
-        with np.load(path_full, mmap_mode="r") as data:
-            BoxResult.verify_result_keys_are_present(path_full, data)
+    def load_results(self, path):
+        """ load results from one file"""
+        with np.load(path, mmap_mode="r") as data:
+            self.__class__.verify_result_keys_are_present(path, data)
             # TODO - check hashes here? - or do we assume they've already been checked?
             # BoxResult.verify_hashes_are_valid()
             if self.samples is 0:
@@ -834,47 +857,89 @@ class BoxResult:
             self.scaled_rho = data["s_rho"]
         return
 
-    def load_multiple_results(self, list_of_paths):
-        """x"""
+    def load_multiple_results(self, list_of_paths, desired_number_of_samples=None):
+        """ load results from more than one file
+        the optional argument desired_number_of_samples can be provided
+        the method will then try to load as many samples UPTO the desired_number_of_samples and no more"""
         number_of_samples = 0
         assert not len(list_of_paths) == 0, "list_of_paths cannot be empty"
+
+        list_of_bad_paths = []
 
         for path in list_of_paths:
             # should verify path is correct?
             with np.load(path, mmap_mode="r") as data:
+                """ TODO - design decision choice here
+                This implementation currently prints out a debug message and continues execution assuming it's job is to scan through and load as many files as possible.
+                For each path that doesn't have the data we expect it to have we will remove it from the list.
+                Another alternative would be to raise an AssertionError if the file it is trying to load does not have the appropriate keys, which is a good approach.
+                """
+                # self.__class__.verify_result_keys_are_present(path, data)
+
                 # TODO - check hashes here? - or do we assume they've already been checked?
                 # BoxResult.verify_hashes_are_valid()
                 # should verify file is not empty?
-                number_of_samples += data["number_of_samples"]
+                if self.__class__.result_keys_are_present_in(data.keys()):
+                    number_of_samples += data["number_of_samples"]
+                else:
+                    list_of_bad_paths.append(path)
+
+        # first lets make sure that we had 1 or more good paths
+        assert not set(list_of_paths) == set()
+
+        # okay now remove all the bad paths!
+        list_of_paths = list(set(list_of_paths) - set(list_of_bad_paths))
+
+        assert len(list_of_paths) > 0, "none of the provided paths were good, i.e. none of them had all the required keys {}".format(self.key_list)
 
         assert number_of_samples is not 0, "number of samples should have changed"
+
+        if desired_number_of_samples is None:
+            desired_number_of_samples = number_of_samples
+        else:
+            if number_of_samples >= desired_number_of_samples:
+                number_of_samples = desired_number_of_samples
+            elif number_of_samples < desired_number_of_samples:
+                print("We found less samples than were requested!!")
+                # TODO - choose what the correct procedure in this case is, for now we shall not raise an error
+
         self.samples = number_of_samples
         self.initialize_arrays()
 
         start = 0
-        finish = 0
         for path in list_of_paths:
+            if start >= desired_number_of_samples:
+                break
             with np.load(path) as data:
-                finish = data["number_of_samples"]
-                self.scaled_g[start:finish] = data["s_g"]
-                self.scaled_rho[start:finish] = data["s_rho"]
-                assert not np.any(data["s_rho"] == 0.0), "Zeros in the denominator"
-                start = data["number_of_samples"]
+                length = min(data["number_of_samples"], desired_number_of_samples)
+                assert not np.any(data["s_rho"][0:length] == 0.0), "Zeros in the denominator"
+                self.scaled_g[start:start+length] = data["s_g"][0:length]
+                self.scaled_rho[start:start+length] = data["s_rho"][0:length]
+                start += length
         return
 
 
 class BoxResultPM(BoxResult):
     """plus minus version of BoxResult"""
 
+    key_list = ["s_gP", "s_gM"] + BoxResult.key_list
+
     @classmethod
     def verify_result_keys_are_present(cls, path, fileObj):
-        """x"""
+        """ x """
         super().verify_result_keys_are_present(path, fileObj)
-        key_list = ["s_gP", "s_gM"]
-        for k in key_list:
+        for k in cls.key_list:
             if k not in fileObj.keys():
                 s = "Expected key ({:s}) not present in result file\n{:s}\n"
-                raise AssertionError(s.foramt(k, path))
+                raise AssertionError(s.format(k, path))
+
+    @classmethod
+    def result_keys_are_present_in(cls, iterable):
+        """ x """
+        for k in cls.key_list:
+            if k not in iterable:
+                return False
+        return True and super().result_keys_are_present_in(iterable)
 
     def initialize_arrays(self):
         super().initialize_arrays()
@@ -891,6 +956,7 @@ class BoxResultPM(BoxResult):
         """x"""
         path = self.compute_path_to_file()
 
+        assert self.hash_vib is not None and self.hash_rho is not None, "we save hash values if they don't exist!"
         # save raw data points
         np.savez(path,
                  # TODO - fix the hash situation - this is hacky
@@ -904,43 +970,76 @@ class BoxResultPM(BoxResult):
                  )
         return
 
-    def load_results(self, path_full):
+    def load_results(self, path):
         """x"""
-        super().load_results(path_full)
+        super().load_results(path)
         # this could be more efficient, since we open the file twice
-        with np.load(path_full) as data:
+        with np.load(path) as data:
             self.scaled_gofr_plus = data["s_gP"]
             self.scaled_gofr_minus = data["s_gM"]
         return
 
-    def load_multiple_results(self, list_of_paths):
-        """x"""
+    def load_multiple_results(self, list_of_paths, desired_number_of_samples=None):
+        """ load results from more than one file
+        the optional argument desired_number_of_samples can be provided
+        the method will then try to load as many samples UPTO the desired_number_of_samples and no more"""
         number_of_samples = 0
         assert not len(list_of_paths) == 0, "list_of_paths cannot be empty"
+
+        list_of_bad_paths = []
 
         for path in list_of_paths:
             # should verify path is correct?
             with np.load(path, mmap_mode="r") as data:
+                """ TODO - design decision choice here
+                This implementation currently prints out a debug message and continues execution assuming it's job is to scan through and load as many files as possible.
+                For each path that doesn't have the data we expect it to have we will remove it from the list.
+                Another alternative would be to raise an AssertionError if the file it is trying to load does not have the appropriate keys, which is a good approach.
+                """
+                # self.__class__.verify_result_keys_are_present(path, data)
+
                 # TODO - check hashes here? - or do we assume they've already been checked?
                 # BoxResult.verify_hashes_are_valid()
                 # should verify file is not empty?
-                number_of_samples += data["number_of_samples"]
+                if self.__class__.result_keys_are_present_in(data.keys()):
+                    number_of_samples += data["number_of_samples"]
+                else:
+                    list_of_bad_paths.append(path)
+
+        # first lets make sure that we had 1 or more good paths
+        assert not set(list_of_paths) == set()
+
+        # okay now remove all the bad paths!
+        list_of_paths = list(set(list_of_paths) - set(list_of_bad_paths))
+
+        assert len(list_of_paths) > 0, "none of the provided paths were good, i.e. none of them had all the required keys {}".format(self.key_list)
 
         assert number_of_samples is not 0, "number of samples should have changed"
+
+        if desired_number_of_samples is None:
+            desired_number_of_samples = number_of_samples
+        else:
+            if number_of_samples >= desired_number_of_samples:
+                number_of_samples = desired_number_of_samples
+            elif number_of_samples < desired_number_of_samples:
+                print("We found less samples than were requested!!")
+                # TODO - choose what the correct procedure in this case is, for now we shall not raise an error
+
         self.samples = number_of_samples
         self.initialize_arrays()
 
         start = 0
-        finish = 0
         for path in list_of_paths:
+            if start >= desired_number_of_samples:
+                break
             with np.load(path) as data:
-                finish += data["number_of_samples"]
-                self.scaled_g[start:finish] = data["s_g"]
-                self.scaled_rho[start:finish] = data["s_rho"]
-                assert not np.any(data["s_rho"] == 0.0), "Zeros in the denominator"
-                self.scaled_gofr_plus[start:finish] = data["s_gP"]
-                self.scaled_gofr_minus[start:finish] = data["s_gM"]
-                start += data["number_of_samples"]
+                length = min(data["number_of_samples"], desired_number_of_samples)
+                assert not np.any(data["s_rho"][0:length] == 0.0), "Zeros in the denominator"
+                self.scaled_g[start:start+length] = data["s_g"][0:length]
+                self.scaled_rho[start:start+length] = data["s_rho"][0:length]
+                self.scaled_gofr_plus[start:start+length] = data["s_gP"][0:length]
+                self.scaled_gofr_minus[start:start+length] = data["s_gM"][0:length]
+                start += length
         return
 
 

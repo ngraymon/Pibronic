@@ -11,7 +11,26 @@ Keeps file naming consistant over the many modules if changes need to be made
 
 # TODO - conside the idea of making the template strings parameterizable as well as including different generating functions - seems like a lot of overhead for little gain?
 
-""" output of a pimc run
+
+""" the execution output of a pimc run
+D - refers to the id of the data set
+R - refers to the id of the sampling set (rho)
+P - refers the number of beads (int)
+T - refers to the tempearture in Kelvin (float-2 places)
+ - number of samples used to obtain results inside file (int)
+"""
+_execution_output = "D{:s}_R{:s}_P{:s}_T{:s}.o{:s}"
+
+
+def execution_output(D="{D:d}", R="{R:d}", P="{P:d}", T="{T:.2f}", J="{J:d}"):
+    """ wrapper function to allow parameterized search for files
+        can pass in any regular expression
+        most commonly will just pass in "*" to search for all files of a given argument
+    """
+    return _execution_output.format(D, R, P, T, J)
+
+
+""" the results of a pimc run
 P - refers the number of beads (int)
 T - refers to the tempearture in Kelvin (float-2 places)
 J - jobnumber, default is zero (int)
@@ -72,6 +91,7 @@ def training_data_input(P="{P:d}", T="{T:.2f}", J="{J:d}"):
     """
     return _training_data_input.format(P, T, J)
 
+
 """ output of a g(R) run - used for training ML algorithms
 P - refers the number of beads (int)
 T - refers to the tempearture in Kelvin (float-2 places)
@@ -103,6 +123,9 @@ def training_data_rho_output(P="{P:d}", T="{T:.2f}", J="{J:d}"):
     """
     return _training_data_rho_output.format(P, T, J)
 
+
+""" output of analytic for either model """
+analytic_results = "analytic_results.txt"
 
 # TODO - maybe only need one file name for both rho and sos???
 """ output of SOS for model diagonal in electronic states

@@ -26,17 +26,18 @@ Ancillary code will be uploading in the near future
 The main PIMC simulation code is provided in minimal.py
 
 In Progress:
-- refresh server code
-- write basic tests of server code
+- plotting code and analysis code
 - increasing coverage of tests
+- third pass on posprocessing
+- inject file_name and file_structure into older modules
 
 To do list:
 - refresh jackknife
+- refresh server code
+- write basic tests of server code
 - Create discrete numerical test case to verify jackknife output
-- inject file_name and file_structure into older modules
 - prune vibronic_model_io
 - integrate FileStructure with electronic_structure
-- third pass on posprocessing
 - clean up server job submission scripts
 
 
@@ -44,7 +45,7 @@ Long term goals:
 - clean up jackknife
 - provide model systems
 - generate test date for fixed rng seeds
-- travis.ci + appveyor + shields.io?
+- appveyor?
 
 ----
 Thanks

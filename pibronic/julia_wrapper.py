@@ -55,6 +55,19 @@ def compute(command, old_dict):
     return
 
 
+def validate_old_data(old_dict, FS):
+    """ check if the old hashes match the new ones,
+    otherwise we have to throw away all the old data
+    """
+    if old_dict["hash_vib"] != FS.hash_vib or old_dict["hash_rho"] != FS.hash_rho:
+        # throw away all the old data
+        old_dict = {}
+        # add the new hashes
+        old_dict["hash_vib"] = FS.hash_vib
+        old_dict["hash_rho"] = FS.hash_rho
+    return
+
+
 def analytic_of_sampling_model(FS, command, beta):
     """x"""
     path_analytic = FS.path_rho_params + "analytic_results.txt"
@@ -68,6 +81,7 @@ def analytic_of_sampling_model(FS, command, beta):
             if len(data) > 1:
                 old_dict = json.loads(data)
 
+    validate_old_data(old_dict, FS)
     command = command.format(F=path_original, T=beta)
     compute(command, old_dict)
 
@@ -89,6 +103,7 @@ def analytic_of_original_coupled_model(FS, command, beta):
             if len(data) > 1:
                 old_dict = json.loads(data)
 
+    validate_old_data(old_dict, FS)
     command = command.format(F=path_original, T=beta)
     compute(command, old_dict)
 
@@ -115,6 +130,7 @@ def sos_of_coupled_model(FS, command, beta):
     command = command.format(F=FS.path_vib_model, T=beta, B=basis_size)
     compute(command, old_dict)
 
+    validate_old_data(old_dict, FS)
     with open(path_sos, 'w') as file:
         json.dump(old_dict, file)
 
@@ -123,7 +139,7 @@ def sos_of_coupled_model(FS, command, beta):
 
 def prepare_julia():
     """preform any tasks necessary to setup the environment for executing julia code"""
-    cmd = ['/usr/bin/modulecmd', 'python', 'load', 'julia/0.6.0']
+    cmd = ['/usr/bin/modulecmd', 'python', 'load', 'julia/0.6.3']
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, error = p.communicate()
     exec(out)
@@ -159,6 +175,7 @@ if (__name__ == "__main__"):
     id_rho = int(sys.argv[3])
 
     FS = fs.FileStructure(path_root, id_data, id_rho)
+    FS.generate_model_hashes()
 
     analytic_of_original_coupled_model(FS, cmd_dict["analytical_coupled"], beta)
     analytic_of_sampling_model(FS, cmd_dict["analytical_sampling"], beta)

@@ -20,15 +20,18 @@ if (__name__ == '__main__'):
     path_scratch = sys.argv[2]
     id_job = sys.argv[3]
 
-    """Just do simple expval(Z) calculation"""
-    data = engine.BoxData.from_json_string(input_parameters)
+    """do a plus minus calculation"""
+    data = engine.BoxDataPM.from_json_string(input_parameters)
+    print(data.hash_vib)
+    print(data.hash_rho)
     data.preprocess()
 
     path_fixed = os.path.normpath(os.path.join(path_scratch, "../.."))
+    # TODO - this is redundant because a FS is already created in from_json_string
     FS = file_structure.FileStructure.from_boxdata(path_fixed, data)
 
-    result = engine.BoxResult(data=data)
+    result = engine.BoxResultPM(data=data)
     result.path_root = FS.path_rho_results
     result.id_job = id_job
 
-    engine.block_compute(data, result)
+    engine.block_compute_pm(data, result)

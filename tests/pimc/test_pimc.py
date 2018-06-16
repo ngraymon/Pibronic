@@ -78,6 +78,10 @@ def test_simple_block_compute(FS, data):
     data.path_vib_model = FS.path_vib_model
     data.path_rho_model = FS.path_rho_model
 
+    FS.generate_model_hashes()
+    data.hash_vib = FS.hash_vib
+    data.hash_rho = FS.hash_rho
+
     data.states = 2
     data.modes = 2
 
@@ -123,6 +127,10 @@ def test_simple_block_compute_pm(FS_pm, dataPM, job_id):
 
     dataPM.path_vib_model = FS_pm.path_vib_model
     dataPM.path_rho_model = FS_pm.path_rho_model
+
+    FS_pm.generate_model_hashes()
+    dataPM.hash_vib = FS_pm.hash_vib
+    dataPM.hash_rho = FS_pm.hash_rho
 
     # data should be able to figure out the number of states and modes from the file
     dataPM.states = 2

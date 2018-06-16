@@ -1,8 +1,9 @@
 """
-=============================
-Scripts that plot information
-=============================
+========================================
+Scripts involved in plotting information
+========================================
 """
 
-__all__ = []
+from . import plotting
 
+__all__ = ['plotting', ]

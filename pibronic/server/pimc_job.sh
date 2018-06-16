@@ -23,6 +23,11 @@ echo "python path: ${PYTHON3_PATH}"
 echo "sampling script: ${SAMPLING_SCRIPT}"
 echo "execution parameters ${EXECUTION_PARAMETERS}"
 echo
+
+# needed to add this because we built numpy with intel MKL
+export MKL_DISABLE_FAST_MM=true
+export LD_LIBRARY_PATH=$HOME/.dev/ubuntu_18.04/intel/mkl/lib/intel64:"${LD_LIBRARY_PATH}"
+
 # execute the job - 100% necessary for execution_parameters to be interpreted as a string
 ${PYTHON3_PATH} ${SAMPLING_SCRIPT} "${EXECUTION_PARAMETERS}" ${SCRATCH_DIR} ${SLURM_JOB_ID}
 

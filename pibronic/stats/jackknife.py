@@ -1,22 +1,9 @@
 # jackknife.py - although might want to rename this to statistical_analysis.py?
 
 # system imports
-import multiprocessing as mp
-# import itertools as it
-# import collections
-# import subprocess
-# import socket
-# import glob
-import json
-# import sys
-# import os
+
 
 # local imports
-# from .data import vibronic_model_io as vIO
-from ..data import postprocessing as pp
-# from .data import file_structure
-# from .data import file_name  # do we need this?
-from ..pimc import BoxResultPM
 from .. import constants
 from ..constants import boltzman
 
@@ -24,60 +11,11 @@ from ..constants import boltzman
 import numpy as np
 
 
-def calculate_property_terms(*args):
-    """calculate g/rho, sym_d1, sym_d2 given the estimation of the exact property"""
-    delta_beta, rho, g, g_plus, g_minus = args
-
-    # # Precalculate the 3 terms we will use
-    ratio = g / rho
-
-    first_symmetric_derivative = (g_plus - g_minus) / rho
-    first_symmetric_derivative /= (2. * delta_beta)  # constant factor
-
-    second_symmetric_derivative = (g_plus - (2. * g) + g_minus) / rho
-    second_symmetric_derivative /= pow(delta_beta, 2)  # constant factor
-
-    ret = [ratio,
-           first_symmetric_derivative,
-           second_symmetric_derivative]
-
-    return ret
-
-
-def calculate_alpha_terms(*args):
-    """calculate g/r, sym_d1, sym_d2 given the estimation of the difference + alpha"""
-    delta_beta, rho, g, g_plus, g_minus, alpha_plus, alpha_minus = args
-
-    ratio = g / rho
-
-    LN = g_plus / rho
-    LD = alpha_minus
-    RN = g_minus / rho
-    RD = alpha_minus
-
-    first_symmetric_derivative = np.mean(LN) * np.mean(LD)
-    first_symmetric_derivative -= np.mean(RN) * np.mean(RD)
-    first_symmetric_derivative /= (2. * delta_beta)  # constant factor
-
-    second_symmetric_derivative = np.mean(LN) * np.mean(LD)
-    second_symmetric_derivative -= 2. * np.mean(ratio)
-    second_symmetric_derivative += np.mean(RN) * np.mean(RD)
-    second_symmetric_derivative /= pow(delta_beta, 2)  # constant factor
-
-    ret = [ratio,
-           first_symmetric_derivative,
-           second_symmetric_derivative,
-           LN, LD, RN, RD,
-           ]
-
-    return ret
-
-
 def calculate_alpha_jackknife_terms(*args):
     """x"""
-    # LN is g_plus / rho
-    # RN is g_minus over / rho
-    X, delta_beta, ratio, LN, RN, alpha_plus, alpha_minus = args
+    # LN is ratio_plus == (g_plus / rho)
+    # RN is ratio_minus == (g_minus / rho)
+    X, delta_beta, ratio, LN, alpha_plus, RN, alpha_minus = args
 
     # first start with the full sum
     jk_ratio = np.full(shape=X, fill_value=np.sum(ratio))
@@ -136,43 +74,6 @@ def calculate_jackknife_terms(length, list_of_arrays):
     return [calculate_jackknife_term(length, array) for array in list_of_arrays]
 
 
-def estimate_property(*args):
-    """"""
-    X, T, g_r, sym1, sym2 = args
-
-    # Partition Function
-    Z = np.mean(g_r)
-    Z_err = np.std(g_r, ddof=0)
-    Z_err /= np.sqrt(X - 1)
-
-    # Energy
-    E = -1. * np.mean(sym1) / np.mean(g_r)
-    # error
-    E_err = 0.0  # can't be measured
-    # E_err = np.zeros_like(E)  # can't be measured
-    # this is just a lower bound on my error bars
-    # E_err = np.std(sym1 / g_r, ddof=0)
-    # E_err /= np.sqrt(X - 1) # remember that this is necessary!
-
-    # Heat Capacity
-    Cv = np.mean(sym2) / np.mean(g_r)
-    Cv -= pow(E, 2.)
-    Cv /= boltzman * pow(T, 2.)
-    # error
-    Cv_err = 0.0  # can't be measured
-    # Cv_err = np.zeros_like(Cv)  # can't be measured
-    # this is just a lower bound on my error bars
-    # old_Cv_err = np.std(old_Cv_err, ddof=0)
-    # old_Cv_err /= np.sqrt(X - 1) # remember that this is necessary!
-
-    # easy to access storage
-    return_dictionary = {"Z": Z,   "Z error": Z_err,
-                         "E": E,   "E error": E_err,
-                         "Cv": Cv, "Cv error": Cv_err,
-                         }
-    return return_dictionary
-
-
 def estimate_jackknife(*args):
     """"""
     X, T, delta_beta, input_dict, jk_g_rho, jk_sym1, jk_sym2 = args
@@ -204,118 +105,5 @@ def estimate_jackknife(*args):
     return return_dictionary
 
 
-def add_harmonic_contribution(input_dict, E_sampling, Cv_sampling):
-    """"""
-    # add the harmonic contribution to the energy
-    input_dict["E"] += E_sampling
-
-    # add the harmonic contribution to the heat capacity
-    input_dict["Cv"] += Cv_sampling
-    return
-
-
-# doesn't necessarily need the # of beads
-# B is only needed for small 2x2 cases where we can do exact diagonalization
-def perform_statistical_analysis(FS, P, T, B, X=None):
-    """x"""
-    pimc_results = BoxResultPM()
-    rhoData = {}
-
-    pp.load_data(FS, P, B, T, pimc_results, rhoData)
-    if X is None:
-        # set the number of samples from load_data
-        X = pimc_results.samples
-
-    Z_sampling = rhoData["Z"]
-    E_sampling = rhoData["E"]
-    Cv_sampling = rhoData["Cv"]
-    alpha_plus = rhoData["alpha_plus"]
-    alpha_minus = rhoData["alpha_minus"]
-
-    # byCopy?, should be byRef, double check this
-    rho = pimc_results.scaled_rho
-    g = pimc_results.scaled_g
-    # rho_plus = pimc_results.scaled_rho_plus
-    # rho_minus = pimc_results.scaled_rho_minus
-    g_plus = pimc_results.scaled_gofr_plus
-    g_minus = pimc_results.scaled_gofr_minus
-
-    data = [rho, g, g_plus, g_minus]
-    data_alpha = [rho, g, g_plus, g_minus, alpha_plus, alpha_minus]
-
-    terms = calculate_property_terms(constants.delta_beta, *data)
-    terms_alpha = calculate_alpha_terms(constants.delta_beta, *data_alpha)
-
-    assert(np.allclose(terms[0], terms_alpha[0]))
-
-    # Calculate the jackknife terms
-    # JK_terms = calculate_jackknife_terms(X, *terms)
-    JK_terms_alpha = calculate_alpha_jackknife_terms(X, constants.delta_beta, g / rho, g_plus / rho, g_minus / rho, alpha_plus, alpha_minus)
-
-    # calculate <exp> s.t. (H = <exp>)
-    # ret = estimate_property(X, T, terms)
-    # JK_ret = estimate_jackknife(X, T, constants.delta_beta, ret, JK_terms)
-
-    # calculate <exp> s.t. (H = <exp> + ho)
-    ret_alpha = estimate_property(X, T, *terms)
-    JK_ret_alpha = estimate_jackknife(X, T, constants.delta_beta, ret_alpha, *JK_terms_alpha)
-
-    # Remember that we need to handle the difference terms specially
-    add_harmonic_contribution(ret_alpha, E_sampling, Cv_sampling)
-    add_harmonic_contribution(JK_ret_alpha, E_sampling, Cv_sampling)
-
-    # prepare dictionary
-    path = FS.template_jackknife.format(P=P, T=T, X=X)
-    output_dict = ret_alpha
-    # temporary HACK
-    for key in JK_ret_alpha.keys():
-        output_dict["jk_" + key] = JK_ret_alpha[key]
-
-    # save data to file
-    with open(path, mode='w', encoding='UTF8') as target_file:
-        target_file.write(json.dumps(output_dict))
-
-    return
-
-
 if (__name__ == "__main__"):
-
-    # catalogue available files
-    pimcList, coupledList, samplingList = pp.retrive_file_paths_for_jackknife()
-
-    # find shared values
-    arg_dict = pp.extract_jackknife_parameters(pimcList, coupledList, samplingList)
-
-    # would be nice to have some feedback about what values there are and what are missing
-
-    # manually select specific values from those available
-    pimc_restriction = range(12, 101, 1)  # at least 12 beads before we plot
-    # pick the highest number of samples
-    sample_restriction = arg_dict["samples"][-1]
-    # pick the highest number of basis functions
-    basis_restriction = arg_dict["basis_fxns"][-1]
-    # temperature is currently fixed at 300K
-    temperature_restriction = np.array([300.00])
-
-    # intersect returns sorted, unique values that are in both of the input arrays
-    arg_dict["temperatures"] = np.intersect1d(arg_dict["temperatures"], temperature_restriction)
-    arg_dict["pimc_beads"] = np.intersect1d(arg_dict["pimc_beads"], pimc_restriction)
-    arg_dict["basis_fxns"] = np.intersect1d(arg_dict["basis_fxns"], basis_restriction)
-    arg_dict["samples"] = np.intersect1d(arg_dict["samples"], sample_restriction)
-
-    # create a list of arguments for multiprocessing pool
-    arg_list = [(P, T, B, X)
-                for X in arg_dict["samples"]
-                for P in arg_dict["pimc_beads"]
-                for T in arg_dict["temperatures"]
-                for B in arg_dict["basis_fxns"]
-                ]
-
-    arg_iterator = iter(arg_list)
-
-    block_size = 10
-
-    with mp.Pool(block_size) as p:
-        p.starmap(perform_statistical_analysis, arg_list)
-
-    print("Finished")
+    pass

@@ -114,6 +114,10 @@ class TestPimcNatively():
         data.path_vib_model = files.path_vib_model
         data.path_rho_model = files.path_rho_model
 
+        files.generate_model_hashes()
+        data.hash_vib = files.hash_vib
+        data.hash_rho = files.hash_rho
+
         data.states = 2
         data.modes = 2
 
@@ -152,6 +156,10 @@ class TestPimcNatively():
     def test_simple_block_compute_pm(self, filesPM, dataPM, job_id):
         dataPM.path_vib_model = filesPM.path_vib_model
         dataPM.path_rho_model = filesPM.path_rho_model
+
+        filesPM.generate_model_hashes()
+        dataPM.hash_vib = filesPM.hash_vib
+        dataPM.hash_rho = filesPM.hash_rho
 
         # data should be able to figure out the number of states and modes from the file
         dataPM.states = 2

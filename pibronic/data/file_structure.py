@@ -101,6 +101,7 @@ class FileStructure:
         # self.pimc_suffix = "P{P:d}_T{T:.2f}_J*_data_points.npz"
         # self.jackknife_suffix = self.template_jackknife_suffix
 
+        # TODO - remember that the dir_list is used to make the directories, so all class variables declared afterwards are not in the dir_list
         self.dir_list = [a for a in dir(self) if a.startswith('path_')]
 
         # print(self.dir_list, '\n\n')
@@ -114,6 +115,10 @@ class FileStructure:
         self.path_vib_model = join(self.path_vib_params, file_name.coupled_model)
         self.path_har_model = join(self.path_vib_params, file_name.harmonic_model)
         self.path_rho_model = join(self.path_rho_params, file_name.sampling_model)
+
+        # TODO - maybe these should begin with file_*  instead of path_* ?
+        self.path_analytic_rho = join(self.path_rho_params, file_name.analytic_results)
+        self.path_analytic_vib = join(self.path_vib_params, file_name.analytic_results)
 
         # if not self.directories_exist():
         self.make_directories()

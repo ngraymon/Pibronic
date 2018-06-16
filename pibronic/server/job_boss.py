@@ -358,7 +358,7 @@ def prepare_job_feynman(param_dict):
                       ",SCRATCH_DIR={path_scratch:s}"
                       ",COPY_FROM={copy_from:s}"
                       ",COPY_TO={copy_to:s}"
-                      ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3"
+                      ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu_18.04/bin/python3"
                       ",SAMPLING_SCRIPT=/home/ngraymon/pibronic/pibronic/server/pimc.py"
                       ",EXECUTION_PARAMETERS=\'{execution_parameters:s}\'"
                       )
@@ -429,8 +429,8 @@ def prepare_job_nlogn(param_dict):
                       ",SCRATCH_DIR={path_scratch:s}"
                       ",COPY_FROM={copy_from:s}"
                       ",COPY_TO={copy_to:s}"
-                      # ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu/16.04/bin/python3"
-                      ",PYTHON3_PATH=/home/ngraymon/test/local/bin/python3"
+                      ",PYTHON3_PATH=/home/ngraymon/.dev/ubuntu_18.04/bin/python3"
+                      # ",PYTHON3_PATH=/home/ngraymon/test/local/bin/python3"
                       ",SAMPLING_SCRIPT=/home/ngraymon/test/Pibronic/pibronic/server/pimc.py"
                       ",EXECUTION_PARAMETERS=\'{execution_parameters:s}\'"
                       )
