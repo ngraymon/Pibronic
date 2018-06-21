@@ -1,19 +1,16 @@
-"""submission script to automate submitting jobs on slurm server"""
+""" submission script for sos jobs (using the sampling model - rho) on a server"""
 
 # system imports
 import subprocess
 import socket
 import os
 
+# third party imports
+
 # local imports
-from .. import vibronic
+from ..vibronic import vIO
 from ..data import file_structure
 from ..constants import GB_per_byte, maximum_memory_per_node
-
-# third party imports
-# from hurry.filesize import size, si
-# import numpy as np
-
 
 # array_cmd = "sbatch"
 # array_cmd += (""

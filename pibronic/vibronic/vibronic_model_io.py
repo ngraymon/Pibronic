@@ -1,34 +1,27 @@
 """vibronic_model_io.py should handle the majority of file I/O"""
 
 # system imports
-# from pathlib import Path
 import itertools as it
-# import functools as ft
-import subprocess
-# import fileinput
 import hashlib
 import shutil
 import json
-# import math
-import mmap
-import sys
 import os
+from os.path import join
 
 # third party imports
-import fortranformat as ff  # Fortran format for VIBRON
 import numpy as np
-# from numpy import newaxis as NEW
 from numpy import float64 as F64
 from numpy.random import uniform as Uniform
-import parse
 
 # local imports
 from ..log_conf import log
 from .. import constants
-from .. import helper
 from ..data import file_structure
 from ..data import file_name
 from .vibronic_model_keys import VibronicModelKeys as VMK
+from . import model_auto
+from . import model_op
+from . import model_h
 
 np.set_printoptions(precision=8, suppress=True)  # Print Precision!
 
@@ -69,7 +62,7 @@ def sample_shape_dict(A, N):
 
 
 def model_array_diagonal_in_surfaces(array):
-    """ boolean function that returns true if the provided numpy array is diagonal in the surface dimension
+    """ boolean function that returns true if the provided numpy array is diagonal or symmetric in the surface dimension
     where the surface dimensions (A) are by convention the last two dimensions
     this function assumes that the array is properly formatted
     """
@@ -251,784 +244,115 @@ def pretty_print_model(id_data, unitsOfeV=False):
     return
 
 
+def _generate_linear_terms(linear_terms, shape, displacement):
+    """ generate linear terms that are 'reasonable' """
+    for i in range(shape[VMK.w]):
+        upTri = Uniform(-displacement[i], displacement[i], shape[VMK.E])
+        # force the linear terms to be symmetric
+        linear_terms[:] = np.tril(upTri) + np.tril(upTri, k=-1).T
+    return
+
+
+def _generate_quadratic_terms(quadratic_terms, shape, displacement, N):
+    """ generate quadratic terms that are 'reasonable' """
+    for i, j in it.combinations_with_replacement(range(N), 2):
+        upTri = Uniform(-displacement[i, j], displacement[i, j], shape[VMK.E])
+        # force the quadratic terms to be symmetric
+        quadratic_terms[i, j, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
+        quadratic_terms[j, i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
+    return
+
+
+def _remove_coupling_from_generated_model(modes, energy, linear_terms, quadratic_terms):
+    """ x """
+    energy[:] = np.diagflat(np.diag(energy))
+    for i in modes:
+        linear_terms[i] = np.diag(np.diag(linear_terms[i]))
+    for i, j in it.product(modes, modes):
+        quadratic_terms[i, j, ...] = np.diag(np.diag(quadratic_terms[i, j, ...]))
+    return
+
+
 def generate_vibronic_model_data(paramDict=None):
     """redo this one but otherwise its fine returns e,w,l,q filled with appropriate values"""
     if paramDict is None:
-        # default values
-        paramDict = {
-                    'frequency_range': [0.02, 0.04],
-                    'energy_range': [0.0, 2.0],
-                    'quadratic_scaling': 0.08,
-                    'linear_scaling': 0.04,
-                    'nonadiabatic': True,
-                    'numStates': 2,
-                    'numModes': 3,
-                    }
-
-    # withdraw input values
-    nonadiabatic = paramDict['nonadiabatic']
-    numStates = paramDict['numStates']
-    numModes = paramDict['numModes']
-
-    # ranges
-    States = range(numStates)
-    Modes = range(numModes)
-
-    # for readability and clarity we use these letters
-    size = {
-            'N': (numModes),
-            'A': (numStates),
-            'AA': (numStates, numStates),
-            'NAA': (numModes, numStates, numStates),
-            'NNAA': (numModes, numModes, numStates, numStates),
-            }
-
-    # data
-    omega = np.zeros(size['N'])
-    energy = np.zeros(size['AA'])
-    linear = np.zeros(size['NAA'])
-    quadratic = np.zeros(size['NNAA'])
-
+        paramDict = {   # default values
+                        'frequency_range': [0.02, 0.04],
+                        'energy_range': [0.0, 2.0],
+                        'quadratic_scaling': 0.08,
+                        'linear_scaling': 0.04,
+                        'nonadiabatic': True,
+                        'numStates': 2,
+                        'numModes': 3,
+                        }
     # readability
-    minFreq, maxFreq = paramDict['frequency_range']
     minE, maxE = paramDict['energy_range']
+    minFreq, maxFreq = paramDict['frequency_range']
 
-    # generate omega
-    omega[:] = np.linspace(minFreq, maxFreq,
-                           num=numModes, endpoint=True, dtype=F64)
+    # ranges for convenience
+    numModes = paramDict['numModes']
+    # numStates = paramDict['numStates']
+    Modes = range(numModes)
+    # States = range(numStates)
+
+    # generate the array dimensions
+    shape = model_shape_dict(paramDict['numStates'], numModes)
+
+    # initialize arrays
+    frequencies = np.zeros(shape[VMK.w])
+    energy = np.zeros(shape[VMK.E])
+    linear_terms = np.zeros(shape[VMK.G1])
+    quadratic_terms = np.zeros(shape[VMK.G2])
+
+    # generate frequencies
+    frequencies[:] = np.linspace(minFreq, maxFreq, num=numModes, endpoint=True, dtype=F64)
 
     # generate energy
-    energy[:] = Uniform(minE, maxE, size['AA'])
+    energy[:] = Uniform(minE, maxE, shape[VMK.E])
     # force the energy to be symmetric
     energy[:] = np.tril(energy) + np.tril(energy, k=-1).T
 
     # calculate the linear displacement
-    l_shift = (omega / paramDict['linear_scaling'])
-
-    # generate linear terms
-    for i in Modes:
-        upTri = Uniform(-l_shift[i], l_shift[i], size['AA'])
-        # force the linear terms to be symmetric
-        linear[:] = np.tril(upTri) + np.tril(upTri, k=-1).T
+    l_shift = frequencies / paramDict['linear_scaling']
+    _generate_linear_terms(linear_terms, shape, l_shift)
 
     # calculate the quadratic displacement
-    q_shift = np.sqrt(np.outer(omega, omega)) / paramDict['quadratic_scaling']
+    q_shift = np.sqrt(np.outer(frequencies, frequencies)) / paramDict['quadratic_scaling']
+    _generate_quadratic_terms(quadratic_terms, shape, q_shift, Modes)
 
-    # generate quadratic terms
-    for i in Modes:
-        for j in range(i, numModes):
-            upTri = Uniform(-q_shift[i,j], q_shift[i,j], size['AA'])
-            # force the quadratic terms to be symmetric
-            quadratic[i, j, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
-            quadratic[j, i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
+    # if we are building a harmonic model then zero out all off-diagonal entries
+    if not paramDict['nonadiabatic']:
+        _remove_coupling_from_generated_model(Modes, energy, linear_terms, quadratic_terms)
 
-    # if we are building a harmonic model
-    # then zero out all off-diagonal entries
-    if not nonadiabatic:
-        # energy
-        energy[:] = np.diagflat(np.diag(energy))
-        # linear terms
-        for i in Modes:
-            linear[i] = np.diag(np.diag(linear[i]))
-        # quadratic terms
-        for i, j in it.product(Modes, Modes):
-            quadratic[i, j, ...] = np.diag(np.diag(quadratic[i, j, ...]))
+    assert model_array_diagonal_in_surfaces(energy), "energy not symmetric in surfaces"
+    assert model_array_diagonal_in_surfaces(linear_terms), "linear_terms not symmetric in surfaces"
+    assert model_array_diagonal_in_surfaces(quadratic_terms), "quadratic_terms not symmetric in surfaces"
+    assert np.allclose(quadratic_terms, quadratic_terms.transpose(1, 0, 2, 3)), "quadratic_terms not symmetric in surfaces"
 
-    # check for symmetry in surfaces
-    assert(np.allclose(energy, energy.transpose(1,0)))
-    assert(np.allclose(linear, linear.transpose(0,2,1)))
-    assert(np.allclose(quadratic, quadratic.transpose(0,1,3,2)))
-    # check for symmetry in modes
-    assert(np.allclose(quadratic, quadratic.transpose(1,0,2,3)))
+    # TODO - which of these returns is the correct one to use?
+    # # and we are done
+    # return_dict = {VMK.N: numModes,
+    #                VMK.A: numStates,
+    #                VMK.E: energy,
+    #                VMK.w: frequencies,
+    #                VMK.G1: linear_terms,
+    #                VMK.G2: quadratic_terms,
+    #                }
+    # return return_dict
 
-    return energy, omega, linear, quadratic
-    # and we are done
-    return_dict = {VMK.N: numModes,
-                   VMK.A: numStates,
-                   VMK.E: energy,
-                   VMK.w: omega,
-                   VMK.G1: linear,
-                   VMK.G2: quadratic,
-                   }
-    return return_dict
+    return energy, frequencies, linear_terms, quadratic_terms
 
 
 def read_model_h_file(path_file_h):
-    """ reads/parses molecule_vibron.h file"""
-    path_file_params = path_file_h[:-2] + ".in"
-
-    # declare the arrays used to store the model's paramters
-    # all numbers have units of electron volts
-    excitation_energies = None
-    frequencies = None
-    linear_couplings = None
-    quadratic_couplings = None
-
-    # the frequencies with units of wavenumbers
-    wavenumber_freq = None
-
-    helper.verify_file_exists(path_file_h)
-    helper.verify_file_exists(path_file_params)
-
-    def get_number_of_electronic_states(file):
-        """x"""
-        # skip first line
-        file.readline()
-        # read in line with electronic states
-        line = file.readline()
-        # verify that we have the correct line
-        targetString = 'Number of electronic states'
-        if targetString in line:
-            number_of_electronic_states = int(line.split()[0])
-            # States = range(number_of_electronic_states)
-            log.debug("Electronic states: " + str(number_of_electronic_states))
-        else:
-            s = "Input file {:s} does not contain {:s}"
-            raise Exception(s.format(path_file_h, targetString))
-
-        return number_of_electronic_states
-
-    def get_number_of_normal_modes(file):
-        """x"""
-        # read in line with symmetric normal modes
-        line = file.readline()
-        # verify that we have the correct line
-        targetString = 'Number of symmetric normal modes'
-        if targetString in line:
-            number_of_symmetric_modes = int(line.split()[0])
-            number_of_normal_modes = number_of_symmetric_modes
-            log.debug("Symmetric normal modes: " + str(number_of_symmetric_modes))
-            log.debug("Total normal modes: " + str(number_of_normal_modes))
-        else:
-            s = "Input file {:s} does not contain {:s}"
-            raise Exception(s.format(path_file_h, targetString))
-
-        # read in line with non-A1 normal modes
-        line = file.readline()
-        # verify that we have the correct line
-        targetString = 'Number of non-A1 normal modes'
-        if targetString in line:
-            other_modes = int(line.split()[0])
-            number_of_normal_modes += other_modes
-            # Modes = range(number_of_normal_modes)
-            log.debug("non-A1 normal modes: " + str(other_modes))
-            log.debug("Total normal modes: " + str(number_of_normal_modes))
-        else:
-            s = "Input file {:s} does not contain {:s}"
-            raise Exception(s.format(path_file_h, targetString))
-
-        return number_of_normal_modes, number_of_symmetric_modes
-
-    def extract_normal_mode_frequencies(file, frequency_array, symmetric_modes):
-        """store output in frequency_array"""
-        # skip headers
-        file.readline()
-        file.readline()
-
-        # read in symmetric normal modes
-        line = file.readline()
-        frequency_array[0:symmetric_modes] = [float(x) for x in line.split()]
-        log.debug(frequency_array)
-
-        # skip header
-        file.readline()
-
-        # read in non-A1 normal modes
-        line = file.readline()
-        frequency_array[symmetric_modes:] = [float(x) for x in line.split()]
-        log.debug(frequency_array)
-        return
-
-    # set the number of normal modes and electronic surfaces
-    # store the normal mode frequencies
-    with open(path_file_params, "r") as source_file:
-        # we will overwrite these default values
-        global numModes, numStates
-        global Modes, States
-
-        numStates = get_number_of_electronic_states(source_file)
-        States = range(numStates)
-        numModes, numSymmetricModes = get_number_of_normal_modes(source_file)
-        Modes = range(numModes)
-
-        # for readability and clarity we use these letters
-        global size
-        size = {
-                'N': (numModes),
-                'AA': (numStates, numStates),
-                'NAA': (numModes, numStates, numStates),
-                'NNAA': (numModes, numModes, numStates, numStates),
-                }
-
-        # Initialize Variables
-        frequencies = np.zeros(size['N'])
-        excitation_energies = np.zeros(size['AA'])
-        linear_couplings = np.zeros(size['NAA'])
-        quadratic_couplings = np.zeros(size['NNAA'])
-
-        extract_normal_mode_frequencies(source_file, frequencies, numSymmetricModes)
-
-        # convert to wavenumers up to 2 decimal places
-        wavenumber_freq = np.around(frequencies * 8065.5, decimals=2)
-        log.debug(wavenumber_freq)
-        #
-
-    def extract_energies(path, memmap, energies):
-        """x"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Reference Hamiltonian'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Gradients of heff along normal modes'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip the header
-        memmap.readline()
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        lines = stringData.strip().splitlines()
-
-        # save the reference hamiltonian into the energies array
-        for d1 in States:
-            energies[d1] = lines[d1].split()
-        # print(energies)
-        return
-
-    def extract_linear_couplings(path, memmap, coupling_terms):
-        """frequencies need to be provided in wavenumbers"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Gradients of heff along normal modes'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Diagonal second order corrections of heff'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        for idx, w in enumerate(frequencies):
-            # find the next block of linear coupling_terms terms
-            next_block = memmap.find(str(w).encode(encoding="utf-8"), begin, end)
-            # error handling
-            if next_block == -1:
-                s = ("Frequency {:f} in wavenumber_freq did not match any "
-                     "frequencies in file {:s} while parsing the "
-                     "{:s} region."
-                     )
-                raise Exception(s.format(w, path, beginString))
-            # go there
-            memmap.seek(next_block)
-            # skip header
-            memmap.readline()
-            # store each line in the array
-            for a in States:
-                line = memmap.readline().decode(encoding="utf-8")
-                coupling_terms[idx, a, :] = line.split()
-            # print(coupling_terms[idx])
-        return
-
-    def extract_quadratic_couplings(path, memmap, coupling_terms):
-        """frequencies need to be provided in wavenumbers"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Diagonal second order corrections of heff'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Off-diagonal second order corrections heff'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        for idx, w in enumerate(frequencies):
-            # find the next block of quadratic coupling terms
-            next_block = memmap.find(str(w).encode(encoding="utf-8"), begin, end)
-            # error handling
-            if next_block == -1:
-                s = ("Frequency {:f} in wavenumber_freq did not match any "
-                     "frequencies in file {:s} while parsing the "
-                     "{:s} region."
-                     )
-                raise Exception(s.format(w, path, beginString))
-            # go there
-            memmap.seek(next_block)
-            # skip header
-            memmap.readline()
-            # store each line in the array
-            for a in States:
-                line = memmap.readline().decode(encoding="utf-8")
-                coupling_terms[idx, idx, a, :] = line.split()
-            # print(coupling_terms[idx, idx])
-        return
-
-    def extract_offdiag_quadratic_couplings(path, memmap, coupling_terms):
-        """frequencies need to be provided in wavenumbers"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Off-diagonal second order corrections heff'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Diagonal Cubic corrections of heff'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        for idx1, w1 in enumerate(frequencies):
-            for idx2, w2 in enumerate(frequencies[:idx1]):
-                # find the next block of quadratic coupling terms
-                next_block = memmap.find(str(w1).encode(encoding="utf-8"), memmap.tell(), end)
-                # error handling
-                if next_block == -1:
-                    s = ("Frequency {:f} in wavenumber_freq did not "
-                         "match any frequencies in file {:s} "
-                         "while parsing the {:s} region."
-                         )
-                    raise Exception(s.format(w, path, beginString))
-
-                # find the next block of quadratic coupling terms
-                next_block = memmap.find(str(w2).encode(encoding="utf-8"), memmap.tell(), end)
-                # error handling
-                if next_block == -1:
-                    s = ("Frequency {:f} in wavenumber_freq did not "
-                         "match any frequencies in file {:s} "
-                         "while parsing the {:s} region."
-                         )
-                    raise Exception(s.format(w, path, beginString))
-
-                # go there
-                memmap.seek(next_block)
-                # skip header
-                memmap.readline()
-
-                # store each line in the array
-                for a in States:
-                    line = memmap.readline().decode(encoding="utf-8")
-                    coupling_terms[idx1, idx2, a, :] = line.split()
-                # print(coupling_terms[idx1, idx2])
-        return
-
-    def extract_cubic_couplings(path, memmap, coupling_terms):
-        """not implemented at this time"""
-        return
-
-    def extract_quartic_couplings(path, memmap, coupling_terms):
-        """not implemented at this time"""
-        return
-
-    # store the energy offsets, and all the coupling terms
-    with open(path_file_h, "r+b") as source_file:
-        # access the file using memory map for efficiency
-        with mmap.mmap(source_file.fileno(), 0, prot=mmap.PROT_READ) as mm:
-            extract_energies(path_file_h, mm, excitation_energies)
-            extract_linear_couplings(path_file_h, mm, wavenumber_freq, linear_couplings)
-            # extract_quadratic_couplings(path_file_h, mm, wavenumber_freq, quadratic_couplings)
-            # extract_offdiag_quadratic_couplings(path_file_h, mm, wavenumber_freq, quadratic_couplings)
-            # extract_cubic_couplings(path_file_h, mm, wavenumber_freq, cubic_couplings)
-            # extract_quartic_couplings(path_file_h, mm, wavenumber_freq, quartic_couplings)
-        #
-
-    # duplicate the lower triangle values into the upper triangle
-    # the couplings are a symmetric matrix
-    for a, b in it.product(States, States):
-        quadratic_couplings[:, :, a, b] += np.tril(quadratic_couplings[:, :, a, b], k=-1).T
-
-    # check for symmetry in surfaces
-    assert(np.allclose(excitation_energies, excitation_energies.transpose(1, 0)))
-    assert(np.allclose(linear_couplings, linear_couplings.transpose(0, 2, 1)))
-    assert(np.allclose(quadratic_couplings, quadratic_couplings.transpose(0, 1, 3, 2)))
-    # check for symmetry in modes
-    assert(np.allclose(quadratic_couplings, quadratic_couplings.transpose(1, 0, 2, 3)))
-
-    # and we are done
-    return_dict = {VMK.N: numModes,
-                   VMK.A: numStates,
-                   VMK.E: excitation_energies,
-                   VMK.w: frequencies,
-                   VMK.G1: linear_couplings,
-                   VMK.G2: quadratic_couplings,
-                   }
-    return return_dict
+    """ wrapper function to maintain functionality - possible remove in the future"""
+    model_h.read_model_h_file(path_file_h)
+    return
 
 
 def read_model_op_file(path_file_op):
-    """reads/parses molecule_vibron.op file"""
-
-    # declare the arrays used to store the model's paramters
-    # all numbers have units of electron volts
-    excitation_energies = None
-    frequencies = None
-    linear_couplings = None
-    quadratic_couplings = None
-    cubic_couplings = None
-    quartic_couplings = None
-
-    global numStates, numModes, States, Modes, size
-    # we will overwrite these default values
-    numStates = numModes = States = Modes = size = 0
-
-    helper.verify_file_exists(path_file_op)
-
-    def extract_energies(path, memmap):
-        """x"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Electronic Hamitonian'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Electronic transition moments'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip the header
-        helper.readlines(memmap, 3)
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        lines = [line for line in stringData.strip().splitlines() if "#" not in line and line is not ""]
-
-        # set the parameters
-        global numStates, States
-        numStates = len(lines)
-        States = range(numStates)
-
-        # save the reference hamiltonian into the energies array
-        energies = np.zeros((numStates, numStates))
-        for a in States:
-            list_of_words = lines[a].split()
-            assert list_of_words[0] == f"EH_s{a+1:02}_s{a+1:02}"  # this is a formatted string literal (new in python3.6)
-            assert list_of_words[-1] == "ev"
-            energies[a, a] = list_of_words[2]
-        return energies
-
-    def extract_normal_mode_frequencies(path, memmap):
-        """store output in frequency_array"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Frequencies'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Zeropoint energy'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip headers
-        helper.readlines(memmap, 2)
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        lines = [line for line in stringData.strip().splitlines() if "#" not in line and line is not ""]
-
-        # set the parameters
-        global numModes, Modes
-        numModes = len(lines)
-        Modes = range(numModes)
-
-        # extract the numbers and save them in the frequencies array
-        frequencies = np.zeros(numModes)
-        for j in Modes:
-            list_of_words = lines[j].split()
-            assert list_of_words[0] == f"w{j+1:02}"  # this is a formatted string literal (new in python3.6)
-            assert list_of_words[-1] == "ev"
-            frequencies[j] = list_of_words[2]
-        return frequencies
-
-    def extract_linear_couplings(path, memmap, coupling_terms):
-        """x"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Linear Coupling Constants'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Diagonal Quadratic Coupling Constants'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip headers
-        helper.readlines(memmap, 2)
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        stringData = stringData.strip().replace('=', '').replace(', ev', '')
-        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
-
-        p = parse.compile("C1_s{a1:d}_s{a2:d}_v{j:d}")
-
-        for line in lines:
-            r = p.parse(line[0])
-            index_tuple = (r['j']-1, r['a1']-1, r['a2']-1)
-            coupling_terms[index_tuple] = line[1]
-        # done
-        return
-
-    def extract_quadratic_couplings(path, memmap, coupling_terms):
-        """x"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Diagonal Quadratic Coupling Constants'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Cubic Coupling Constants'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip headers
-        helper.readlines(memmap, 2)
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        stringData = stringData.strip().replace('=', '').replace(', ev', '')
-        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
-
-        p = parse.compile("C2_s{a1:d}s{a2:d}_v{j1:d}v{j2:d}")
-
-        for line in lines:
-            r = p.parse(line[0])
-            index_tuple = (r['j1']-1, r['j2']-1, r['a1']-1, r['a2']-1)
-            coupling_terms[index_tuple] = line[1]
-        # done
-        return
-
-    def extract_cubic_couplings(path, memmap, coupling_terms):
-        """x"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Cubic Coupling Constants'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Quartic Coupling Constants'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip headers
-        helper.readlines(memmap, 2)
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        stringData = stringData.strip().replace('=', '').replace(', ev', '')
-        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
-
-        p = parse.compile("C3_s{a1:d}_s{a2:d}_v{j:d}")
-
-        for line in lines:
-            r = p.parse(line[0])
-            index_tuple = (r['j']-1, r['j']-1, r['j']-1, r['a1']-1, r['a2']-1)
-            coupling_terms[index_tuple] = line[1]
-        # done
-        return
-
-    def extract_bicubic_couplings(path, memmap, coupling_terms):
-        """x"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Bi-Cubic Constants'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Bi-Quartic Constants'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip headers
-        helper.readlines(memmap, 2)
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        stringData = stringData.strip().replace('=', '').replace(', ev', '')
-        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
-
-        p = parse.compile("B3_s{a1:d}s{a2:d}_v{j1:d}v{j2:d}")
-
-        for line in lines:
-            r = p.parse(line[0])
-            # need to confirm this?
-            index_tuple = (r['j1']-1, r['j2']-1, r['j2']-1, r['a1']-1, r['a2']-1)
-            coupling_terms[index_tuple] = line[1]
-        # done
-        return
-
-    def extract_quartic_couplings(path, memmap, coupling_terms):
-        """x"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Quartic Coupling Constants'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'Bi-Cubic Constants'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip headers
-        helper.readlines(memmap, 2)
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        stringData = stringData.strip().replace('=', '').replace(', ev', '')
-        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
-
-        p = parse.compile("C4_s{a1:d}_s{a2:d}_v{j:d}")
-
-        for line in lines:
-            r = p.parse(line[0])
-            index_tuple = (r['j']-1, r['j']-1, r['j']-1, r['j']-1, r['a1']-1, r['a2']-1)
-            coupling_terms[index_tuple] = line[1]
-        # done
-        return
-
-    def extract_biquartic_couplings(path, memmap, coupling_terms):
-        """x"""
-        # find the begining and ending of the important region
-        memmap.seek(0)  # start looking from the begining of the file
-        beginString = 'Bi-Quartic Constants'
-        begin = helper.find_string_in_file(memmap, path, beginString)
-        endString = 'end-parameter-section'
-        end = helper.find_string_in_file(memmap, path, endString)
-
-        # go to the begining of that region
-        memmap.seek(begin)
-
-        # skip headers
-        helper.readlines(memmap, 2)
-
-        # read all the relevant data
-        byteData = memmap.read(end - memmap.tell())
-        stringData = byteData.decode(encoding="utf-8")
-        stringData = stringData.strip().replace('=', '').replace(', ev', '')
-        lines = [line.split() for line in stringData.splitlines() if "#" not in line and line is not ""]
-
-        list_B4 = filter(lambda item: item[0].startswith("B4"), lines)
-        pB4 = parse.compile("B4_s{a1:d}s{a2:d}_v{j1:d}v{j2:d}")
-
-        list_A4 = filter(lambda item: item[0].startswith("A4"), lines)
-        pA4 = parse.compile("A4_s{a1:d}s{a2:d}_v{j1:d}v{j2:d}")
-
-        for line in list_B4:
-            r = pB4.parse(line[0])
-            index_tuple = (r['j1']-1, r['j2']-1, r['j2']-1, r['j2']-1, r['a1']-1, r['a2']-1)
-            coupling_terms[index_tuple] = line[1]
-
-        for line in list_A4:
-            r = pA4.parse(line[0])
-            index_tuple = (r['j1']-1, r['j1']-1, r['j2']-1, r['j2']-1, r['a1']-1, r['a2']-1)
-            coupling_terms[index_tuple] = line[1]
-        # done
-        return
-
-    # store the energy offsets, and all the coupling terms
-    with open(path_file_op, "r+b") as source_file:
-
-        # access the file using memory map for efficiency
-        with mmap.mmap(source_file.fileno(), 0, prot=mmap.PROT_READ) as mm:
-
-            frequencies = extract_normal_mode_frequencies(path_file_op, mm)
-            excitation_energies = extract_energies(path_file_op, mm)
-
-            # for readability and clarity we use these letters
-            A = numStates
-            N = numModes
-            size = {
-                    'N': (N),
-                    'AA': (A, A),
-                    'NAA': (N, A, A),
-                    'NNAA': (N, N, A, A),
-                    'NNNAA': (N, N, N, A, A),
-                    'NNNNAA': (N, N, N, N, A, A),
-                    }
-            # size = {
-            #         'N': (numModes),
-            #         'AA': (numStates, numStates),
-            #         'NAA': (numModes, numStates, numStates),
-            #         'NNAA': (numModes, numModes, numStates, numStates),
-            #         'NNNAA': (numModes, numModes, numModes, numStates, numStates),
-            #         'NNNNAA': (numModes, numModes, numModes, numModes, numStates, numStates),
-            #         }
-
-            # Assert/Initialize array sizes
-            assert frequencies.shape[0] == size['N'], "Incorrect array dimensions"
-            assert excitation_energies.shape == size['AA'], "Incorrect array dimensions"
-
-            # predefine these arrays now that we know the values of N and A are
-            linear_couplings = np.zeros(size['NAA'])
-            quadratic_couplings = np.zeros(size['NNAA'])
-            cubic_couplings = np.zeros(size['NNNAA'])
-            quartic_couplings = np.zeros(size['NNNNAA'])
-
-            # read in the rest of the parameters
-            extract_linear_couplings(path_file_op, mm, linear_couplings)
-            extract_quadratic_couplings(path_file_op, mm, quadratic_couplings)
-            extract_cubic_couplings(path_file_op, mm, cubic_couplings)
-            extract_quartic_couplings(path_file_op, mm, quartic_couplings)
-            extract_bicubic_couplings(path_file_op, mm, cubic_couplings)
-            extract_biquartic_couplings(path_file_op, mm, quartic_couplings)
-
-    # duplicate the lower triangle values into the upper triangle
-
-    # do we not account for the symmetry in surfaces? this might be incorrect
-
-    linear_couplings[:] += linear_couplings.transpose(0, 2, 1)
-
-    # the couplings are a symmetric matrix
-    for a, b in it.product(States, States):
-        quadratic_couplings[:, :, a, b] += np.tril(quadratic_couplings[:, :, a, b], k=-1).T
-        quadratic_couplings[:, :, a, b] += quadratic_couplings[:, :, b, a]
-        # are these two correct?
-        cubic_couplings[:, :, :, a, b] += np.tril(cubic_couplings[:, :, :, a, b], k=-1).T
-        cubic_couplings[:, :, :, a, b] += cubic_couplings[:, :, :, b, a]  # this is probably incorrect
-        quartic_couplings[:, :, :, :, a, b] += np.tril(quartic_couplings[:, :, :, :, a, b], k=-1).T
-        quartic_couplings[:, :, :, :, a, b] += quartic_couplings[:, :, :, :, b, a]
-
-    # don't overcount the diagonals
-    for a in States:
-        linear_couplings[:, a, a] /= 2.
-        quadratic_couplings[:, :, a, b] /= 2.
-        cubic_couplings[:, :, :, a, b] /= 2.
-        quartic_couplings[:, :, :, :, a, b] /= 2.
-
-    # check for symmetry in surfaces
-    assert np.allclose(excitation_energies, excitation_energies.transpose(1, 0))
-    assert np.allclose(linear_couplings, linear_couplings.transpose(0, 2, 1))
-    assert np.allclose(quadratic_couplings, quadratic_couplings.transpose(0, 1, 3, 2))
-    assert np.allclose(cubic_couplings, cubic_couplings.transpose(0, 1, 2, 4, 3))
-    assert np.allclose(quartic_couplings, quartic_couplings.transpose(0, 1, 2, 3, 5, 4))
-
-    # check for symmetry in modes
-    assert np.allclose(quadratic_couplings, quadratic_couplings.transpose(1, 0, 2, 3))
-    # either (q^3) or (q, q^2)
-    assert np.allclose(cubic_couplings, cubic_couplings.transpose(0, 2, 1, 3, 4))
-    # either (q, q^3) or (q^2, q^2)
-    assert np.allclose(quartic_couplings, quartic_couplings.transpose(0, 1, 3, 2, 4, 5))
-
-    # and we are done
-    maximal_dict = {VMK.N: numModes,
-                    VMK.A: numStates,
-                    VMK.E: excitation_energies,
-                    VMK.w: frequencies,
-                    VMK.G1: linear_couplings,
-                    VMK.G2: quadratic_couplings,
-                    VMK.G3: cubic_couplings,
-                    VMK.G4: quartic_couplings,
-                    }
-
-    # if the arrays only have zeros then we might not need to store them?
-    return_dict = dict((k, v) for k, v in maximal_dict.items() if not np.all(v == 0))
-
-    return return_dict
+    """ wrapper function to maintain functionality - possible remove in the future"""
+    model_op.read_model_op_file(path_file_op)
+    return
 
 
 def create_coupling_from_h_file(FS, path_file_h):
@@ -1065,153 +389,15 @@ def create_coupling_from_op_hyperlink(FS, url):
         save_model_to_JSON(FS.path_vib_model, args)
         log.debug("Created \n{:s}\nfrom\n{:s}\n".format(FS.path_vib_model, url))
         return FS.path_vib_model
-    except:
+    except Exception as err:
         # The url wasn't valid
         raise Exception("Incorrect https link {:s}".format(url))
 
 
-def read_model_auto_file(filename):
-    """
-    if the shift to MCTDH file structure is permananent this function will no longer be needed
-
-    Read Vibronic Model file (cp.auto) which
-    contains all information on the approximate
-    Born-Oppenheimer Ground State PES.
-
-    Returns:
-    number of electronic states
-    number of normal modes
-
-    Excitation energies: (nel, nel)
-    frequencies (nmode)
-    linear couplings: (nmode, nel, nel)
-    quadratic couplings: (nmode, nmode, nel, nel)
-    """
-    nel = 2  # Number of minima [energy wells]
-    nmode = 12  # Number of normal modes
-    mode_range = range(nmode)
-    el_range = range(nel)
-
-    # Read file (Iterator object)
-    file_object = open(filename, 'r')
-
-    # first lets strip out all the blank lines and lines like ------
-    lines = [line.rstrip() for line in file_object.readlines() if ((len(line.strip()) != 0) and ("--------" not in line.strip()))]
-    f_iter = iter(lines)  # make an iterator
-
-    # =====
-    # Title
-    # =====
-
-    title_header = ff.FortranRecordReader('(A50, A20)')
-    title_header.read(next(f_iter))
-
-    # ==========================
-    # 0. Header and Normal modes
-    # ==========================
-
-    numgrid = ff.FortranRecordReader('(A26, i4)').read(next(f_iter))[1]      # read the type of grid in ACESII
-    num_irreps = ff.FortranRecordReader('(A36, i4)').read(next(f_iter))[1]   # number of vibrational irreps
-    nmodes = ff.FortranRecordReader('(A30, i4)').read(next(f_iter))[1]       # read the total number of modes per symmetry
-
-    # Initialize Variables
-    excitation_energies = np.zeros((nel, nel))
-    frequencies         = np.zeros((nmode))
-    linear_couplings    = np.zeros((nmode, nel, nel))
-    quadratic_couplings = np.zeros((nmode, nmode, nel, nel))
-
-    # we can either grab the frequencies from the ref_freq_data, or the parent hessian
-    if(False):
-        # the frequency given here is in cm-1
-        frequencies[:] = np.asarray(ff.FortranRecordReader('(A31, 12F8.2)').read(next(f_iter))[1:], dtype=F64)
-    else:
-        next(f_iter)
-
-    # ==================
-    # 1. Parent Gradient
-    # ==================
-
-    title_header.read(next(f_iter))
-    gradient_header_parent = ff.FortranRecordReader('(t3, A17, i4, t22, A15, E16.10)')
-    for i in mode_range:
-        next(f_iter)
-
-    # =================
-    # 2. Parent Hessian
-    # =================
-
-    title_header.read(next(f_iter))
-    hessian_header_parent = ff.FortranRecordReader('(t3, A17, i4, t22, A15, F8.2, A5, F12.6, A5)')
-    try:
-        for i in mode_range:
-            # store the value incase exception occurs
-            temp_str = next(f_iter)
-            frequencies[i] = float(temp_str.partition("cm-1")[2].partition("eV")[0])
-    except ValueError as err_obj:
-        print("Having issues parsing the Hessian parent energy, why are the frequences not digits?")
-        print(temp_str)
-        print(temp_str.partition("cm-1")[2])
-        print(temp_str.partition("cm-1")[2].partition("eV")[0])
-        raise err_obj
-
-    # ========================
-    # 3. Reference Hamiltonian
-    # ========================
-
-    title_header.read(next(f_iter))
-    energy_header = ff.FortranRecordReader('2(F12.6)')
-    for a in el_range:
-        excitation_energies[a,:] = energy_header.read(next(f_iter))
-
-    # ===============================
-    # 4. Linear couplings (gradients)
-    # ===============================
-
-    title_header.read(next(f_iter))
-    gradient_header = ff.FortranRecordReader('(t3, A15, i4, A15, F10.2)')
-    for i in mode_range:
-        gradient_header.read(next(f_iter))  # should 'read in' the header
-        for a in el_range:
-            linear_couplings[i, a, :] = energy_header.read(next(f_iter))
-
-    # ========================================================
-    # 5. Quadratic couplings [Diagonal corrections of Hessian]
-    # ========================================================
-    #
-
-    title_header.read(next(f_iter))
-    for i in mode_range:
-        gradient_header.read(next(f_iter))
-        for a in el_range:
-            quadratic_couplings[i, i, a, :] = energy_header.read(next(f_iter))
-
-    # ============================================================
-    # 6. Quadratic couplings [Off-diagonal corrections of Hessian]
-    # ============================================================
-
-    title_header.read(next(f_iter))
-    for i in mode_range:
-        for j in range(i):
-            next(f_iter)  # 'reading in' the first line/title
-            for a in el_range:
-                quadratic_couplings[i, j, a, :] = energy_header.read(next(f_iter))
-
-    for a in el_range:
-        for b in el_range:
-            quadratic_couplings[:,:,a,b] += np.tril(quadratic_couplings[:,:,a,b], k=-1).T
-
-    # check for symmetry in surfaces
-    for a in el_range:
-        for b in el_range:
-            assert(np.allclose(linear_couplings[:,a,b], linear_couplings[:,b,a]))
-            assert(np.allclose(quadratic_couplings[:,:,a,b], quadratic_couplings[:,:,b,a]))
-
-    # check for symmetry in modes
-    for i in mode_range:
-        for j in mode_range:
-            assert(np.allclose(quadratic_couplings[i,j,:,:], quadratic_couplings[j,i,:,:]))
-
-    return nel, nmode, excitation_energies, frequencies, linear_couplings, quadratic_couplings
+def read_model_auto_file(path_file_auto):
+    """ wrapper function to maintain functionality - possible remove in the future"""
+    model_auto.read_model_auto_file(path_file_auto)
+    return
 
 
 def _extract_dimensions_from_dictionary(dictionary):
@@ -1457,48 +643,44 @@ def create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter):
 
 
 def create_fake_coupled_model(FS, tuning_parameter=0.01):
-    """ take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix """
+    """ take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix
+    for a tuning_parameter of 0 the transformation matrix (U) is identity
+    the larger the value of tuning_parameter the "farther" away from identity U becomes
+    """
     assert os.path.isfile(FS.path_vib_model), "coupled_model file doesn't exist!"
 
     model_dict = load_model_from_JSON(FS.path_vib_model)
     A, N = _extract_dimensions_from_dictionary(model_dict)
     U = create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter)
-    # print("U ", U)
 
-    # TODO - all the for loops are just hard checks, they should be factored out into test cases
-    # in the long term
+    for key in filter(model_dict.__contains__, VMK.key_list()):
 
-    for key in VMK.key_list():
-        if key not in model_dict:
-            continue
-
+        # the array of coefficients that we are going to modify
         array = model_dict[key].view()
+
+        # TODO - do we really need to assert this? should this already have been called when we loaded the model?
         assert model_array_diagonal_in_surfaces(array), f"{key} not diagonal in surfaces"
+        """ we assert if the array is diagonal in modes inside each if statement because the checks are all unique, the surface check is the same because all arrays have the same structure where the last two dimensions are the surface dimensions """
 
-        if key is VMK.E:
-            new_values = np.einsum('bj,jk,ck->bc', U, array, U)
+        # simulating a case statement
+        op_switcher = {
+                        VMK.E: lambda old: np.einsum('bj,jk,ck->bc', U, old, U),
+                        VMK.G1: lambda old: np.einsum('bj,ajk,ck->abc', U, old, U),
+                        VMK.G2: lambda old: np.einsum('cj,abjk,dk->abcd', U, old, U),
+                        VMK.G3: lambda old: np.einsum('dj,abcjk,ek->abcde', U, old, U),
+                        VMK.G4: lambda old: np.einsum('ej,abcdjk,fk->abcdef', U, old, U),
+                        }
 
-        elif key is VMK.G1:
-            new_values = np.einsum('bj,ajk,ck->abc', U, array, U)
-            for j in range(N):
-                assert np.allclose(new_values[j, ...], U.dot(array[j, ...].dot(U.T)))
+        # calculate the new Hamiltonian, by preforming the transformation with the matrix U
+        new_values = op_switcher[key](array)
 
-        elif key is VMK.G2:
-            new_values = np.einsum('cj,abjk,dk->abcd', U, array, U)
-            for j1, j2, in zip(range(N), range(N)):
-                assert np.allclose(new_values[j1, j2, ...], U.dot(array[j1, j2, ...].dot(U.T)))
+        # number of modes in each array
+        mode_switcher = {VMK.E: 0, VMK.G1: 1, VMK.G2: 2, VMK.G3: 3, VMK.G4: 4}
 
-        elif key is VMK.G3:
-            new_values = np.einsum('dj,abcjk,ek->abcde', U, array, U)
-            for j1, j2, j3 in zip(range(N), range(N), range(N)):
-                assert np.allclose(new_values[j1, j2, j3, ...],
-                                   U.dot(array[j1, j2, j3, ...].dot(U.T)))
-
-        elif key is VMK.G4:
-            new_values = np.einsum('ej,abcdjk,fk->abcdef', U, array, U)
-            for j1, j2, j3, j4 in zip(range(N), range(N), range(N), range(N)):
-                assert np.allclose(new_values[j1, j2, j3, j4, ...],
-                                   U.dot(array[j1, j2, j3, j4, ...].dot(U.T)))
+        # make sure that the transformation was indeed unitary
+        for iters in it.product(*it.repeat(range(N), mode_switcher[key])):
+            idx = (*iters, ...)
+            assert np.allclose(new_values[idx], U.dot(array[idx].dot(U.T)))
 
         # overwrite the previous array with the new values
         array[:] = new_values
@@ -1509,10 +691,10 @@ def create_fake_coupled_model(FS, tuning_parameter=0.01):
     # backup the old model
     shutil.copyfile(source, dest)
     # save the new one
-    save_model_to_JSON(FS.path_vib_model, model_dict)
+    save_model_to_JSON(source, model_dict)
 
-    # save the Orthogonal matrix in case we need to use it later
-    np.save(FS.path_vib_params + "orthogonal_matrix", U)
+    # save the orthogonal matrix in case we need to use it later
+    np.save(join(FS.path_vib_params, "orthogonal_matrix"), U)
     return
 
 

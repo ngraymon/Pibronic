@@ -1,18 +1,17 @@
-"""submission script to automate submitting jobs on slurm server"""
+""" submission script to automate submitting pimc jobs on slurm server """
 
 # system imports
 import subprocess
 import socket
-# import sys
-# import os
-
-# local imports
-from .. import vibronic
-from ..data import file_structure
-from ..constants import delta_beta
 
 # third party imports
 import numpy as np
+
+# local imports
+from ..vibronic import vIO
+from ..data import file_structure
+from ..constants import delta_beta
+
 
 pimc_cmd = "sbatch"
 pimc_cmd += (
@@ -57,6 +56,47 @@ pimc_cmd += (
 def extract_job_id(out, error):
     """this might need to be more dynamic and change with type of server"""
     return int(out.decode()[20:])
+
+
+def submit_pimc_job_to_nlogn(lst_T, lst_P, lst_mem, param_dict):
+    """x"""
+    for bead_index, bead_val in enumerate(lst_P):
+        param_dict["wait_param"] = ""
+        command = pimc_cmd.format(memory=lst_mem[bead_index],
+                                  n_beads=bead_val,
+                                  temp=lst_T[-1],
+                                  **param_dict
+                                  )
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        out, error = p.communicate()
+        previous_job_id = extract_job_id(out, error)
+
+        # go backwards because higher temps are easier
+        for temp_val in lst_T[-2::-1]:
+            param_dict["wait_param"] = f"--dependency afterok:{previous_job_id:d}"
+            command = pimc_cmd.format(memory=lst_mem[bead_index],
+                                      n_beads=bead_val,
+                                      temp=temp_val,
+                                      **param_dict
+                                      )
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            out, error = p.communicate()
+            previous_job_id = extract_job_id(out, error)
+    return
+
+
+def submit_pimc_job_to_feynman(lst_T, lst_P, lst_mem, param_dict):
+    """x"""
+    for bead_index, bead_val in enumerate(lst_P):
+        for temp_val in lst_T:
+            command = pimc_cmd.format(memory=lst_mem[bead_index],
+                                      n_beads=bead_val,
+                                      temp=temp_val,
+                                      **param_dict
+                                      )
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            out, error = p.communicate()
+    return
 
 
 def submit_pimc_job(FS=None, path_root=None, id_data=None, id_rho=None, param_dict=None):
@@ -107,38 +147,9 @@ def submit_pimc_job(FS=None, path_root=None, id_data=None, id_rho=None, param_di
     memory_list = np.array([25]*len(bead_list))
 
     if(param_dict["hostname"] == "nlogn"):
-        for bead_index, bead_val in enumerate(bead_list):
-            param_dict["wait_param"] = ""
-            command = pimc_cmd.format(memory=memory_list[bead_index],
-                                      n_beads=bead_val,
-                                      temp=temperature_list[-1],
-                                      **param_dict
-                                      )
-            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            out, error = p.communicate()
-            previous_job_id = extract_job_id(out, error)
-
-            # go backwards because higher temps are easier
-            for temp_val in temperature_list[-2::-1]:
-                param_dict["wait_param"] = f"--dependency afterok:{previous_job_id:d}"
-                command = pimc_cmd.format(memory=memory_list[bead_index],
-                                          n_beads=bead_val,
-                                          temp=temp_val,
-                                          **param_dict
-                                          )
-                p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                out, error = p.communicate()
-                previous_job_id = extract_job_id(out, error)
+        submit_pimc_job_to_nlogn(temperature_list, bead_list, memory_list, param_dict)
     if(param_dict["hostname"] == "feynman"):
-        for bead_index, bead_val in enumerate(bead_list):
-            for temp_val in temperature_list:
-                command = pimc_cmd.format(memory=memory_list[bead_index],
-                                          n_beads=bead_val,
-                                          temp=temp_val,
-                                          **param_dict
-                                          )
-                p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                out, error = p.communicate()
+        submit_pimc_job_to_feynman(temperature_list, bead_list, memory_list, param_dict)
     else:
         raise Exception("This server is currently not supported")
     return

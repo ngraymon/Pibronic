@@ -1,12 +1,13 @@
-"""provides a number of job submission related functions - a helper module for job submission - assumes the server uses SLURM"""
+"""provides a number of job submission related functions - a helper module for job submission
+assumes the server uses SLURM"""
 
 # system imports
 import subprocess
-from subprocess import Popen, TimeoutExpired
+from subprocess import Popen
+# from subprocess import TimeoutExpired
 import threading
 import socket
 import signal
-import math
 import time
 import sys
 import os
@@ -15,7 +16,6 @@ import os
 
 # local imports
 # import pibronic.data.vibronic_model_io as vIO
-from ..data import file_structure
 # from ..constants import GB_per_byte, maximum_memory_per_node
 from ..log_conf import log
 from .. import constants
@@ -192,7 +192,7 @@ class PimcSubmissionClass:
         "id_rho": 0,
         "partition": "serial",
         "hostname": None,
-        "partition": None,
+        # "partition": None,
         # "partition": "serial,highmem",
         "block_size": int(1e2),
         "memory_per_node": 20,
@@ -304,13 +304,14 @@ class PimcSubmissionClass:
         assert False, "this is currently under development"
 
         temperature_list = self.param_dict["temperature_list"]
-        bead_list = self.param_dict["bead_list"]
+        # bead_list = self.param_dict["bead_list"]
 
         for temp in temperature_list:
             log.info("Submitting jobarray")
 
-            params = base_params.copy()
-            params["temperature"] = temp
+            # TODO -  what were base_params supposed to be?
+            # params = base_params.copy()
+            # params["temperature"] = temp
 
             # if job_boss.hostname == "nlogn":
             #     job_id = submit_job_nlogn(params)

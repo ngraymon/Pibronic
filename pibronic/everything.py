@@ -18,8 +18,8 @@ from os.path import join
 # sys.path.append('/home/ngraymon/pibronic/')
 from . import constants
 from .log_conf import log
-from . import electronic_structure as ES
 from .vibronic import vIO
+from .vibronic import electronic_structure as ES
 from .data import file_structure
 from . import pimc
 from .server import job_boss

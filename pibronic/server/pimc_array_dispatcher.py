@@ -1,13 +1,59 @@
-"""x"""
+""" submission script for arrays of pimc jobs on a server"""
 
-# note that this script is not ready!!!
-# submission script for jobs on nlogn
+# system imports
+import subprocess
+import socket
+import sys
+
+# third party imports
 import numpy as np
-import sys, os, socket, subprocess
-from .. import vibronic
+
+# local imports
+from ..vibronic import vIO
+
+
+hostname = socket.gethostname()
+array_qsub = "sbatch" + (
+                 ""
+                 # + " --output={:}".format(hostname) + ":{root_dir:}execution_output/" # defines output directions
+                 + " --job-name=\"F{id_data:}_S{n_surfaces:d}_N{n_modes:d}\""  # name the jobs
+                 + " --array=0-{MAX_JOBS:d}%1"  # this creates a job array with MAX_JOBS number of jobs
+                 # + " --cpu-per-task=1"
+                 + " -N1"
+                 # + " --ntasks=1"
+                 # + " --label"
+                 + " --mem-per-cpu=1000"
+                 # + " -n=5"
+                 + " ./server_scripts/slurm/pimc_job.sh"
+                )
+
+# + " -o {:}".format(hostname) + ":{root_dir:}execution_output/" # defines output directions
+# + " -N \"F{:}".format(data_set_id) + "_A{n_surfaces:d}_N{n_modes:d}_X{n_samples:d}_P{n_beads:d}_T{temp:d}\""
+
+alter_qsub = "scontrol" + (
+                 " update"
+                 + " ArrayJobId={job_id:}"
+                 + " UserId=ngraymon"
+                 # + " --mem={memory:}GB -n {n_cpus:d}"
+                 + " --export="
+                 + " \"MODES={n_modes:d}\""
+                 + ",\"SURFACES={n_surfaces:d}\""
+                 + ",\"SAMPLES={n_samples:d}\""
+                 + ",\"BLOCKS={block_size:d}\""
+                 + ",\"BEADS={n_beads:d}\""
+                 + ",\"TEMP={temp:d}\""
+                 + ",\"DELTA_BETA={delta_beta:f}\""
+                 + ",\"ROOT_DIR={root_dir:}\""
+                 + ",\"DATA_SET_ID={data_set_id:}\""
+                 + ",\"PYTHON3_PATH=/home/ngraymon/dev/ubuntu/16.04/bin/python3\""
+                 + ",\"Q_HOSTNAME={:}\"".format(hostname)
+                 + ",\"NUMBER_OF_CORES={n_cpus:d}\""
+                 + ",\"MEMORY_RESERVED={memory:}\""
+                )
+
 
 if (__name__ == "__main__"):
-    pass
+    pass  # script is not finished!!!
 
     assert(len(sys.argv) == 2)
     assert(sys.argv[1].isnumeric() and int(sys.argv[1]) >= 1)
@@ -41,47 +87,9 @@ if (__name__ == "__main__"):
     bead_list = np.array([4, 8, 16, 32, 64])
     memory_list = np.ones_like(bead_list, dtype=int) + (bead_list // 20)
 
-    hostname = socket.gethostname()
-
     MAX_JOBS = len(temperature_list)*len(bead_list)
 
-    array_qsub  = "sbatch" + (""
-                     # + " --output={:}".format(hostname) + ":{root_dir:}execution_output/" # defines output directions
-                     + " --job-name=\"F{:}".format(data_set_id) + "_S{n_surfaces:d}_N{n_modes:d}\"" # name the jobs
-                     + " --array=0-{:d}%1".format(MAX_JOBS) # this creates a job array with MAX_JOBS number of jobs
-                     # + " --cpu-per-task=1"
-                     + " -N1"
-                     # + " --ntasks=1"
-                     # + " --label"
-                     + " --mem-per-cpu=1000"
-                     # + " -n=5"
-                     + " ./server_scripts/slurm/pimc_job.sh"
-                    )
-
-
-    # + " -o {:}".format(hostname) + ":{root_dir:}execution_output/" # defines output directions
-    # + " -N \"F{:}".format(data_set_id) + "_A{n_surfaces:d}_N{n_modes:d}_X{n_samples:d}_P{n_beads:d}_T{temp:d}\""
-
-    alter_qsub = "scontrol" + (" update"
-                     + " ArrayJobId={job_id:}"
-                     + " UserId=ngraymon"
-                     # + " --mem={memory:}GB -n {n_cpus:d}"
-                     + " --export="
-                     + " \"MODES={n_modes:d}\""
-                     + ",\"SURFACES={n_surfaces:d}\""
-                     + ",\"SAMPLES={n_samples:d}\""
-                     + ",\"BLOCKS={block_size:d}\""
-                     + ",\"BEADS={n_beads:d}\""
-                     + ",\"TEMP={temp:d}\""
-                     + ",\"DELTA_BETA={delta_beta:f}\""
-                     + ",\"ROOT_DIR={root_dir:}\""
-                     + ",\"DATA_SET_ID={data_set_id:}\""
-                     + ",\"PYTHON3_PATH=/home/ngraymon/dev/ubuntu/16.04/bin/python3\""
-                     + ",\"Q_HOSTNAME={:}\"".format(hostname)
-                     + ",\"NUMBER_OF_CORES={n_cpus:d}\""
-                     + ",\"MEMORY_RESERVED={memory:}\""
-                    )
-    #ArrayTaskThrottle=5
+    # ArrayTaskThrottle=5
 
     # submit the job array
     command = array_qsub.format(
@@ -112,5 +120,5 @@ if (__name__ == "__main__"):
                     )
             p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, error = p.communicate()
-            print(out.decode(),error.decode())
+            print(out.decode(), error.decode())
             # JOB_ARRAY_ROOT = out.split(sep=b'.', maxsplit=1)[0].decode()

@@ -2,19 +2,21 @@
 #
 # system imports
 import itertools as it
-import subprocess
-import threading
-import warnings
-import inspect
+# import subprocess
+# import threading
+# import warnings
+# import inspect
 import shutil
-import socket
+# import socket
 import signal
 import enum
 import time
-import math
+# import math
 import mmap
 import sys
 import os
+from os.path import join
+from os.path import isfile
 
 # third party imports
 import numpy as np
@@ -23,19 +25,20 @@ import numpy as np
 # from ..data import vibronic_model_io as vIO
 # from .. import constants
 # from ..constants import hbar
-from .log_conf import log
-from .server import job_boss
+from ..log_conf import log
+from ..server import job_boss
+
 
 # how we identify the different steps
 @enum.unique
 class State(enum.Enum):
     # DROPMO   = 0
-    OPT      = enum.auto()
-    NIP      = enum.auto()
-    VIB      = enum.auto()
-    IPEOMCC  = enum.auto()
-    PREPVIB  = enum.auto()
-    VIBRON   = enum.auto()
+    OPT = enum.auto()
+    NIP = enum.auto()
+    VIB = enum.auto()
+    IPEOMCC = enum.auto()
+    PREPVIB = enum.auto()
+    VIBRON = enum.auto()
     FINISHED = enum.auto()
 
     @classmethod
@@ -49,33 +52,33 @@ class State(enum.Enum):
 
 # the input filename templates that this script uses to run calculations
 default_file_in = {
-    "parameter" : "{:s}_params.txt",
-    "zmat"      : "{:s}_zmat.txt",
-    "DROPMO"    : "{:s}_hartree_fock_dropmo.in",
-    "NIP"       : "{:s}_hartree_fock_nip.in",
-    "geometry"  : "{:s}_opt.in",
-    "vib"       : "{:s}_vib.in",
-    "ipeomcc"   : "{:s}_eomcc_ip_{{:d}}.in",
-    "prepVib"   : "{:s}_prepvib.in",
-    "vibronIn"  : "{:s}_vibron.in",
-    # "vibronIn"  : "cp.in",
-    "vibronCp"  : "cp.auto",
-    # "vibronCp"  : "{:s}_vibron.auto",
+    "parameter": "{:s}_params.txt",
+    "zmat":      "{:s}_zmat.txt",
+    "DROPMO":    "{:s}_hartree_fock_dropmo.in",
+    "NIP":       "{:s}_hartree_fock_nip.in",
+    "geometry":  "{:s}_opt.in",
+    "vib":       "{:s}_vib.in",
+    "ipeomcc":   "{:s}_eomcc_ip_{{:d}}.in",
+    "prepVib":   "{:s}_prepvib.in",
+    "vibronIn":  "{:s}_vibron.in",
+    # "vibronIn":  "cp.in",
+    "vibronCp":  "cp.auto",
+    # "vibronCp":  "{:s}_vibron.auto",
 }
 
 # the output filename templates that this script uses to run calculations
 default_file_out = {
-    "DROPMO"    : "{:s}_hartree_fock_dropmo.out0",
-    "NIP"       : "{:s}_hartree_fock_nip.out0",
-    "geometry"  : "{:s}_opt.out0",
-    "vib"       : "{:s}_vib.out0",
-    "ipeomcc"   : "{:s}_eomcc_ip_{{:d}}.out0",
-    "prepVib"   : "{:s}_prepvib.out0",
-    "pntheff"   : "{:s}_prepvib.pntheff",
-    "vibronIn"  : "{:s}_prepvib.vibron_input",
-    "vibronCp"  : "{:s}_prepvib.vibronic_coupling",
-    "vibron"    : "{:s}_vibron.out0",
-    # "vibron"    : "cp.auto0",
+    "DROPMO":   "{:s}_hartree_fock_dropmo.out0",
+    "NIP":      "{:s}_hartree_fock_nip.out0",
+    "geometry": "{:s}_opt.out0",
+    "vib":      "{:s}_vib.out0",
+    "ipeomcc":  "{:s}_eomcc_ip_{{:d}}.out0",
+    "prepVib":  "{:s}_prepvib.out0",
+    "pntheff":  "{:s}_prepvib.pntheff",
+    "vibronIn": "{:s}_prepvib.vibron_input",
+    "vibronCp": "{:s}_prepvib.vibronic_coupling",
+    "vibron":   "{:s}_vibron.out0",
+    # "vibron":   "cp.auto0",
 }
 
 
@@ -99,10 +102,10 @@ calculations_list = [
     # "EA",
 ]
 
-# get the functions name
-#inspect.currentframe().f_code.co_name
-# get the name of the function that called the current function
-#inspect.currentframe().f_back.f_code.co_name
+""" get the functions name """
+# inspect.currentframe().f_code.co_name
+""" get the name of the function that called the current function """
+# inspect.currentframe().f_back.f_code.co_name
 
 
 # quick hacky cheats!!
@@ -115,15 +118,16 @@ file_name_state = "execution_state.txt"
 # MEMORY MAPPED HELPER FUNCTIONS
 # -----------------------------------------------------------
 
+
 def find_string_in_file(memmap_file, file_path, target_string):
     """wrapper that raises error if no substr can be found finds the first occurance of a substring in memory mapped file"""
     location = memmap_file.find(target_string.encode(encoding="utf-8"))
 
     if location == -1:
         # couldn't find target string in file
-        s = (   "It seems \"{:s}\" was not present in the file\n\"{:s}\"\n"
-                "Check that the previous calculation didn't fail"
-            )
+        s = ("It seems \"{:s}\" was not present in the file\n\"{:s}\"\n"
+             "Check that the previous calculation didn't fail"
+             )
         raise Exception(s.format(target_string, file_path))
     return location
 
@@ -134,9 +138,9 @@ def rfind_string_in_file(memmap_file, file_path, target_string):
 
     if location == -1:
         # couldn't find target string in file
-        s = (   "It seems \"{:s}\" was not present in the file\n\"{:s}\"\n"
-                "Check that the previous calculation didn't fail"
-            )
+        s = ("It seems \"{:s}\" was not present in the file\n\"{:s}\"\n"
+             "Check that the previous calculation didn't fail"
+             )
         raise Exception(s.format(target_string, file_path))
     return location
 
@@ -166,38 +170,40 @@ def skip_forward_n_lines(memmap_file, n, start_index):
 # HELPER FUNCTIONS
 # -----------------------------------------------------------
 
+
+number_dictionary = {
+    0:    ("acetonitrile", 200),
+    1:    ("ammonia", 201),
+    2:    ("boron_trifluoride", 202),
+    3:    ("formaldehyde", 203),
+    4:    ("methane", 204),
+    5:    ("formamide", 205),
+    6:    ("formic_acid", 206),
+    7:    ("hydrogen_peroxide", 207),
+    8:    ("water", 208),
+    9:    ("pyridine", 209),
+    10:   ("furan", 210),
+    11:   ("trichloroethylene", 211),
+    12:   ("chloroethylene", 212),
+    13:   ("acrolein", 213),
+    14:   ("acrylonitrile", 214),
+    15:   ("cis_12_dichloroethylene", 215),
+    16:   ("trans_12_dichloroethylene", 216),
+    17:   ("11_dichloroethylene", 217),
+    # 18:   ("", 218),
+    # 19:   ("", 219),
+    # 20:   ("", 220),
+    # 21:   ("", 221),
+    }
+
+
 def pretty_print_job_status():
     """ quick hack for scripting"""
-    number_dictionary = {
-        0   :   ("acetonitrile", 200),
-        1   :   ("ammonia", 201),
-        2   :   ("boron_trifluoride", 202),
-        3   :   ("formaldehyde", 203),
-        4   :   ("methane", 204),
-        5   :   ("formamide", 205),
-        6   :   ("formic_acid", 206),
-        7   :   ("hydrogen_peroxide", 207),
-        8   :   ("water", 208),
-        9   :   ("pyridine", 209),
-        10  :   ("furan", 210),
-        11  :   ("trichloroethylene", 211),
-        12  :   ("chloroethylene", 212),
-        13  :   ("acrolein", 213),
-        14  :   ("acrylonitrile", 214),
-        15  :   ("cis_12_dichloroethylene", 215),
-        16  :   ("trans_12_dichloroethylene", 216),
-        17  :   ("11_dichloroethylene", 217),
-        # 18  :   ("", 218),
-        # 19  :   ("", 219),
-        # 20  :   ("", 220),
-        # 21  :   ("", 221),
-        }
-
     path_root = "/work/ngraymon/pimc/data_set_{:d}/electronic_structure/execution_state.txt"
 
     for model in number_dictionary.values():
         path_file_state = path_root.format(model[1])
-        if os.path.isfile(path_file_state):
+        if isfile(path_file_state):
             with open(path_file_state, 'r') as file:
                 lines = file.readlines()
             for line in reversed(lines):
@@ -205,17 +211,17 @@ def pretty_print_job_status():
                     continue
                 last_state = str(line.strip())
                 break
-            log.info("({:}, {:}) last state was {:}".format(model[0],model[1],last_state))
+            log.info("({:}, {:}) last state was {:}".format(model[0], model[1], last_state))
         else:
             s = "({:}, {:}) does not have an execution_state.txt file"
-            log.info(s.format(model[0],model[1]))
+            log.info(s.format(model[0], model[1]))
 
     return
 
 
 def verify_file_exists(file_path):
     """raises FileNotFoundError exception if input is not a file, or does not exist"""
-    if not os.path.isfile(file_path):
+    if not isfile(file_path):
         raise FileNotFoundError("Cannot find {}".format(file_path))
     return True
 
@@ -246,7 +252,7 @@ def get_integer_from_user(message):
     while True:
         try:
             user_integer = int(input(message))
-            assert(user_integer >= 0)
+            assert user_integer >= 0
         except ValueError:
             print("Sorry, I didn't understand that\n")
             continue
@@ -294,18 +300,18 @@ def verify_aces2_completed(path_root, file_path, job_id):
             # then we search from there to the end of the file for our target string
             if memmap_file.find(final_string, ten_lines_back) == -1:
                 # if we don't find it then the calculation was a failure
-                s = (   "Output for ACES2 jobid={:d} did not complete successfully!\n"
-                        "Check output file\n{:s}"
-                    )
+                s = ("Output for ACES2 jobid={:d} did not complete successfully!\n"
+                     "Check output file\n{:s}"
+                     )
                 log.error(s.format(job_id, file_path))
 
                 # verify that the slurm job didn't fail
                 job_boss.check_slurm_output(path_root, job_id)
 
-                s = (   "Could not find an issue with slurm output in file\nslurm-{:d}.out\n"
-                        "It appears that slurm job didn't fail but ACES2 did?\n"
-                        "This appears to be a theory/numerical/symmetry issue.\n"
-                    )
+                s = ("Could not find an issue with slurm output in file\nslurm-{:d}.out\n"
+                     "It appears that slurm job didn't fail but ACES2 did?\n"
+                     "This appears to be a theory/numerical/symmetry issue.\n"
+                     )
                 # only the aces2 job failed?
                 raise Exception(s.format(job_id))
 
@@ -315,27 +321,27 @@ def verify_aces2_completed(path_root, file_path, job_id):
 def submit_job(parameter_dictionary):
     """wrapper for job_boss job submission"""
 
-    job = "sbatch"
-    job += (" --mem={memory_size:d}G"
-            " --ntasks=1"
-            " --job-name={file_name:s}"
-            " --cpus-per-task={cpus:d}"
-            " --workdir={work_dir:s}"
-            # " --output={output:s}/%x.o%j"
-            " --partition={partition:s}"
-            " --export="
-            # "MK_SCRATCH_DIR={make_scratch:s}"
-            # ",SCRATCH_COPY_IN={scratch_in:s}"
-            # ",SCRATCH_COPY_OUT={scratch_out:s}"
-            ",HEADNODE={hostname:s}"
-            ",PREAMBLE={pre_amble:s}"
-            ",JOB={job_name:s}"
-            ",POSTAMBLE={post_amble:s}"
-            ",PARENT_PID={parent_pid:d}"
-            " /home/ngraymon/chem740/work_dir/submit_template"
-        )
+    command = "sbatch"
+    command += (" --mem={memory_size:d}G"
+                " --ntasks=1"
+                " --job-name={file_name:s}"
+                " --cpus-per-task={cpus:d}"
+                " --workdir={work_dir:s}"
+                # " --output={output:s}/%x.o%j"
+                " --partition={partition:s}"
+                " --export="
+                # "MK_SCRATCH_DIR={make_scratch:s}"
+                # ",SCRATCH_COPY_IN={scratch_in:s}"
+                # ",SCRATCH_COPY_OUT={scratch_out:s}"
+                ",HEADNODE={hostname:s}"
+                ",PREAMBLE={pre_amble:s}"
+                ",JOB={job_name:s}"
+                ",POSTAMBLE={post_amble:s}"
+                ",PARENT_PID={parent_pid:d}"
+                " /home/ngraymon/chem740/work_dir/submit_template"
+                )
 
-    job_id, out, error = job_boss.submit_job(job, parameter_dictionary)
+    job_id, out, error = job_boss.submit_job(command, parameter_dictionary)
 
     # check for any errors
     if error.decode('utf-8') is not "":
@@ -346,46 +352,45 @@ def submit_job(parameter_dictionary):
 # -----------------------------------------------------------
 
 
-def parse_input_parameters(file_path = None):
-    return # no workey
+def parse_input_parameters(file_path=None):
+    return  # does not work - decommission for now
     # Default is to assume parameter file is in the same directory
-    if file_path is None:
-        file_path = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(file_path, default_file_in["parameter"].format("default"))
+    # if file_path is None:
+    #     file_path = os.path.dirname(os.path.realpath(__file__))
+    #     file_path = join(file_path, default_file_in["parameter"].format("default"))
 
     # where we store the data
     data_dictionary = {
-        "calculation"   : None,
-        "zmat path"     : None,
-        "theory"        : None,
-        "basis"         : None,
+        "calculation":  None,
+        "zmat path":    None,
+        "theory":       None,
+        "basis":        None,
         }
 
-    # read in the file contents
-    try:
-        verify_file_exists(file_path)
+    # # read in the file contents
+    # try:
+    #     verify_file_exists(file_path)
 
-        with open(file_path, 'r') as source_file:
-            for line in source_file:
-                if not (line == "" or line.startswith("#")):
-                    header = line.strip()
-                    data = source_file.readline().strip()
-                    if header in ["zmat path", "basis", "theory", "calculation"]:
-                        data_dictionary[header] = data
-                    else:
-                        s = (   "Header {:s} is not valid\n"
-                                "Check that your {:s} has the correct formatting"
-                            )
-                        raise ValueError(s.format(header, file_path))
-    except ValueError as error_object:
-        raise error_object
+    #     with open(file_path, 'r') as source_file:
+    #         for line in source_file:
+    #             if not (line == "" or line.startswith("#")):
+    #                 header = line.strip()
+    #                 data = source_file.readline().strip()
+    #                 if header in ["zmat path", "basis", "theory", "calculation"]:
+    #                     data_dictionary[header] = data
+    #                 else:
+    #                     s = ("Header {:s} is not valid\n"
+    #                          "Check that your {:s} has the correct formatting"
+    #                          )
+    #                     raise ValueError(s.format(header, file_path))
+    # except ValueError as error_object:
+    #     raise error_object
 
-
-    # check the validity of the parameter file
-    assert(data_dictionary["basis"] in basis_list)
-    assert(data_dictionary["theory"] in theory_list)
-    assert(data_dictionary["calculation"] in calculations_list)
-    assert(os.path.isfile(data_dictionary["zmat path"]))
+    # # check the validity of the parameter file
+    # assert data_dictionary["basis"] in basis_list, "invalid parameter provided for basis"
+    # assert data_dictionary["theory"] in theory_list, "invalid parameter provided for theory"
+    # assert data_dictionary["calculation"] in calculations_list, "invalid parameter provided for calculation"
+    # assert isfile(data_dictionary["zmat path"]), "path to zmat file is not a valid path!"
 
     return data_dictionary
 
@@ -394,11 +399,11 @@ def hartree_fock_calculation(path_root, name, zmat, parameter_dictionary, hf_typ
     """creates and populates the input file and submission file for the job"""
     log.flow("Setting up {:s} calculation".format(hf_type))
 
-    memory_size = 10 # in GB's
+    memory_size = 10  # in GB's
 
     # file location
     file_name = default_file_in[hf_type].format(name)
-    file_path = os.path.join(path_root, file_name)
+    file_path = join(path_root, file_name)
 
     # create the input file template
     template = zmat.get()
@@ -425,20 +430,20 @@ def hartree_fock_calculation(path_root, name, zmat, parameter_dictionary, hf_typ
     path_output = ""
 
     slurm_parameters = {
-        "memory_size" : memory_size+3,
-        "file_name" : file_name,
-        "cpus" : 1,
-        "work_dir" : path_root,
-        "output" : path_output,
-        "partition" : job_boss.partition,
-        "make_scratch" : 0,
-        "scratch_in" : copy_in,
-        "scratch_out" : copy_out,
-        "pre_amble" : "jobaces",
-        "job_name" : file_name.replace(".in", ""),
-        "post_amble" : "",
-        "hostname" : job_boss.hostname,
-        "parent_pid" : os.getpid(),
+        "memory_size": memory_size+3,
+        "file_name": file_name,
+        "cpus": 1,
+        "work_dir": path_root,
+        "output": path_output,
+        "partition": job_boss.partition,
+        "make_scratch": 0,
+        "scratch_in": copy_in,
+        "scratch_out": copy_out,
+        "pre_amble": "jobaces",
+        "job_name": file_name.replace(".in", ""),
+        "post_amble": "",
+        "hostname": job_boss.hostname,
+        "parent_pid": os.getpid(),
     }
 
     # run the job
@@ -447,215 +452,221 @@ def hartree_fock_calculation(path_root, name, zmat, parameter_dictionary, hf_typ
     wait_on_results(job_id, "SCF")
 
     file_name = default_file_out[hf_type].format(name)
-    file_path = os.path.join(path_root, file_name)
+    file_path = join(path_root, file_name)
 
     verify_aces2_completed(path_root, file_path, job_id)
 
     return
 
 
+def _estimate_dropmo(file_path):
+    """read the output file from a scf calculation and attempt to choose a DROPMO value """
+
+    # access the file using memory map for efficiency
+    with open(file_path, "r+b") as source_file:
+        with mmap.mmap(source_file.fileno(), 0, prot=mmap.PROT_READ) as memmap_file:
+
+            # find the begining and ending of the important region
+            target_begin = 'ORBITAL EIGENVALUES (ALPHA)'
+            target_end = '+++++++++++++++++++++++++++++++++++++++++++'
+            begin = find_string_in_file(memmap_file, file_path, target_begin)
+            end = find_string_in_file(memmap_file, file_path, target_end)
+
+            # go there
+            memmap_file.seek(begin)
+
+            # throw away the header lines
+            past_headers = skip_forward_n_lines(memmap_file, 4, memmap_file.tell())
+            memmap_file.seek(past_headers)
+
+            # read all the relevant data
+            data_in_bytes = memmap_file.read(end - memmap_file.tell())
+            data_as_string = data_in_bytes.decode(encoding="utf-8")
+            lines = data_as_string.strip().splitlines()
+
+    # attempt to guess a DROPMO value
+    try:
+        # where we store the data
+        list_ev = np.array([line.split(maxsplit=5)[3] for line in lines], dtype=float)
+        log.debug("list_ev "+str(list_ev))
+
+        # the differences in each pair of eV's
+        diffs = list(map(lambda e: (e[0] / e[1]), pairwise(list_ev)))
+        log.debug("diffs "+str(diffs))
+
+        # biggest gap in eV's
+        max_diff = max(diffs)
+        log.debug("max_diff: "+str(max_diff))
+
+        # getguess_dropmo
+        guess_dropmo = diffs.index(max_diff)+1
+        log.debug("guess_dropmo: "+str(guess_dropmo))
+
+    except Exception as error:
+        guess_dropmo = -1
+        log.debug("We failed to guess a dropmo")
+        pass
+
+    string_orbital = "Here are the orbital energies\n"
+    string_orbital += "-"*30 + "\n"
+    string_orbital += "".join([str(ev)+"\n" for ev in list_ev])
+    string_orbital += "+"*30
+
+    # show the user the orbital energies
+    print(string_orbital)
+
+    # ask user if our guess of dropmo is appropriate
+    if not guess_dropmo == -1:
+        s = "We guessed that dropmo should be {:d} is that acceptable?\n"
+        valid = get_yes_no_from_user(s.format(guess_dropmo))
+    else:
+        print("We failed to guess a dropmo value")
+        valid = False
+
+    # if the dropmo value is bad then get a new value from the user
+    while not valid:
+        guess_dropmo = get_integer_from_user("Please provide an alternative dropmo value\n")
+        s = "You provided a new dropmo value of {:d} is that acceptable?\n"
+        valid = get_yes_no_from_user(s.format(guess_dropmo))
+
+    # if zero then don't put any typeword
+    string_dropmo = ""
+
+    if guess_dropmo == 1:
+        string_dropmo = "DROPMO=1"
+
+    if guess_dropmo > 1:
+        # a range of orbitals is indicated by '1-X'
+        string_dropmo = "DROPMO=1-{:d}".format(guess_dropmo)
+
+    return string_dropmo
+
+
+def _extract_lines_for_estimating_NIP(path):
+    """ does what it says """
+    with open(path, "r+b") as source_file:
+        # access the file using memory map for efficiency
+        with mmap.mmap(source_file.fileno(), 0, prot=mmap.PROT_READ) as memmap_file:
+
+            # find the begining and ending of the important region
+            target_begin = 'ORBITAL EIGENVALUES (ALPHA)'
+            target_end = '+++++++++++++++++++++++++++++++++++++++++++'
+            begin = find_string_in_file(memmap_file, path, target_begin)
+            end = find_string_in_file(memmap_file, path, target_end)
+
+            # go there
+            memmap_file.seek(begin)
+
+            # throw away the header lines
+            past_headers = skip_forward_n_lines(memmap_file, 4, memmap_file.tell())
+            memmap_file.seek(past_headers)
+
+            # read all the relevant data
+            data_in_bytes = memmap_file.read(end - memmap_file.tell())
+            data_as_string = data_in_bytes.decode(encoding="utf-8")
+            lines = data_as_string.strip().splitlines()
+
+    return lines
+
+
+def _guess_NIP_value(lines, guess_dropmo):
+    """ attempt to guess a NIP value """
+    list_ev = []
+
+    try:
+        # where we store the data
+        list_ev = np.array([lin.split(maxsplit=5)[3] for lin in lines], dtype=float)
+        log.debug("list_ev "+str(list_ev))
+
+        # the differences in each pair of eV's
+        diffs = list(map(lambda e: (e[0] / e[1]), pairwise(list_ev)))
+        log.debug("diffs "+str(diffs))
+
+        if guess_dropmo >= len(list_ev):
+            raise Exception("Can't remove orbitals that don't exist")
+
+        list_dropped = np.delete(list_ev, range(0, guess_dropmo+1))
+        log.debug("list_dropped "+str(list_dropped))
+
+        # the differences in each pair of eV's
+        diffs2 = list(map(lambda e: (e[0] / e[1]), pairwise(list_dropped)))
+        log.debug("diffs2 "+str(diffs2))
+
+        # biggest gap in eV's
+        second_highest = max(diffs2)
+        log.debug("second_highest: "+str(second_highest))
+
+        # the suggested nip value
+        guess_nip = len(diffs) - diffs.index(second_highest)
+        log.debug("guess_nip: "+str(guess_nip))
+
+    except Exception as error:
+        guess_nip = -1
+        log.debug("We failed to guess a nip")
+
+    return guess_nip, list_ev
+
+
+def _estimate_NIP(vibron, path):
+    """ read the output file from a scf calculation and attempt to choose a NIP value"""
+
+    lines = _extract_lines_for_estimating_NIP(path)
+    # grab the guess_dropmo as a number
+    string_dropmo = vibron.parameter_dictionary["DROPMO"]
+    guess_dropmo = 0 if string_dropmo == "" else int(string_dropmo[-1])
+    print(guess_dropmo)
+
+    guess_nip, list_ev = _guess_NIP_value(lines, guess_dropmo)
+
+    string_orbital = "Here are the orbital energies\n"
+    string_orbital += "-"*30 + "\n"
+    string_orbital += "".join([str(ev)+"\n" for ev in list_ev])
+    string_orbital += "+"*30
+
+    # show the user the orbital energies
+    print(string_orbital)
+
+    # ask user if our guess of nip is appropriate
+    if not guess_nip == -1:
+        s = "We guessed that nip should be {:d} is that acceptable?\n"
+        valid = get_yes_no_from_user(s.format(guess_nip))
+    else:
+        print("We failed to guess a nip value")
+        valid = False
+
+    # if the nip value is bad then get a new value from the user
+    while not valid:
+        guess_nip = get_integer_from_user("Please provide an alternative nip value\n")
+        s = "You provided a new nip value of {:d} is that acceptable?\n"
+        valid = get_yes_no_from_user(s.format(guess_nip))
+
+    return guess_nip
+
+
 def parse_hartree_fock_output(vibron, execution_state):
-    """extracts relevant data from output of job"""
+    """ extracts relevant data from output of job """
     hf_type = str(State(execution_state).name)
     file_name = vibron.file_out[hf_type]
-    file_path = os.path.join(vibron.path_root, file_name)
+    file_path = join(vibron.path_root, file_name)
 
     verify_file_exists(file_path)
-
-    # read the output file from a scf calculation
-    # and attempt to choose a DROPMO value
-    def estimate_dropmo(file_path):
-
-        # access the file using memory map for efficiency
-        with open(file_path, "r+b") as source_file:
-            with mmap.mmap(source_file.fileno(), 0, prot=mmap.PROT_READ) as memmap_file:
-
-                # find the begining and ending of the important region
-                target_begin = 'ORBITAL EIGENVALUES (ALPHA)'
-                target_end = '+++++++++++++++++++++++++++++++++++++++++++'
-                begin = find_string_in_file(memmap_file, file_path, target_begin)
-                end = find_string_in_file(memmap_file, file_path, target_end)
-
-                # go there
-                memmap_file.seek(begin)
-
-                # throw away the header lines
-                past_headers = skip_forward_n_lines(memmap_file, 4, memmap_file.tell())
-                memmap_file.seek(past_headers)
-
-                # read all the relevant data
-                data_in_bytes = memmap_file.read(end - memmap_file.tell())
-                data_as_string = data_in_bytes.decode(encoding="utf-8")
-                lines = data_as_string.strip().splitlines()
-
-        # attempt to guess a DROPMO value
-        try:
-            # where we store the data
-            list_ev = np.array([line.split(maxsplit=5)[3] for line in lines], dtype=float)
-            log.debug("list_ev "+str(list_ev))
-
-            # the differences in each pair of eV's
-            diffs = list(map(lambda e: (e[0] / e[1]), pairwise(list_ev)))
-            log.debug("diffs "+str(diffs))
-
-            # biggest gap in eV's
-            max_diff = max(diffs)
-            log.debug("max_diff: "+str(max_diff))
-
-            # getguess_dropmo
-            guess_dropmo = diffs.index(max_diff)+1
-            log.debug("guess_dropmo: "+str(guess_dropmo))
-
-        except Exception as error:
-            guess_dropmo = -1
-            log.debug("We failed to guess a dropmo")
-            pass
-
-        string_orbital = "Here are the orbital energies\n"
-        string_orbital += "-"*30 + "\n"
-        string_orbital += "".join([str(ev)+"\n" for ev in list_ev])
-        string_orbital += "+"*30
-
-        # show the user the orbital energies
-        print(string_orbital)
-
-        # ask user if our guess of dropmo is appropriate
-        if not guess_dropmo == -1:
-            s = "We guessed that dropmo should be {:d} is that acceptable?\n"
-            valid = get_yes_no_from_user(s.format(guess_dropmo))
-        else:
-            print("We failed to guess a dropmo value")
-            valid = False
-
-        # if the dropmo value is bad then get a new value from the user
-        while not valid:
-            guess_dropmo = get_integer_from_user("Please provide an alternative dropmo value\n")
-            s = "You provided a new dropmo value of {:d} is that acceptable?\n"
-            valid = get_yes_no_from_user(s.format(guess_dropmo))
-
-
-        # if zero then don't put any typeword
-        string_dropmo = ""
-
-        if guess_dropmo == 1:
-            string_dropmo = "DROPMO=1"
-
-        if guess_dropmo > 1:
-            # a range of orbitals is indicated by '1-X'
-            string_dropmo = "DROPMO=1-{:d}".format(guess_dropmo)
-
-        return string_dropmo
-
-    # read the output file from a scf calculation
-    # and attempt to choose a NIP value
-    def estimate_NIP(file_path):
-        # access the file using memory map for efficiency
-        with open(file_path, "r+b") as source_file:
-            with mmap.mmap(source_file.fileno(), 0, prot=mmap.PROT_READ) as memmap_file:
-
-                # find the begining and ending of the important region
-                target_begin = 'ORBITAL EIGENVALUES (ALPHA)'
-                target_end = '+++++++++++++++++++++++++++++++++++++++++++'
-                begin = find_string_in_file(memmap_file, file_path, target_begin)
-                end = find_string_in_file(memmap_file, file_path, target_end)
-
-                # go there
-                memmap_file.seek(begin)
-
-                # throw away the header lines
-                past_headers = skip_forward_n_lines(memmap_file, 4, memmap_file.tell())
-                memmap_file.seek(past_headers)
-
-                # read all the relevant data
-                data_in_bytes = memmap_file.read(end - memmap_file.tell())
-                data_as_string = data_in_bytes.decode(encoding="utf-8")
-                lines = data_as_string.strip().splitlines()
-
-        # grab the guess_dropmo as a number
-        string_dropmo = vibron.parameter_dictionary["DROPMO"]
-        if string_dropmo == "":
-            guess_dropmo = 0
-        else:
-            guess_dropmo = int(string_dropmo[-1])
-        print(guess_dropmo)
-
-        # attempt to guess a NIP value
-        try:
-            # where we store the data
-            list_ev = np.array([lin.split(maxsplit=5)[3] for lin in lines], dtype=float)
-            log.debug("list_ev "+str(list_ev))
-
-            # the differences in each pair of eV's
-            diffs = list(map(lambda e: (e[0] / e[1]), pairwise(list_ev)))
-            log.debug("diffs "+str(diffs))
-
-            if guess_dropmo >= len(list_ev):
-                raise Exception("Can't remove orbitals that don't exist")
-
-            list_dropped = np.delete(list_ev, range(0, guess_dropmo+1))
-            log.debug("list_dropped "+str(list_dropped))
-
-            # the differences in each pair of eV's
-            diffs2 = list(map(lambda e: (e[0] / e[1]), pairwise(list_dropped)))
-            log.debug("diffs2 "+str(diffs2))
-
-            # biggest gap in eV's
-            second_highest = max(diffs2)
-            log.debug("second_highest: "+str(second_highest))
-
-            # the suggested nip value
-            guess_nip = len(diffs) - diffs.index(second_highest)
-            log.debug("guess_nip: "+str(guess_nip))
-
-        except Exception as error:
-            guess_nip = -1
-            log.debug("We failed to guess a nip")
-            pass
-
-
-        string_orbital = "Here are the orbital energies\n"
-        string_orbital += "-"*30 + "\n"
-        string_orbital += "".join([str(ev)+"\n" for ev in list_ev])
-        string_orbital += "+"*30
-
-        # show the user the orbital energies
-        print(string_orbital)
-
-
-        # ask user if our guess of nip is appropriate
-        if not guess_nip == -1:
-            s = "We guessed that nip should be {:d} is that acceptable?\n"
-            valid = get_yes_no_from_user(s.format(guess_nip))
-        else:
-            print("We failed to guess a nip value")
-            valid = False
-
-
-        # if the nip value is bad then get a new value from the user
-        while not valid:
-            guess_nip = get_integer_from_user("Please provide an alternative nip value\n")
-            s = "You provided a new nip value of {:d} is that acceptable?\n"
-            valid = get_yes_no_from_user(s.format(guess_nip))
-
-
-        return guess_nip
 
     # this could possibly be redesigned
     # first scf estimates the DROPMO parameter
     if hf_type is "DROPMO":
         # save the estimate in the vibron object
-        vibron.parameter_dictionary["DROPMO"] = estimate_dropmo(file_path)
+        vibron.parameter_dictionary["DROPMO"] = _estimate_dropmo(file_path)
 
     # second scf estimates the new DROPMO parameter
     # and checks which orbitals to include at the optimized geometry
     elif hf_type is "NIP":
         # vibron.parameter_dictionary["DROPMO"] = estimate_dropmo(file_path)
-        vibron.parameter_dictionary["nip"] = estimate_NIP(file_path)
+        vibron.parameter_dictionary["nip"] = _estimate_NIP(vibron, file_path)
 
     else:
-        s = (   "Tried to call parse_hartree_fock_output "
-                "with hf_type argument of {:s} which is not implemented"
-            )
+        s = ("Tried to call parse_hartree_fock_output "
+             "with hf_type argument of {:s} which is not implemented"
+             )
         raise NotImplementedError(s.format(hf_type))
 
     return
@@ -670,7 +681,7 @@ def geometry_optimization(path_root, name, zmat, parameter_dictionary):
 
     # file location
     file_name = default_file_in["geometry"].format(name)
-    file_path = os.path.join(path_root, file_name)
+    file_path = join(path_root, file_name)
 
     # create the input file template
     template = zmat.get(opt_zmat=True)
@@ -691,26 +702,21 @@ def geometry_optimization(path_root, name, zmat, parameter_dictionary):
     with open(file_path, 'w') as dest_file:
         dest_file.write(output)
 
-    # nothing for now
-    # copy_in = ""
-    # copy_out = ""
-    # path_output = ""
-
     slurm_parameters = {
-        "memory_size" : memory_size+3,
-        "file_name" : file_name,
-        "cpus" : 1,
-        "work_dir" : path_root,
-        "output" : "",
-        "partition" : job_boss.partition,
-        "make_scratch" : "",
-        "scratch_in" : "",
-        "scratch_out" : "",
-        "pre_amble" : "jobaces",
-        "job_name" : file_name.replace(".in", ""),
-        "post_amble" : "",
-        "hostname" : job_boss.hostname,
-        "parent_pid" : os.getpid(),
+        "memory_size": memory_size+3,
+        "file_name": file_name,
+        "cpus": 1,
+        "work_dir": path_root,
+        "output": "",
+        "partition": job_boss.partition,
+        "make_scratch": "",
+        "scratch_in": "",
+        "scratch_out": "",
+        "pre_amble": "jobaces",
+        "job_name": file_name.replace(".in", ""),
+        "post_amble": "",
+        "hostname": job_boss.hostname,
+        "parent_pid": os.getpid(),
     }
 
     # run the job
@@ -719,7 +725,7 @@ def geometry_optimization(path_root, name, zmat, parameter_dictionary):
     wait_on_results(job_id, "geometry optimization")
 
     file_name = default_file_out["geometry"].format(name)
-    file_path = os.path.join(path_root, file_name)
+    file_path = join(path_root, file_name)
 
     verify_aces2_completed(path_root, file_path, job_id)
     return
@@ -728,7 +734,7 @@ def geometry_optimization(path_root, name, zmat, parameter_dictionary):
 def parse_opt_output(vibron):
     """extract substrings describing the optimized geometry from the output file generated by a geometry optimization calcultion"""
     file_name = vibron.file_out["geometry"]
-    file_path = os.path.join(vibron.path_root, file_name)
+    file_path = join(vibron.path_root, file_name)
 
     verify_file_exists(file_path)
 
@@ -760,7 +766,6 @@ def parse_opt_output(vibron):
                 new_internal_geometry = dict([map(str.strip, line.split('=')) for line in lines])
 
         return new_internal_geometry
-
 
     def extract_cartesian(file_path):
         """assume that the substrings describing the geometry are in cartesian coordinates"""
@@ -800,7 +805,6 @@ def parse_opt_output(vibron):
 
         return new_cartesian_geometry
 
-
     # return optimized geometry
     if vibron.zmat.kind is "internal":
         vibron.zmat.set(extract_internal(file_path))
@@ -818,7 +822,7 @@ def vibrational_frequency(path_root, name, zmat, parameter_dictionary):
 
     # file location
     file_name = default_file_in["vib"].format(name)
-    file_path = os.path.join(path_root, file_name)
+    file_path = join(path_root, file_name)
 
     # create the input file template
     template = zmat.get()
@@ -836,26 +840,21 @@ def vibrational_frequency(path_root, name, zmat, parameter_dictionary):
     with open(file_path, 'w') as dest_file:
         dest_file.write(output)
 
-    # nothing for now
-    copy_in = ""
-    copy_out = ""
-    path_output = ""
-
     slurm_parameters = {
-        "memory_size" : memory_size+3,
-        "file_name" : file_name,
-        "cpus" : 1,
-        "work_dir" : path_root,
-        "output" : "",
-        "partition" : job_boss.partition,
-        "make_scratch" : "",
-        "scratch_in" : "",
-        "scratch_out" : "",
-        "pre_amble" : "jobaces",
-        "job_name" : file_name.replace(".in", ""),
-        "post_amble" : "fcm",
-        "hostname" : job_boss.hostname,
-        "parent_pid" : os.getpid(),
+        "memory_size": memory_size+3,
+        "file_name": file_name,
+        "cpus": 1,
+        "work_dir": path_root,
+        "output": "",
+        "partition": job_boss.partition,
+        "make_scratch": "",
+        "scratch_in": "",
+        "scratch_out": "",
+        "pre_amble": "jobaces",
+        "job_name": file_name.replace(".in", ""),
+        "post_amble": "fcm",
+        "hostname": job_boss.hostname,
+        "parent_pid": os.getpid(),
     }
 
     # run the job
@@ -864,16 +863,16 @@ def vibrational_frequency(path_root, name, zmat, parameter_dictionary):
     wait_on_results(job_id, "vibrational frequency")
 
     file_name = default_file_out["vib"].format(name)
-    file_path = os.path.join(path_root, file_name)
+    file_path = join(path_root, file_name)
 
     verify_aces2_completed(path_root, file_path, job_id)
 
     # make sure the output files we expect to be present are present
-    # verify_file_exists(os.path.join(path_root, "fcmint"))
-    # verify_file_exists(os.path.join(path_root, file_name))
-    # verify_file_exists(os.path.join(path_root, file_name))
-    # verify_file_exists(os.path.join(path_root, file_name))
-    # verify_file_exists(os.path.join(path_root, file_name))
+    # verify_file_exists(join(path_root, "fcmint"))
+    # verify_file_exists(join(path_root, file_name))
+    # verify_file_exists(join(path_root, file_name))
+    # verify_file_exists(join(path_root, file_name))
+    # verify_file_exists(join(path_root, file_name))
     return
 
 
@@ -887,7 +886,7 @@ def ip_calculation(path_root, name, zmat, parameter_dictionary):
     # file location
     file_name = default_file_in["ipeomcc"].format(name)
     file_name = file_name.format(parameter_dictionary["nip"])
-    file_path = os.path.join(path_root, file_name)
+    file_path = join(path_root, file_name)
 
     template = zmat.get()
     template += "*ACES2( BASIS={basis:s},"
@@ -899,8 +898,8 @@ def ip_calculation(path_root, name, zmat, parameter_dictionary):
     template += "\n"
     template += "\n" + "*mrcc_gen"
     template += "\n\t" + "nip={nip:d}"
-    #template += "\n\t" + "ip_low=-25"
-    #template += "\n\t" + "ea_high=0"
+    # template += "\n\t" + "ip_low=-25"
+    # template += "\n\t" + "ea_high=0"
     template += "\n" + "*end"
     template += "\n"
 
@@ -910,26 +909,21 @@ def ip_calculation(path_root, name, zmat, parameter_dictionary):
     with open(file_path, 'w') as dest_file:
         dest_file.write(output)
 
-    # nothing for now
-    copy_in = ""
-    copy_out = ""
-    path_output = ""
-
     slurm_parameters = {
-        "memory_size" : memory_size+3,
-        "file_name" : file_name,
-        "cpus" : 1,
-        "work_dir" : path_root,
-        "output" : "",
-        "partition" : job_boss.partition,
-        "make_scratch" : "",
-        "scratch_in" : "",
-        "scratch_out" : "",
-        "pre_amble" : "jobaces",
-        "job_name" : file_name.replace(".in", ""),
-        "post_amble" : "",
-        "hostname" : job_boss.hostname,
-        "parent_pid" : os.getpid(),
+        "memory_size": memory_size+3,
+        "file_name": file_name,
+        "cpus": 1,
+        "work_dir": path_root,
+        "output": "",
+        "partition": job_boss.partition,
+        "make_scratch": "",
+        "scratch_in": "",
+        "scratch_out": "",
+        "pre_amble": "jobaces",
+        "job_name": file_name.replace(".in", ""),
+        "post_amble": "",
+        "hostname": job_boss.hostname,
+        "parent_pid": os.getpid(),
     }
 
     # run the job
@@ -939,7 +933,7 @@ def ip_calculation(path_root, name, zmat, parameter_dictionary):
 
     file_name = default_file_out["ipeomcc"].format(name)
     file_name = file_name.format(parameter_dictionary["nip"])
-    file_path = os.path.join(path_root, file_name)
+    file_path = join(path_root, file_name)
 
     verify_aces2_completed(path_root, file_path, job_id)
     return
@@ -948,10 +942,9 @@ def ip_calculation(path_root, name, zmat, parameter_dictionary):
 def parse_ip_output(vibron):
     """extracts relevant data from output of job"""
     file_name = vibron.file_out["ipeomcc"].format(vibron.parameter_dictionary["nip"])
-    file_path = os.path.join(vibron.path_root, file_name)
+    file_path = join(vibron.path_root, file_name)
 
     verify_file_exists(file_path)
-
 
     def verify_percent_singles(file_path, cutoff):
         """read the output file from an ionization potential calculation extract the \% singles and verify they they are above a cutoff"""
@@ -974,7 +967,7 @@ def parse_ip_output(vibron):
                 lines = []
                 while True:
                     line = memmap_file.readline().decode(encoding="utf-8")
-                    if( line is "\n" or "--------" in line):
+                    if(line is "\n" or "--------" in line):
                         break
 
                     lines.append(line)
@@ -996,7 +989,7 @@ def parse_ip_output(vibron):
 
 
 def verify_ip_states(job):
-    '''run calculations to verify the range of states selected'''
+    """run calculations to verify the range of states selected"""
     while True:
         job.ip_calc()
 
@@ -1004,7 +997,7 @@ def verify_ip_states(job):
             s = "We verified that {:d} states had \% singles above {:f}"
             log.info(s.format(job.parameter_dictionary["nip"], job.singles_cutoff))
             if job.state is State.IPEOMCC:
-                job.advance() # this is a problem
+                job.advance()  # this is a problem
             # we only want to advance if we arn't already at prepVibron or vibron calc
             break
 
@@ -1014,22 +1007,14 @@ def verify_ip_states(job):
         job.parameter_dictionary["nip"] -= 1
         if job.parameter_dictionary["nip"] == 0:
             s = "We failed to get % singles above 85% and ended up with a nip of 0"
-            raise Exception(s) # Don't know how to handle this right now
+            raise Exception(s)  # Don't know how to handle this right now
     return
 
 
-def prepVibron_calculation(path_root, name, zmat, parameter_dictionary):
-    """creates and populates the input file and submission file for the job"""
-    log.flow("Setting up calculation")
-
-    # in GB's
-    memory_size = 10
-
-    # file location
-    file_name = default_file_in["prepVib"].format(name)
-    file_path = os.path.join(path_root, file_name)
-
-    # create the input file template
+def _create_template(zmat, memory_size):
+    """ wrapper for the template creation
+    this is the most flexible way in case it needs to be changed in the future
+    """
     template = zmat.get()
     template += "*ACES2( BASIS={basis:s},"
     template += "\n\t" + "CALC={theory:s},"
@@ -1051,6 +1036,21 @@ def prepVibron_calculation(path_root, name, zmat, parameter_dictionary):
     template += "\n\t" + "heff_high=200"
     template += "\n" + "*end"
     template += "\n"
+    return
+
+
+def prepVibron_calculation(path_root, name, zmat, parameter_dictionary):
+    """creates and populates the input file and submission file for the job"""
+    log.flow("Setting up calculation")
+
+    # in GB's
+    memory_size = 10
+
+    # file location
+    file_name = default_file_in["prepVib"].format(name)
+    file_path = join(path_root, file_name)
+
+    template = _create_template(zmat, memory_size)
 
     # populate the template using the input dictionary
     output = template.format_map(parameter_dictionary)
@@ -1058,26 +1058,21 @@ def prepVibron_calculation(path_root, name, zmat, parameter_dictionary):
     with open(file_path, 'w') as dest_file:
         dest_file.write(output)
 
-    # nothing for now
-    copy_in = ""
-    copy_out = ""
-    path_output = ""
-
     slurm_parameters = {
-        "memory_size" : memory_size+3,
-        "file_name" : file_name,
-        "cpus" : 2,
-        "work_dir" : path_root,
-        "output" : "",
-        "partition" : job_boss.partition,
-        "make_scratch" : "",
-        "scratch_in" : "",
-        "scratch_out" : "",
-        "pre_amble" : "jobaces",
-        "job_name" : file_name.replace(".in", ""),
-        "post_amble" : "vibron",
-        "hostname" : job_boss.hostname,
-        "parent_pid" : os.getpid(),
+        "memory_size": memory_size+3,
+        "file_name": file_name,
+        "cpus": 2,
+        "work_dir": path_root,
+        "output": "",
+        "partition": job_boss.partition,
+        "make_scratch": "",
+        "scratch_in": "",
+        "scratch_out": "",
+        "pre_amble": "jobaces",
+        "job_name": file_name.replace(".in", ""),
+        "post_amble": "vibron",
+        "hostname": job_boss.hostname,
+        "parent_pid": os.getpid(),
     }
 
     # run the job
@@ -1087,143 +1082,150 @@ def prepVibron_calculation(path_root, name, zmat, parameter_dictionary):
 
     job_boss.check_slurm_output(path_root, job_id)
 
-    verify_file_exists(os.path.join(path_root, "fcmfinal"))
-    verify_file_exists(os.path.join(path_root, default_file_out["pntheff"].format(name)))
-    verify_file_exists(os.path.join(path_root, default_file_out["vibronCp"].format(name)))
-    verify_file_exists(os.path.join(path_root, default_file_out["vibronIn"].format(name)))
+    verify_file_exists(join(path_root, "fcmfinal"))
+    verify_file_exists(join(path_root, default_file_out["pntheff"].format(name)))
+    verify_file_exists(join(path_root, default_file_out["vibronCp"].format(name)))
+    verify_file_exists(join(path_root, default_file_out["vibronIn"].format(name)))
+    return
+
+
+def _remove_extra_heff(vibron, file_name, target_string='HEFF_IP2'):
+    """remove non relevant data from output files kind argument does nothing at the moment"""
+    file_path = join(vibron.path_root, file_name)
+    # access the file using memory map for efficiency
+    with open(file_path, "r+b") as source_file:
+        with mmap.mmap(source_file.fileno(), 0) as memmap_file:
+            # store the original file size
+            size_original = memmap_file.size()
+            log.debug(size_original)
+            log.debug(target_string)
+
+            # find the first occurance of the target_string
+            start_in_bytes = find_string_in_file(memmap_file, file_path, target_string)
+            log.debug(start_in_bytes)
+            # get the byte location of the start of the line
+            start_in_bytes = memmap_file.rfind(b'\n', 0, start_in_bytes)
+            # we want to ignore that newline character however
+            start_in_bytes += 1
+            log.debug(start_in_bytes)
+
+            # get the EOF location in numBytes
+            memmap_file.seek(0, os.SEEK_END)
+            end_of_file_in_bytes = memmap_file.tell()
+            log.debug(end_of_file_in_bytes)
+
+            # the length of our source
+            length_in_bytes = end_of_file_in_bytes - start_in_bytes
+            log.debug(length_in_bytes)
+
+            # copy the file, resize it and write the change to disk
+            memmap_file.move(0, start_in_bytes, length_in_bytes)
+            memmap_file.resize(length_in_bytes)
+            memmap_file.flush()
+
+            # # store the original file size
+            # size_original = memmap_file.size()
+
+            # # find the begining and ending of the important region
+            # destStart = find_string_in_file(memmap_file, file_path, target_string)
+            # destEnd = rfind_string_in_file(memmap_file, file_path, target_string)
+            # log.debug(destStart, destEnd)
+
+            # # find the byte location of the end of the line
+            # destStart = memmap_file.rfind(b'\n', 0, destStart)
+            # destEnd = memmap_file.find(b'\n', destEnd)
+            # log.debug(destStart, destEnd)
+
+            # # if we can't find a newline character
+            # # that means the substring was found
+            # # in the first line of the file
+            # if destStart == -1:
+            #     destStart = 0
+
+            # destEnd += 1
+            # log.debug(destStart, destEnd)
+
+            # # find the start of the section to copy
+            # start_in_bytes = memmap_file.find(b'HEFF_IP2', destEnd)
+            # log.debug(start_in_bytes)
+
+            # # get the location of the begining of the line
+            # start_in_bytes = memmap_file.rfind(b'\n', 0, start_in_bytes)
+            # log.debug(start_in_bytes)
+
+            # # get the EOF location in numBytes
+            # memmap_file.seek(0, os.SEEK_END)
+            # EOF = memmap_file.tell()
+
+            # # check file sizes
+            # destLength = destEnd - destStart
+            # length_in_bytes = EOF - start_in_bytes
+
+            # log.debug(memmap_file.size(), EOF)
+            # log.debug(destStart, start_in_bytes, length_in_bytes)
+            # log.debug(size_original - destLength)
+
+            # memmap_file.move(destStart, start_in_bytes, length_in_bytes)
+            # memmap_file.resize(size_original - destLength)
+            # memmap_file.flush()
+    return
+
+
+def _copy_output_file(vibron, source, destination):
+    """ verifies source file exists before copying it to destination  """
+    path_source = join(vibron.path_root, source)
+    verify_file_exists(path_source)
+    path_destination = join(vibron.path_root, destination)
+    shutil.copyfile(path_source, path_destination)
+    return
+
+
+def _add_nip_to_file(vibron, file_name):
+    """ modify file to contain the nip """
+    nip = vibron.parameter_dictionary["nip"]
+    file_path = join(vibron.path_root, file_name)
+    with open(file_path, "r+b") as destFile:
+        # access the file using memory map for efficiency
+        with mmap.mmap(destFile.fileno(), 0) as memmap_file:
+
+            # we assume that there is only one 'xxx' substring in the whole file
+            startTarget = 'xxx'
+            start = find_string_in_file(memmap_file, file_path, startTarget)
+            # go there
+            memmap_file.seek(start)
+            s = "{:>6,d}"
+            # attempt to write 3 bytes over the 'xxx'
+            try:
+                bytesWritten = memmap_file.write(s.format(nip).encode(('utf-8')))
+                # make sure we wrote the right amount
+                assert bytesWritten == 6, "incorrect number of bytes written to file {:s}".format(file_name)
+                memmap_file.flush()  # write the changes from memory to disk
+            except (Exception, ValueError) as e:
+                s = "Failed to write the nip={:d} to {:s}"
+                log.error(s.format(nip, file_path))
+                raise e    # 1
     return
 
 
 def parse_prepVibron_output(vibron):
     """extracts relevant data from output of job"""
-    def remove_extra_heff(file_name, target_string='HEFF_IP2'):
-        """remove non relevant data from output files kind argument does nothing at the moment"""
-        file_path = os.path.join(vibron.path_root, file_name)
-        # access the file using memory map for efficiency
-        with open(file_path, "r+b") as source_file:
-            with mmap.mmap(source_file.fileno(), 0) as memmap_file:
-                # store the original file size
-                size_original = memmap_file.size()
-                log.debug(size_original)
-                log.debug(target_string)
 
-                # find the first occurance of the target_string
-                start_in_bytes = find_string_in_file(memmap_file, file_path, target_string)
-                log.debug(start_in_bytes)
-                # get the byte location of the start of the line
-                start_in_bytes = memmap_file.rfind(b'\n', 0, start_in_bytes)
-                # we want to ignore that newline character however
-                start_in_bytes += 1
-                log.debug(start_in_bytes)
+    src = vibron.file_out["pntheff"]
+    dst = "PNTHEFF"
+    _copy_output_file(vibron, src, dst)
+    _remove_extra_heff(vibron, dst)
+    # _remove_extra_heff(vibron, dst, 'HEFF_0')
 
-                # get the EOF location in numBytes
-                memmap_file.seek(0, os.SEEK_END)
-                end_of_file_in_bytes = memmap_file.tell()
-                log.debug(end_of_file_in_bytes)
+    src = vibron.file_out["vibronCp"]
+    dst = vibron.file_in["vibronCp"]
+    _copy_output_file(vibron, src, dst)
+    _remove_extra_heff(vibron, dst)
+    # _remove_extra_heff(vibron, dst, 'Heff_0')
 
-                # the length of our source
-                length_in_bytes = end_of_file_in_bytes - start_in_bytes
-                log.debug(length_in_bytes)
-
-                # copy the file, resize it and write the change to disk
-                memmap_file.move(0, start_in_bytes, length_in_bytes)
-                memmap_file.resize(length_in_bytes)
-                memmap_file.flush()
-
-                # # store the original file size
-                # size_original = memmap_file.size()
-
-                # # find the begining and ending of the important region
-                # destStart = find_string_in_file(memmap_file, file_path, target_string)
-                # destEnd = rfind_string_in_file(memmap_file, file_path, target_string)
-                # log.debug(destStart, destEnd)
-
-                # # find the byte location of the end of the line
-                # destStart = memmap_file.rfind(b'\n', 0, destStart)
-                # destEnd = memmap_file.find(b'\n', destEnd)
-                # log.debug(destStart, destEnd)
-
-                # # if we can't find a newline character
-                # # that means the substring was found
-                # # in the first line of the file
-                # if destStart == -1:
-                #     destStart = 0
-
-                # destEnd += 1
-                # log.debug(destStart, destEnd)
-
-                # # find the start of the section to copy
-                # start_in_bytes = memmap_file.find(b'HEFF_IP2', destEnd)
-                # log.debug(start_in_bytes)
-
-                # # get the location of the begining of the line
-                # start_in_bytes = memmap_file.rfind(b'\n', 0, start_in_bytes)
-                # log.debug(start_in_bytes)
-
-                # # get the EOF location in numBytes
-                # memmap_file.seek(0, os.SEEK_END)
-                # EOF = memmap_file.tell()
-
-                # # check file sizes
-                # destLength = destEnd - destStart
-                # length_in_bytes = EOF - start_in_bytes
-
-                # log.debug(memmap_file.size(), EOF)
-                # log.debug(destStart, start_in_bytes, length_in_bytes)
-                # log.debug(size_original - destLength)
-
-                # memmap_file.move(destStart, start_in_bytes, length_in_bytes)
-                # memmap_file.resize(size_original - destLength)
-                # memmap_file.flush()
-        return
-
-
-    def add_nip_to_file(file_name, nip):
-        """modify file to contain the nip"""
-        file_path = os.path.join(vibron.path_root, file_name)
-        with open(file_path, "r+b") as destFile:
-            # access the file using memory map for efficiency
-            with mmap.mmap(destFile.fileno(), 0) as memmap_file:
-
-                # we assume that there is only one 'xxx' substring in the whole file
-                startTarget = 'xxx'
-                start = find_string_in_file(memmap_file, file_path, startTarget)
-                # go there
-                memmap_file.seek(start)
-                s = "{:>6,d}"
-                # attempt to write 3 bytes over the 'xxx'
-                try:
-                    bytesWritten = memmap_file.write(s.format(nip).encode(('utf-8')))
-                    assert(bytesWritten == 6) # make sure we wrote the right amount
-                    memmap_file.flush() # write the changes from memory to disk
-                except (Exception, ValueError) as e:
-                    s = "Failed to write the nip={:d} to {:s}"
-                    log.error(s.format(nip, file_path))
-                    raise e    # 1
-        return
-
-
-    def copy_output_file(source, destination):
-        """ verifies source file exists before copying it to destination  """
-        path_source = os.path.join(vibron.path_root, source)
-        verify_file_exists(path_source)
-        path_destination = os.path.join(vibron.path_root, destination)
-        shutil.copyfile(path_source, path_destination)
-        return
-
-    file_new = "PNTHEFF"
-    copy_output_file(vibron.file_out["pntheff"], file_new)
-    remove_extra_heff(file_new)
-    # remove_extra_heff(file_new, 'HEFF_0')
-
-    file_new = vibron.file_in["vibronCp"]
-    copy_output_file(vibron.file_out["vibronCp"], file_new)
-    remove_extra_heff(file_new)
-    # remove_extra_heff(file_new, 'Heff_0')
-
-    file_new = vibron.file_in["vibronIn"]
-    copy_output_file(vibron.file_out["vibronIn"], file_new)
-    add_nip_to_file(file_new, vibron.parameter_dictionary["nip"])
+    src = vibron.file_out["vibronIn"]
+    dst = vibron.file_in["vibronIn"]
+    _copy_output_file(vibron, src, dst)
+    _add_nip_to_file(vibron, dst)
 
     return
 
@@ -1238,26 +1240,21 @@ def vibron_calculation(path_root, name, zmat, parameter_dictionary):
     # file location
     file_name = default_file_in["vibronIn"].format(name)
 
-    # nothing for now
-    copy_in = ""
-    copy_out = ""
-    path_output = ""
-
     slurm_parameters = {
-        "memory_size" : memory_size+3,
-        "file_name" : file_name,
-        "cpus" : 1,
-        "work_dir" : path_root,
-        "output" : "",
-        "partition" : job_boss.partition,
-        "make_scratch" : "",
-        "scratch_in" : "",
-        "scratch_out" : "",
-        "pre_amble" : "jobvibron",
-        "job_name" : file_name.replace(".in", ""),
-        "post_amble" : "",
-        "hostname" : job_boss.hostname,
-        "parent_pid" : os.getpid(),
+        "memory_size": memory_size+3,
+        "file_name": file_name,
+        "cpus": 1,
+        "work_dir": path_root,
+        "output": "",
+        "partition": job_boss.partition,
+        "make_scratch": "",
+        "scratch_in": "",
+        "scratch_out": "",
+        "pre_amble": "jobvibron",
+        "job_name": file_name.replace(".in", ""),
+        "post_amble": "",
+        "hostname": job_boss.hostname,
+        "parent_pid": os.getpid(),
     }
 
     # run the job
@@ -1272,7 +1269,7 @@ def vibron_calculation(path_root, name, zmat, parameter_dictionary):
 def parse_vibron_output(vibron):
     """extracts relevant data from output of job"""
     file_name = vibron.file_out["vibron"]
-    file_path = os.path.join(vibron.path_root, file_name)
+    file_path = join(vibron.path_root, file_name)
 
     verify_file_exists(file_path)
 
@@ -1312,7 +1309,6 @@ class ZmatClass:
     # in cartesian coordinates
     _cartesian = None
 
-
     def __init__(self, file_path):
         verify_file_exists(file_path)
 
@@ -1345,7 +1341,6 @@ class ZmatClass:
 
         return
 
-
     def get(self, opt_zmat=False):
         """returns a string which represents the coordinates"""
 
@@ -1369,7 +1364,6 @@ class ZmatClass:
         # no modification is needed for the cartesian version
         elif self.kind is "cartesian":
             return self._cartesian
-
 
     def set(self, geometry_new):
         """updates geometry data"""
@@ -1398,7 +1392,6 @@ class ZmatClass:
                   + "Old geometry\n{:s}\nNew Geometry\n{:s}\n"
                 raise Exception(s.format(self._cartesian, geometry_new))
 
-
             return
 
         return
@@ -1418,15 +1411,15 @@ class VibronExecutionClass:
 
     # parameters
     parameter_dictionary = {
-        "calculation"   : None,
-        "theory"        : None,
-        "basis"         : None,
-        "DROPMO"        : "",
-        "NIP"           : None,
-        "gridVibron"    : 3, # or 4
-        "ccConv"        : 10,
-        "scfConv"       : 10,
-        "estateTol"     : 10,
+        "calculation": None,
+        "theory":      None,
+        "basis":       None,
+        "DROPMO":      "",
+        "NIP":         None,
+        "gridVibron":  3,  # or 4
+        "ccConv":      10,
+        "scfConv":     10,
+        "estateTol":   10,
         }
 
     file_in = {}
@@ -1448,7 +1441,6 @@ class VibronExecutionClass:
         self.file_out = default_file_out.copy()
         self.path_state = self.path_root + file_name_state
 
-
         # fill in names
         for key, val in self.file_in.items():
             self.file_in[key] = val.format(self.name)
@@ -1459,18 +1451,16 @@ class VibronExecutionClass:
             self.state = State(int(state))
         return
 
-
     def record_state(self):
         with open(self.path_state, 'a') as file_state:
             string_state = str(self.state.name)+"\n"
             file_state.write(string_state)
         return
 
-
     def advance(self):
         """increase state counter and log it IF not already at the highest state"""
         # create state file if it doesn't exist
-        if not os.path.isfile(self.path_state):
+        if not isfile(self.path_state):
             s = "State file {:s} doesn't exist, creating a blank file"
             log.debug(s.format(self.path_state))
             open(self.path_state, 'w').close()
@@ -1491,28 +1481,69 @@ class VibronExecutionClass:
 
         return
 
-
     def setup_zmat(self, file_path=None):
         """assumes that you formatted the ZMAT file correctly"""
         # Default is to assume parameter file is in /path_root/*
         if file_path is None:
-            file_path = os.path.join(   self.path_root,
-                                        # "parameters",
-                                        self.file_in["zmat"]
-                                    )
+            file_path = join(self.path_root,
+                             # "parameters",
+                             self.file_in["zmat"]
+                             )
 
         self.zmat = ZmatClass(file_path)
         return
 
+    def _set_state_from_file(self):
+        """ sets self.state to the value stored in the file located at self.path_state
+        if the file is empty it defaults to teh inital state State.min()"""
+        log.debug("Attempting to set state using state file")
 
-    def parse_input_parameters(self, file_path = None):
+        if os.stat(self.path_state).st_size == 0:
+            s = "State file {:s} is empty, defaulting to initial State"
+            log.debug(s.format(self.path_state))
+            self.state = State(State.min())
+            return
+
+        with open(self.path_state, 'r') as file_state:
+            lines = file_state.readlines()
+
+        for line in reversed(lines):
+
+            # I believe there is a cleaner way to do this, should clean this up
+            # low priority
+            if line in ["", "\n"]:
+                continue
+
+            old_state = str(line.strip())
+
+            if old_state == State(State.max()):
+                self.state = State(State.max())
+
+            elif old_state in State:
+                self.state = State(State(old_state).value + 1)
+
+            for member in State:
+                if member.name == str(line.strip()):
+                    self.state = State(member.value + 1)
+                    break
+            else:
+                s = ("State file {:s} contained an invalid state: {:s}"
+                     "Defaulting to initial state"
+                     )
+                log.debug(s.format(line, self.path_state))
+                self.state = State(State.min())
+                break
+
+        return
+
+    def parse_input_parameters(self, file_path=None):
         """loads data into the object"""
         # Default is to assume parameter file is in /path_root/*
         if file_path is None:
-            file_path = os.path.join(   self.path_root,
-                                        # "parameters",
-                                        self.file_in["parameter"]
-                                    )
+            file_path = join(self.path_root,
+                             # "parameters",
+                             self.file_in["parameter"]
+                             )
 
         # attempt to read in file
         try:
@@ -1525,74 +1556,37 @@ class VibronExecutionClass:
                         header = line.strip()
                         data = next(source_file).strip()
 
-                        if header in self.parameter_dictionary.keys():
-                             self.parameter_dictionary[header] = data
-
-                        else:
-                            s = (   "Header {:s} is not valid\n"
-                                    "Check that your {:s} has the correct formatting"
-                                    )
+                        if header not in self.parameter_dictionary.keys():
+                            s = "Header {:s} is not valid\n Check that your {:s} has the correct formatting"
                             raise ValueError(s.format(header, file_path))
+
+                        self.parameter_dictionary[header] = data
 
         except ValueError as error_object:
             raise error_object
 
         # check the validity of the parameter file
-        assert(self.parameter_dictionary["basis"] in basis_list)
-        assert(self.parameter_dictionary["theory"] in theory_list)
-        assert(self.parameter_dictionary["calculation"] in calculations_list)
+        assert self.parameter_dictionary["basis"] in basis_list, "invalid parameter provided for basis"
+        assert self.parameter_dictionary["theory"] in theory_list, "invalid parameter provided for theory"
+        assert self.parameter_dictionary["calculation"] in calculations_list, "invalid parameter provided for calculation"
 
         # create state file if it doesn't exist
-        if not os.path.isfile(self.path_state):
+        if not isfile(self.path_state):
             s = "State file {:s} doesn't exist, creating a blank file"
             log.debug(s.format(self.path_state))
             open(self.path_state, 'w').close()
 
-        # check the state of the last calculation
+        # retrieve the previous state which was saved
         if self.state is None:
-            log.debug("Attempting to set state using state file")
+            self._set_state_from_file()
 
-            if os.stat(self.path_state).st_size == 0:
-                s = "State file {:s} is empty, defaulting to initial State"
-                log.debug(s.format(self.path_state))
-                self.state = State(State.min())
-                return
-
-            with open(self.path_state, 'r') as file_state:
-                lines = file_state.readlines()
-                for line in reversed(lines):
-
-                    if line in ["", "\n"]:
-                        continue
-
-                    old_state = str(line.strip())
-
-                    if old_state == State(State.max()):
-                        self.state = State(State.max())
-
-                    elif old_state in State:
-                        self.state = State(State(old_state).value + 1)
-
-                    for member in State:
-                        if member.name == str(line.strip()):
-                            self.state = State(member.value + 1)
-                            return
-                    else:
-                        s = (   "State file {:s} contained an invalid state: {:s}"
-                                "Defaulting to initial state"
-                            )
-                        log.debug(s.format(line, self.path_state))
-                        self.state = State(State.min())
-
-                    return
         return
-
 
     def hf(self, matching_state):
         """wrapper method"""
         if self.state == matching_state:
             hartree_fock_calculation(self.path_root, self.name, self.zmat,
-                                        self.parameter_dictionary, self.state.name)
+                                     self.parameter_dictionary, self.state.name)
             self.advance()
         return
 
@@ -1656,17 +1650,17 @@ class VibronExecutionClass:
 
             self.vibron_calc()
             parse_vibron_output(self)
-            self.advance() # important to do after parsing vibron_output
+            self.advance()  # important to do after parsing vibron_output
             log.info("We have reached the end of execution.")
         return
 
 
-def test_one(molecule_name = "ch2o", inital_job_state=0):
+def test_one(molecule_name="ch2o", inital_job_state=0):
     """runs the job in the current directory stores results in folder named by the molecule"""
 
     # create execution directory
     path_root = os.path.dirname(os.path.realpath(__file__))
-    path_root = os.path.join(path_root, molecule_name)
+    path_root = join(path_root, molecule_name)
     os.makedirs(path_root,  exist_ok=True)
 
     job = VibronExecutionClass(molecule_name, path_root, inital_job_state)
@@ -1676,7 +1670,7 @@ def test_one(molecule_name = "ch2o", inital_job_state=0):
 
 # need a better naming - distinguishing scheme between
 # build_vibronic_model and calculate_vibronic_model
-def calculate_vibronic_model_wrapper_one(data_set_num, inital_job_state=0):
+def calculate_vibronic_model_wrapper_one(data_set_num, molecule_name="ch2o", inital_job_state=0):
     """executes jobs using exists data_set_# file structure"""
 
     # create execution directory
@@ -1686,6 +1680,7 @@ def calculate_vibronic_model_wrapper_one(data_set_num, inital_job_state=0):
     job = VibronExecutionClass(molecule_name, path_root, inital_job_state)
     job.calculate_vibronic_model()
     return
+
 
 if (__name__ == "__main__"):
 
