@@ -1,0 +1,9 @@
+component_depth: 3
+languages:
+- python
+- script
+exclude:
+- /flowcharts/*
+- /examples/*
+- /docs/*
+- /*\.pdf
