@@ -943,8 +943,8 @@ class BoxResultPM(BoxResult):
 
     def initialize_arrays(self):
         super().initialize_arrays()
-        self.scaled_gofr_plus = np.empty(self.samples, dtype=F64)
-        self.scaled_gofr_minus = np.empty(self.samples, dtype=F64)
+        self.scaled_gofr_plus = np.full(self.samples, np.nan, dtype=F64)
+        self.scaled_gofr_minus = np.full(self.samples, np.nan, dtype=F64)
         return
 
     def __init__(self, data=None, X=None):

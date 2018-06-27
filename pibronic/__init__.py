@@ -15,6 +15,8 @@ from . import helper
 from . import log_conf
 from . import constants
 from . import everything
+# TODO - julia_wrapper is here temporarily
+from . import julia_wrapper
 
 name = "Pibronic"
 
@@ -29,4 +31,5 @@ __all__ = [
            'log_conf',
            'constants',
            'everything',
+           'julia_wrapper'
            ]

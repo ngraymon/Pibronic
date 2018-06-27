@@ -75,7 +75,7 @@ def copyInput(FS, file_name):
     log.flow(s.format(dst_params, dst_zmat))
 
 
-def generate_analytical_results(id_data, id_rho, temperature_list):
+def generate_analytical_results(root, id_data, id_rho, temperature_list):
     """generate analytical results using julia"""
 
     # need a check to see if analytical results exist
@@ -83,7 +83,7 @@ def generate_analytical_results(id_data, id_rho, temperature_list):
 
     for T in temperature_list:
         # this should also be generalized
-        command = "python3 ~/pibronic/pibronic/julia_wrapper.py {:d} {:d} {:.2f}\n"
+        command = "python3 ~/pibronic/pibronic/julia_wrapper.py {:s} {:d} {:d} {:.2f}\n"
         # should replace this with a function call that isn't dependent on our server
         # sshProcess = subprocess.Popen(["ssh", "-t", "dev002"],
         sshProcess = subprocess.Popen(["srun", "--pty"],  # dev002 is out of commission
@@ -93,7 +93,7 @@ def generate_analytical_results(id_data, id_rho, temperature_list):
                                       stderr=subprocess.PIPE,
                                       )
 
-        sshProcess.stdin.write(command.format(id_data, id_rho, T))
+        sshProcess.stdin.write(command.format(root, id_data, id_rho, T))
         sshProcess.stdin.close()
         log.flow("Currently generating analytical parameters at Temperature {:.2f}".format(T))
         sshProcess.wait(timeout=120)
@@ -154,12 +154,12 @@ def execute(file_path, id_model):
     temperature_list = [250., 275., 300., 325., 350.]
     bead_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, ]
 
-    generate_analytical_results(id_data, id_rho, temperature_list)
+    generate_analytical_results(files.path_root, id_data, id_rho, temperature_list)
     log.flow("Finished preparing input for PIMC calculation")
     # ---------------------------------------------------------------------------------------------
     # SUBMIT PIMC JOBS
 
-    A, N = vIO.extract_dimensions_of_coupled_model(id_data)
+    A, N = vIO.extract_dimensions_of_coupled_model(FS=files)
 
     # this is the minimum amount of data needed to run an execution
     parameter_dictionary = {

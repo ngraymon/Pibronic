@@ -256,6 +256,7 @@ class PimcSubmissionClass:
         # calculate how many samples we need for each job
         samples_per_job = min(n_samples, self.MAX_SAMPLES_PER_JOB)
         self.param_dict["number_of_samples_per_job"] = samples_per_job
+        self.param_dict["number_of_samples"] = samples_per_job
 
         # calculate how many blocks we need for each job
         blocks_per_job = samples_per_job // block_size
@@ -263,8 +264,13 @@ class PimcSubmissionClass:
 
         # calculate how many jobs we need
         total_samples = self.param_dict["number_of_samples_overall"]
-        self.n_jobs = max(1, total_samples // self.MAX_SAMPLES_PER_JOB)
 
+        # TODO - HACKY
+        if total_samples is 0:
+            total_samples = n_samples
+            self.param_dict["number_of_samples_overall"] = n_samples
+
+        self.n_jobs = max(1, total_samples // self.MAX_SAMPLES_PER_JOB)
         return
 
     def submit_jobs(self):

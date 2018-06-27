@@ -141,14 +141,51 @@ class FileStructure:
         return
 
     def make_rho_directories(self, id_rho):
-        """x"""
+        """creates (if they don't already exist) the necessary directories for storing the data of an additional sampling distribution (choice of rho)
+        """
         if id_rho == self.id_rho:
             self.make_directories()
             return
 
-        directories = [self.path_data + self.dir_rho.format(id_rho) + x for x in list_sub_dirs]
+        # TODO - could improve the use of 'template_rho' to be more concise
+        directories = [join(self.path_root,
+                            self.template_rho.format(self.id_data, id_rho),
+                            x
+                            )
+                       for x in list_sub_dirs]
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
+        return
+
+    def change_rho(self, id_rho):
+        """ modifies all the FileStructure's paths to point to the new rho id
+        calls make_rho_directories() to ensure the directories exist
+        """
+        self.make_rho_directories(id_rho)
+        # update all the rho paths
+        self.path_rho_params = join(self.path_root,
+                                    self.template_rho_params.format(self.id_data, id_rho))
+        self.path_rho_results = join(self.path_root,
+                                     self.template_rho_results.format(self.id_data, id_rho))
+        self.path_rho_output = join(self.path_root,
+                                    self.template_rho_output.format(self.id_data, id_rho))
+        self.path_rho_plots = join(self.path_root,
+                                   self.template_rho_plots.format(self.id_data, id_rho))
+
+        #
+        self.template_pimc = self.path_rho_results + file_name.pimc(J="{J:s}")
+        self.template_jackknife = self.path_rho_results + file_name.jackknife()
+        self.template_sos_rho = self.path_rho_params + file_name.sos()
+
+        # TODO - now we can't reliably update the self.dir_list
+        # should have a mode modular way of doing this
+
+        #
+        self.path_rho_model = join(self.path_rho_params, file_name.sampling_model)
+
+        #
+        self.path_analytic_rho = join(self.path_rho_params, file_name.analytic_results)
+
         return
 
     def verify_directories_exists(self, id_data, path_root=None):

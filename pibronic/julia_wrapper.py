@@ -59,19 +59,24 @@ def validate_old_data(old_dict, FS):
     """ check if the old hashes match the new ones,
     otherwise we have to throw away all the old data
     """
-    if old_dict["hash_vib"] != FS.hash_vib or old_dict["hash_rho"] != FS.hash_rho:
+    if "hash_vib" not in old_dict or "hash_rho" not in old_dict:
         # throw away all the old data
-        old_dict = {}
-        # add the new hashes
-        old_dict["hash_vib"] = FS.hash_vib
-        old_dict["hash_rho"] = FS.hash_rho
+        old_dict.clear()
+
+    elif old_dict["hash_vib"] != FS.hash_vib or old_dict["hash_rho"] != FS.hash_rho:
+        # throw away all the old data
+        old_dict.clear()
+
+    # add the new hashes
+    old_dict["hash_vib"] = FS.hash_vib
+    old_dict["hash_rho"] = FS.hash_rho
     return
 
 
 def analytic_of_sampling_model(FS, command, beta):
     """x"""
-    path_analytic = FS.path_rho_params + "analytic_results.txt"
-    path_original = FS.path_rho_params + "sampling_model.json"
+    path_analytic = FS.path_analytic_rho
+    path_original = FS.path_rho_model
 
     old_dict = {}
 
@@ -160,8 +165,8 @@ def construct_command_dictionary():
 if (__name__ == "__main__"):
     """x"""
 
-    assert(len(sys.argv) in [4, 5])
-    assert(sys.argv[3].isnumeric() and int(sys.argv[3]) >= 0)
+    assert len(sys.argv) in [4, 5], "wrong number of args"
+    assert sys.argv[3].isnumeric() and int(sys.argv[3]) >= 0, "rho id is invalid"
 
     temperature = 300.0 if (len(sys.argv) == 4) else float(sys.argv[4])
     beta = constants.beta(temperature)
@@ -177,6 +182,6 @@ if (__name__ == "__main__"):
     FS = fs.FileStructure(path_root, id_data, id_rho)
     FS.generate_model_hashes()
 
-    analytic_of_original_coupled_model(FS, cmd_dict["analytical_coupled"], beta)
+    # analytic_of_original_coupled_model(FS, cmd_dict["analytical_coupled"], beta)
     analytic_of_sampling_model(FS, cmd_dict["analytical_sampling"], beta)
     # sos_of_coupled_model(FS, cmd_dict["sos"], beta)

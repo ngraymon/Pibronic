@@ -124,9 +124,6 @@ def training_data_rho_output(P="{P:d}", T="{T:.2f}", J="{J:d}"):
     return _training_data_rho_output.format(P, T, J)
 
 
-""" output of analytic for either model """
-analytic_results = "analytic_results.txt"
-
 # TODO - maybe only need one file name for both rho and sos???
 """ output of SOS for model diagonal in electronic states
 B - refers the number of basis functions to obtain results inside file (int)
@@ -152,6 +149,11 @@ harmonic_model = "harmonic_model.json"
 this can be anything which is diagonal in the electronic states
 """
 sampling_model = "sampling_model.json"
+
+""" contains any parameters which can be obtained through analytical methods
+this commonly stores properties of the sampling model at different temperatures
+"""
+analytic_results = "analytic_results.json"
 
 # TODO - maybe include the directories and so forth inside file_name? or maybe in file_structure?
 # list_sub_dirs = [

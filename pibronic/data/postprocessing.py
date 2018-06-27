@@ -316,6 +316,7 @@ def load_analytic_data(FS, T, analytic):
     path = FS.path_analytic_rho
 
     try:
+        assert os.path.isfile(path), f"This file doesn't exist:\n{path:s}"
         with open(path, "r") as file:
             in_dict = json.loads(file.read())
 
@@ -348,6 +349,7 @@ def load_rho_sos_data(FS, P, B, T, rho_args):
     path = FS.template_sos_rho.format(B=B)
 
     try:
+        assert os.path.isfile(path), f"This file doesn't exist:\n{path:s}"
         with open(path, "r") as file:
             rho_dict = json.loads(file.read())
             # TODO - should make a class function in a new module that handles sos stuff ??

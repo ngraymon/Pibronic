@@ -33,7 +33,7 @@ __all__ = [
            ]
 
 
-__number_of_processes = 10
+__number_of_processes = 12
 
 
 def calculate_basic_property_terms(*args):
@@ -171,6 +171,7 @@ def starmap_wrapper(FS, P, T, statistical_operation):
 
     # save the data to disk
     path = FS.template_jackknife.format(P=P, T=T, X=pimc_results.samples)
+
     with open(path, mode='w', encoding='UTF8') as target_file:
         target_file.write(json.dumps(output_dict))
 
@@ -212,7 +213,7 @@ def alpha_statistical_analysis(temperature, pimc_result, analytic_data):
     return alpha_dict
 
 
-def statistical_analysis_of_pimc(path, id_data, id_rho=0, method="basic", samples=None):
+def statistical_analysis_of_pimc(path, id_data, id_rho=0, method="basic", location="local", samples=None):
     """ preform calculation of Z, E, Cv for the given model, using either basic or alpha/difference terms """
     FS = fs.FileStructure(path, id_data, id_rho)
     FS.generate_model_hashes()  # build the hashes so that we can check against them
@@ -238,9 +239,23 @@ def statistical_analysis_of_pimc(path, id_data, id_rho=0, method="basic", sample
         operation = alpha_statistical_analysis
 
     # dispatch multiple processes to execute the analyze concurrently
-    basic_wrapper = partial(starmap_wrapper, statistical_operation=operation)
-    with mp.Pool(__number_of_processes) as p:
-        p.starmap(basic_wrapper, arg_list)
+    if location is "local":
+        basic_wrapper = partial(starmap_wrapper, statistical_operation=operation)
+
+        with mp.Pool(__number_of_processes) as p:
+            p.starmap(basic_wrapper, arg_list)
+
+    elif location is "server":
+        assert False, "Need to write this code"
+
+        # TODO - add a simple command to check that slurm is installed
+        # os.system("sbatch --version")
+        # the output should be something like "slurm*#.#.#""
+
+        # TODO - write code that submits jobs to the server
+
+    else:
+        raise Exception(f"Invalid value for paramter location:({location:s})")
 
     return
 
@@ -314,7 +329,7 @@ def alpha_jackknife_analysis(temperature, pimc_result, analytic_data):
     return output_dict
 
 
-def jackknife_analysis_of_pimc(path, id_data, id_rho=0, method="basic", samples=None):
+def jackknife_analysis_of_pimc(path, id_data, id_rho=0, method="basic", location="local", samples=None):
     """ preform calculation of Z, E, Cv for the given model, using either basic or alpha/difference terms with the jackknife method"""
     FS = fs.FileStructure(path, id_data, id_rho)
     FS.generate_model_hashes()  # build the hashes so that we can check against them
@@ -339,9 +354,22 @@ def jackknife_analysis_of_pimc(path, id_data, id_rho=0, method="basic", samples=
         operation = alpha_jackknife_analysis
 
     # dispatch multiple processes to execute the analyze concurrently
-    jackknife_wrapper = partial(starmap_wrapper, statistical_operation=operation)
-    with mp.Pool(__number_of_processes) as p:
-        p.starmap(jackknife_wrapper, arg_list)
+    if location is "local":
+        jackknife_wrapper = partial(starmap_wrapper, statistical_operation=operation)
+        with mp.Pool(__number_of_processes) as p:
+            p.starmap(jackknife_wrapper, arg_list)
+
+    elif location is "server":
+        assert False, "Need to write this code"
+
+        # TODO - add a simple command to check that slurm is installed
+        # os.system("sbatch --version")
+        # the output should be something like "slurm*#.#.#""
+
+        # TODO - write code that submits jobs to the server
+
+    else:
+        raise Exception(f"Invalid value for paramter location:({location:s})")
 
     return
 
