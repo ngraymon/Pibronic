@@ -73,6 +73,7 @@ class plotVirtual:
             [12, 250.00], [12, 275.00], [12, 300.00], [22, 300.00], [50, 300.00]
 
         the purposes of this function is to generate lists which allow for modifying the range of each parameter separately using intersections
+
         """
         return
 

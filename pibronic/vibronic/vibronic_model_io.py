@@ -32,6 +32,7 @@ np.set_printoptions(precision=8, suppress=True)  # Print Precision!
 def model_shape_dict(A, N):
     """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
     Takes A - number of surfaces and N - number of modes
+
     """
     dictionary = {
                   VMK.E:  (A, A),
@@ -48,6 +49,7 @@ def model_shape_dict(A, N):
 def sample_shape_dict(A, N):
     """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
     Takes A - number of surfaces and N - number of modes
+
     """
     dictionary = {
                   VMK.E:  (A, ),
@@ -65,6 +67,7 @@ def model_array_diagonal_in_surfaces(array):
     """ boolean function that returns true if the provided numpy array is diagonal or symmetric in the surface dimension
     where the surface dimensions (A) are by convention the last two dimensions
     this function assumes that the array is properly formatted
+
     """
 
     new_dims = list(range(array.ndim))
@@ -76,6 +79,7 @@ def model_array_diagonal_in_surfaces(array):
 
 def model_zeros_template_json_dict(A, N):
     """ returns a dictionary that is a valid model, where all values (other than states and modes) are set to 0
+
     """
     shape = model_shape_dict(A, N)
     dictionary = {

@@ -5,9 +5,14 @@
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = Pibronic
+SPHINXAUTHOR  = Neil Raymond
 SOURCEDIR     = .
 BUILDDIR      = _build
 GHPAGES_BUILDDIR = ../../Pibronic-docs
+
+RELATIVEPROJDIR  = ../pibronic/
+# we don't need the tests to be part of the documentation
+RELATIVEEXCLUDEPATTERN  = '../tests/*' '../pibronic/stats/jackknife_old.py' '*._*'
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -16,6 +21,8 @@ help:
 .PHONY: help Makefile
 
 gh-pages:
+	sphinx-apidoc -f -M -H "$(SPHINXPROJ)" -A "$(SPHINXAUTHOR)" \
+		-o $(SOURCEDIR)  $(RELATIVEPROJDIR) $(RELATIVEEXCLUDEPATTERN)
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(GHPAGES_BUILDDIR)" $(SPHINXOPTS) $(O)
 	cd "$(GHPAGES_BUILDDIR)/html" && git add . && git commit -m "Updated gh-pages" && git push
 
