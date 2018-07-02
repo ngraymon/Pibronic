@@ -1,0 +1,264 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tests.test_models &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tests.test_models</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A basic test of the multiple modules&quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">.context</span> <span class="k">import</span> <span class="n">pibronic</span>
+<span class="kn">from</span> <span class="nn">pibronic</span> <span class="k">import</span> <span class="n">pimc</span>
+<span class="kn">from</span> <span class="nn">pibronic.vibronic</span> <span class="k">import</span> <span class="n">vIO</span>
+<span class="kn">import</span> <span class="nn">pibronic.data.file_structure</span> <span class="k">as</span> <span class="nn">fs</span>
+<span class="kn">import</span> <span class="nn">pibronic.constants</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">filecmp</span>
+<span class="kn">import</span> <span class="nn">pytest</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="TestProcessingVibronicModel"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestProcessingVibronicModel">[docs]</a><span class="k">class</span> <span class="nc">TestProcessingVibronicModel</span><span class="p">():</span>
+
+    <span class="n">test_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span> <span class="s2">&quot;test_models/&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check both the data set 0 and data set 1</span>
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="k">def</span> <span class="nf">files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_path</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># looks like we might not use this file type anymore</span>
+    <span class="c1"># def test_creating_coupled_model_from_h_file(self, files):</span>
+    <span class="c1">#     path_h_file = files.path_es + &quot;fake_vibron.h&quot;</span>
+    <span class="c1">#     vIO.create_coupling_from_h_file(files, path_h_file)</span>
+    <span class="c1">#     samefile = filecmp.cmp(files.path_vib_model, files.path_vib_params + &quot;coupled_model_reference.json&quot;)</span>
+    <span class="c1">#     assert samefile</span>
+    <span class="c1">#     return</span>
+
+<div class="viewcode-block" id="TestProcessingVibronicModel.test_creating_harmonic_model_from_coupled_model"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestProcessingVibronicModel.test_creating_harmonic_model_from_coupled_model">[docs]</a>    <span class="k">def</span> <span class="nf">test_creating_harmonic_model_from_coupled_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+        <span class="n">vIO</span><span class="o">.</span><span class="n">create_harmonic_model</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+        <span class="n">samefile</span> <span class="o">=</span> <span class="n">filecmp</span><span class="o">.</span><span class="n">cmp</span><span class="p">(</span><span class="n">files</span><span class="o">.</span><span class="n">path_har_model</span><span class="p">,</span> <span class="n">files</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="s2">&quot;harmonic_model_reference.json&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">samefile</span>
+        <span class="k">return</span></div>
+
+    <span class="c1"># only check the data_set_0</span>
+<div class="viewcode-block" id="TestProcessingVibronicModel.files"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestProcessingVibronicModel.files">[docs]</a>    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="k">def</span> <span class="nf">files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_path</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+
+    <span class="c1"># only want to check that the rho 0 sampling models are the same as the harmonic models</span>
+<div class="viewcode-block" id="TestProcessingVibronicModel.test_creating_basic_sampling_model_from_harmonic_model"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestProcessingVibronicModel.test_creating_basic_sampling_model_from_harmonic_model">[docs]</a>    <span class="k">def</span> <span class="nf">test_creating_basic_sampling_model_from_harmonic_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+        <span class="n">vIO</span><span class="o">.</span><span class="n">create_basic_sampling_model</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+        <span class="n">samefile</span> <span class="o">=</span> <span class="n">filecmp</span><span class="o">.</span><span class="n">cmp</span><span class="p">(</span><span class="n">files</span><span class="o">.</span><span class="n">path_rho_model</span><span class="p">,</span> <span class="n">files</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="s2">&quot;sampling_model_reference.json&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">samefile</span>
+        <span class="k">return</span></div></div>
+
+    <span class="c1"># seems to work now</span>
+    <span class="c1"># # @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])</span>
+    <span class="c1"># @pytest.fixture(params=[(0, 0)])</span>
+    <span class="c1"># def files(self, request):</span>
+    <span class="c1">#     return fs.FileStructure(self.test_path, request.param[0], request.param[1])</span>
+
+    <span class="c1"># def test_create_coupling_from_op_file(self, files):</span>
+    <span class="c1">#     path_full = files.path_es + &quot;fake_vibron.op&quot;</span>
+    <span class="c1">#     vIO.create_coupling_from_op_file(files, path_full)</span>
+    <span class="c1">#     assert os.path.isfile(files.path_vib_model), &quot;failed to create any output file&quot;</span>
+    <span class="c1">#     assert True, &quot;output values are incorrect&quot;  # TODO - implement way to check all the values of the output</span>
+    <span class="c1">#     return</span>
+
+    <span class="c1"># # check both the data set 0 and data set 1</span>
+    <span class="c1"># # @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])</span>
+    <span class="c1"># @pytest.fixture(params=[&quot;ch3cn&quot;, &quot;acrolein&quot;, &quot;acrylonitrile&quot;, ])</span>
+    <span class="c1"># def https(self, request):</span>
+    <span class="c1">#     root = &quot;http://scienide2.uwaterloo.ca/~nooijen/website_new_20_10_2011/vibron/VC/&quot;</span>
+    <span class="c1">#     url = root + request.param + &quot;_files.html&quot;</span>
+    <span class="c1">#     return url</span>
+
+    <span class="c1"># import urllib</span>
+
+    <span class="c1"># def test_create_coupling_from_op_hyperlink(self, files, https):</span>
+    <span class="c1">#     vIO.create_coupling_from_op_hyperlink(files, https)</span>
+    <span class="c1">#     assert os.path.isfile(files.path_vib_model), &quot;failed to create any output file&quot;</span>
+    <span class="c1">#     assert True, &quot;output values are incorrect&quot;  # TODO - implement way to check all the values of the output</span>
+    <span class="c1">#     # TODO</span>
+    <span class="c1">#     return</span>
+
+
+<div class="viewcode-block" id="TestPimcNatively"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively">[docs]</a><span class="k">class</span> <span class="nc">TestPimcNatively</span><span class="p">():</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e1</span><span class="p">)</span>
+    <span class="n">block_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e1</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">242351</span><span class="p">)</span>  <span class="c1"># pick our seed</span>
+
+    <span class="n">test_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span> <span class="s2">&quot;test_models/&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TestPimcNatively.test_create_BoxData_inline"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.test_create_BoxData_inline">[docs]</a>    <span class="k">def</span> <span class="nf">test_create_BoxData_inline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">pimc</span><span class="o">.</span><span class="n">BoxData</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TestPimcNatively.test_create_BoxData_from_file"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.test_create_BoxData_from_file">[docs]</a>    <span class="k">def</span> <span class="nf">test_create_BoxData_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TestPimcNatively.test_create_BoxData_from_jsonData"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.test_create_BoxData_from_jsonData">[docs]</a>    <span class="k">def</span> <span class="nf">test_create_BoxData_from_jsonData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TestPimcNatively.data"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.data">[docs]</a>    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;class&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">pimc</span><span class="o">.</span><span class="n">BoxData</span><span class="p">()</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">id_data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">id_rho</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="TestPimcNatively.files"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.files">[docs]</a>    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;class&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="o">.</span><span class="n">from_boxdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_path</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestPimcNatively.test_simple_block_compute"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.test_simple_block_compute">[docs]</a>    <span class="k">def</span> <span class="nf">test_simple_block_compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">path_vib_model</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">path_vib_model</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">path_rho_model</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">path_rho_model</span>
+
+        <span class="n">files</span><span class="o">.</span><span class="n">generate_model_hashes</span><span class="p">()</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">hash_vib</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">hash_vib</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">hash_rho</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">hash_rho</span>
+
+        <span class="n">data</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">modes</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="n">data</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">beads</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="mf">300.0</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">block_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+
+        <span class="c1"># setup empty tensors, models, and constants</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">preprocess</span><span class="p">()</span>
+
+        <span class="c1"># store results here</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">pimc</span><span class="o">.</span><span class="n">BoxResult</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">path_root</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">path_rho_results</span>
+
+        <span class="n">pimc</span><span class="o">.</span><span class="n">block_compute</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TestPimcNatively.dataPM"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.dataPM">[docs]</a>    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;class&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="k">def</span> <span class="nf">dataPM</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">pimc</span><span class="o">.</span><span class="n">BoxDataPM</span><span class="p">(</span><span class="n">pibronic</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span><span class="p">)</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">id_data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">id_rho</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="TestPimcNatively.filesPM"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.filesPM">[docs]</a>    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;class&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">filesPM</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataPM</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="o">.</span><span class="n">from_boxdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_path</span><span class="p">,</span> <span class="n">dataPM</span><span class="p">)</span></div>
+
+    <span class="c1"># this creates 10 different output files for this test case</span>
+<div class="viewcode-block" id="TestPimcNatively.job_id"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.job_id">[docs]</a>    <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;class&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">job_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span></div>
+
+<div class="viewcode-block" id="TestPimcNatively.test_simple_block_compute_pm"><a class="viewcode-back" href="../../tests.html#tests.test_models.TestPimcNatively.test_simple_block_compute_pm">[docs]</a>    <span class="k">def</span> <span class="nf">test_simple_block_compute_pm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filesPM</span><span class="p">,</span> <span class="n">dataPM</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">path_vib_model</span> <span class="o">=</span> <span class="n">filesPM</span><span class="o">.</span><span class="n">path_vib_model</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">path_rho_model</span> <span class="o">=</span> <span class="n">filesPM</span><span class="o">.</span><span class="n">path_rho_model</span>
+
+        <span class="n">filesPM</span><span class="o">.</span><span class="n">generate_model_hashes</span><span class="p">()</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">hash_vib</span> <span class="o">=</span> <span class="n">filesPM</span><span class="o">.</span><span class="n">hash_vib</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">hash_rho</span> <span class="o">=</span> <span class="n">filesPM</span><span class="o">.</span><span class="n">hash_rho</span>
+
+        <span class="c1"># data should be able to figure out the number of states and modes from the file</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">modes</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">beads</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="mf">300.00</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">block_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+
+        <span class="c1"># setup empty tensors, models, and constants</span>
+        <span class="n">dataPM</span><span class="o">.</span><span class="n">preprocess</span><span class="p">()</span>
+
+        <span class="c1"># store results here</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">pimc</span><span class="o">.</span><span class="n">BoxResultPM</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">dataPM</span><span class="p">)</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">path_root</span> <span class="o">=</span> <span class="n">filesPM</span><span class="o">.</span><span class="n">path_rho_results</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">id_job</span> <span class="o">=</span> <span class="n">job_id</span>
+
+        <span class="n">pimc</span><span class="o">.</span><span class="n">block_compute_pm</span><span class="p">(</span><span class="n">dataPM</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

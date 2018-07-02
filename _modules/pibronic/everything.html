@@ -9,7 +9,7 @@
     <title>pibronic.everything &#8212; Pibronic 0.1.2 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for pibronic.everything</h1><div class="highlight"><pre>
@@ -43,6 +45,7 @@
 <span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span>
 
 <span class="c1"># third party imports</span>
 
@@ -50,15 +53,15 @@
 <span class="c1"># sys.path.append(&#39;/home/ngraymon/pibronic/&#39;)</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">constants</span>
 <span class="kn">from</span> <span class="nn">.log_conf</span> <span class="k">import</span> <span class="n">log</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">electronic_structure</span> <span class="k">as</span> <span class="n">ES</span>
-<span class="kn">from</span> <span class="nn">.data</span> <span class="k">import</span> <span class="n">vibronic_model_io</span> <span class="k">as</span> <span class="n">vIO</span>
+<span class="kn">from</span> <span class="nn">.vibronic</span> <span class="k">import</span> <span class="n">vIO</span>
+<span class="kn">from</span> <span class="nn">.vibronic</span> <span class="k">import</span> <span class="n">electronic_structure</span> <span class="k">as</span> <span class="n">ES</span>
 <span class="kn">from</span> <span class="nn">.data</span> <span class="k">import</span> <span class="n">file_structure</span>
-<span class="kn">from</span> <span class="nn">.pimc</span> <span class="k">import</span> <span class="n">minimal</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">pimc</span>
 <span class="kn">from</span> <span class="nn">.server</span> <span class="k">import</span> <span class="n">job_boss</span>
 
 <span class="c1"># source for generating vibronic models</span>
-<span class="kn">import</span> <span class="nn">pibronic.input_files</span>
-
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">examples</span> <span class="k">import</span> <span class="n">input_files</span>
 
 <span class="c1"># -------------------------------------------------------------------------------------------------</span>
 <span class="c1"># REFERENCE DATA</span>
@@ -92,13 +95,13 @@
 
 <div class="viewcode-block" id="copyInput"><a class="viewcode-back" href="../../pibronic.html#pibronic.everything.copyInput">[docs]</a><span class="k">def</span> <span class="nf">copyInput</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="n">path_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">pibronic</span><span class="o">.</span><span class="n">input_files</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span>
+    <span class="n">path_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">input_files</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span>
 
-    <span class="n">src_params</span> <span class="o">=</span> <span class="n">path_root</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s2">&quot;_params.txt&quot;</span>
-    <span class="n">src_zmat</span> <span class="o">=</span> <span class="n">path_root</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s2">&quot;_zmat.txt&quot;</span>
+    <span class="n">src_params</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;_params.txt&quot;</span><span class="p">)</span>
+    <span class="n">src_zmat</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;_zmat.txt&quot;</span><span class="p">)</span>
 
-    <span class="n">dst_params</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_es</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s2">&quot;_params.txt&quot;</span>
-    <span class="n">dst_zmat</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_es</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s2">&quot;_zmat.txt&quot;</span>
+    <span class="n">dst_params</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_es</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;_params.txt&quot;</span><span class="p">)</span>
+    <span class="n">dst_zmat</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_es</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;_zmat.txt&quot;</span><span class="p">)</span>
 
     <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">src_params</span><span class="p">,</span> <span class="n">dst_params</span><span class="p">)</span>
     <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">src_zmat</span><span class="p">,</span> <span class="n">dst_zmat</span><span class="p">)</span>
@@ -107,7 +110,7 @@
     <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dst_params</span><span class="p">,</span> <span class="n">dst_zmat</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="generate_analytical_results"><a class="viewcode-back" href="../../pibronic.html#pibronic.everything.generate_analytical_results">[docs]</a><span class="k">def</span> <span class="nf">generate_analytical_results</span><span class="p">(</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">temperature_list</span><span class="p">):</span>
+<div class="viewcode-block" id="generate_analytical_results"><a class="viewcode-back" href="../../pibronic.html#pibronic.everything.generate_analytical_results">[docs]</a><span class="k">def</span> <span class="nf">generate_analytical_results</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">temperature_list</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;generate analytical results using julia&quot;&quot;&quot;</span>
 
     <span class="c1"># need a check to see if analytical results exist</span>
@@ -115,16 +118,17 @@
 
     <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">temperature_list</span><span class="p">:</span>
         <span class="c1"># this should also be generalized</span>
-        <span class="n">command</span> <span class="o">=</span> <span class="s2">&quot;python3 ~/pibronic/pibronic/julia_wrapper.py </span><span class="si">{:d}</span><span class="s2"> </span><span class="si">{:d}</span><span class="s2"> </span><span class="si">{:.2f}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="s2">&quot;python3 ~/pibronic/pibronic/julia_wrapper.py </span><span class="si">{:s}</span><span class="s2"> </span><span class="si">{:d}</span><span class="s2"> </span><span class="si">{:d}</span><span class="s2"> </span><span class="si">{:.2f}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="c1"># should replace this with a function call that isn&#39;t dependent on our server</span>
-        <span class="n">sshProcess</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s2">&quot;ssh&quot;</span><span class="p">,</span> <span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="s2">&quot;dev002&quot;</span><span class="p">],</span>
+        <span class="c1"># sshProcess = subprocess.Popen([&quot;ssh&quot;, &quot;-t&quot;, &quot;dev002&quot;],</span>
+        <span class="n">sshProcess</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s2">&quot;srun&quot;</span><span class="p">,</span> <span class="s2">&quot;--pty&quot;</span><span class="p">],</span>  <span class="c1"># dev002 is out of commission</span>
                                       <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                       <span class="n">stdin</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
                                       <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
                                       <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
                                       <span class="p">)</span>
 
-        <span class="n">sshProcess</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">T</span><span class="p">))</span>
+        <span class="n">sshProcess</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">T</span><span class="p">))</span>
         <span class="n">sshProcess</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="s2">&quot;Currently generating analytical parameters at Temperature </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
         <span class="n">sshProcess</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
@@ -185,12 +189,12 @@
     <span class="n">temperature_list</span> <span class="o">=</span> <span class="p">[</span><span class="mf">250.</span><span class="p">,</span> <span class="mf">275.</span><span class="p">,</span> <span class="mf">300.</span><span class="p">,</span> <span class="mf">325.</span><span class="p">,</span> <span class="mf">350.</span><span class="p">]</span>
     <span class="n">bead_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="p">]</span>
 
-    <span class="n">generate_analytical_results</span><span class="p">(</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">temperature_list</span><span class="p">)</span>
+    <span class="n">generate_analytical_results</span><span class="p">(</span><span class="n">files</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">temperature_list</span><span class="p">)</span>
     <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="s2">&quot;Finished preparing input for PIMC calculation&quot;</span><span class="p">)</span>
     <span class="c1"># ---------------------------------------------------------------------------------------------</span>
     <span class="c1"># SUBMIT PIMC JOBS</span>
 
-    <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_coupled_model</span><span class="p">(</span><span class="n">id_data</span><span class="p">)</span>
+    <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="n">files</span><span class="p">)</span>
 
     <span class="c1"># this is the minimum amount of data needed to run an execution</span>
     <span class="n">parameter_dictionary</span> <span class="o">=</span> <span class="p">{</span>
@@ -239,6 +243,7 @@
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -271,8 +276,8 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

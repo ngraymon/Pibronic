@@ -9,7 +9,7 @@
     <title>pibronic.data.file_structure &#8212; Pibronic 0.1.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for pibronic.data.file_structure</h1><div class="highlight"><pre>
@@ -47,6 +49,7 @@
 <span class="c1"># local imports</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">file_name</span>
 <span class="kn">from</span> <span class="nn">..log_conf</span> <span class="k">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">..vibronic</span> <span class="k">import</span> <span class="n">vIO</span>
 
 
 <span class="c1"># the names of the sub directories</span>
@@ -89,8 +92,9 @@
         <span class="sd">&quot;&quot;&quot;constructor wrapper that takes a data object from minimal.py&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">id_data</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">id_rho</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">no_makedir</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If the flag no_makedir is true then no directories are created and the object is simply a container of strings that represent the various paths to files and folders&quot;&quot;&quot;</span>
         <span class="c1"># assert type(path_root) is str, &quot;did not provide a path in str format&quot;</span>
 
         <span class="sd">&quot;&quot;&quot;</span>
@@ -133,6 +137,7 @@
         <span class="c1"># self.pimc_suffix = &quot;P{P:d}_T{T:.2f}_J*_data_points.npz&quot;</span>
         <span class="c1"># self.jackknife_suffix = self.template_jackknife_suffix</span>
 
+        <span class="c1"># TODO - remember that the dir_list is used to make the directories, so all class variables declared afterwards are not in the dir_list</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dir_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;path_&#39;</span><span class="p">)]</span>
 
         <span class="c1"># print(self.dir_list, &#39;\n\n&#39;)</span>
@@ -147,8 +152,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">path_har_model</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">harmonic_model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_model</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sampling_model</span><span class="p">)</span>
 
-        <span class="c1"># if not self.directories_exist():</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">make_directories</span><span class="p">()</span>
+        <span class="c1"># TODO - maybe these should begin with file_*  instead of path_* ?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_analytic_rho</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">analytic_results</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_analytic_vib</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">analytic_results</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">no_makedir</span><span class="p">:</span>
+            <span class="c1"># TODO - possibly check to see if directories exist instead of just blindly creating them? like so? if not self.directories_exist():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">make_directories</span><span class="p">()</span>
+
         <span class="k">return</span>
 
 <div class="viewcode-block" id="FileStructure.directories_exist"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.directories_exist">[docs]</a>    <span class="k">def</span> <span class="nf">directories_exist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -168,14 +179,51 @@
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="FileStructure.make_rho_directories"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.make_rho_directories">[docs]</a>    <span class="k">def</span> <span class="nf">make_rho_directories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;creates (if they don&#39;t already exist) the necessary directories for storing the data of an additional sampling distribution (choice of rho)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">id_rho</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_rho</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">make_directories</span><span class="p">()</span>
             <span class="k">return</span>
 
-        <span class="n">directories</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">path_data</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dir_rho</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_rho</span><span class="p">)</span> <span class="o">+</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">list_sub_dirs</span><span class="p">]</span>
+        <span class="c1"># TODO - could improve the use of &#39;template_rho&#39; to be more concise</span>
+        <span class="n">directories</span> <span class="o">=</span> <span class="p">[</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">template_rho</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">),</span>
+                            <span class="n">x</span>
+                            <span class="p">)</span>
+                       <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">list_sub_dirs</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="n">directories</span><span class="p">:</span>
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="FileStructure.change_rho"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.change_rho">[docs]</a>    <span class="k">def</span> <span class="nf">change_rho</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; modifies all the FileStructure&#39;s paths to point to the new rho id</span>
+<span class="sd">        calls make_rho_directories() to ensure the directories exist</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_rho_directories</span><span class="p">(</span><span class="n">id_rho</span><span class="p">)</span>
+        <span class="c1"># update all the rho paths</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">template_rho_params</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_results</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">template_rho_results</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_output</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">template_rho_output</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_plots</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">template_rho_plots</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">))</span>
+
+        <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_pimc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_results</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">pimc</span><span class="p">(</span><span class="n">J</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{J:s}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_jackknife</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_results</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">jackknife</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_sos_rho</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sos</span><span class="p">()</span>
+
+        <span class="c1"># TODO - now we can&#39;t reliably update the self.dir_list</span>
+        <span class="c1"># should have a mode modular way of doing this</span>
+
+        <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_model</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sampling_model</span><span class="p">)</span>
+
+        <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_analytic_rho</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">analytic_results</span><span class="p">)</span>
+
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="FileStructure.verify_directories_exists"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.verify_directories_exists">[docs]</a>    <span class="k">def</span> <span class="nf">verify_directories_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">path_root</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -191,10 +239,18 @@
             <span class="k">return</span>
 
         <span class="n">files</span><span class="o">.</span><span class="n">make_directories</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="FileStructure.generate_model_hashes"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.generate_model_hashes">[docs]</a>    <span class="k">def</span> <span class="nf">generate_model_hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; create two new data attributes which store the hash values (hash_vib, hash_rho)</span>
+<span class="sd">        created by the functions vIO.create_model_hash() and vIO.create_sampling_hash()&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">create_model_hash</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">create_sampling_hash</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span></div></div>
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -227,8 +283,8 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

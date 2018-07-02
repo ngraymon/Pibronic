@@ -1,0 +1,282 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.vibronic.model_auto &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.vibronic.model_auto</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; module that handles parsing model.auto files&quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="c1"># import itertools as it</span>
+<span class="c1"># import mmap</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">fortranformat</span> <span class="k">as</span> <span class="nn">ff</span>  <span class="c1"># Fortran format for VIBRON</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">float64</span> <span class="k">as</span> <span class="n">F64</span>
+
+<span class="c1"># local imports</span>
+<span class="c1"># from ..log_conf import log</span>
+<span class="c1"># from .. import constants</span>
+<span class="c1"># from ..data import file_structure</span>
+<span class="c1"># from ..data import file_name</span>
+<span class="c1"># from .. import helper</span>
+<span class="c1"># from .vibronic_model_keys import VibronicModelKeys as VMK</span>
+
+<span class="sd">&quot;&quot;&quot; pre-defined header formats &quot;&quot;&quot;</span>
+<span class="n">title_header</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">FortranRecordReader</span><span class="p">(</span><span class="s1">&#39;(A50, A20)&#39;</span><span class="p">)</span>
+<span class="n">coefficient_header</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">FortranRecordReader</span><span class="p">(</span><span class="s1">&#39;2(F12.6)&#39;</span><span class="p">)</span>
+<span class="n">gradient_header</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">FortranRecordReader</span><span class="p">(</span><span class="s1">&#39;(t3, A15, i4, A15, F10.2)&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="read_header"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_auto.read_header">[docs]</a><span class="k">def</span> <span class="nf">read_header</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">nel</span><span class="p">,</span> <span class="n">nmode</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">):</span>
+    <span class="n">numgrid</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">FortranRecordReader</span><span class="p">(</span><span class="s1">&#39;(A26, i4)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># read the type of grid in ACESII</span>
+    <span class="n">num_irreps</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">FortranRecordReader</span><span class="p">(</span><span class="s1">&#39;(A36, i4)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># number of vibrational irreps</span>
+    <span class="n">nmodes</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">FortranRecordReader</span><span class="p">(</span><span class="s1">&#39;(A30, i4)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># read the total number of modes per symmetry</span>
+
+    <span class="c1"># we can either grab the frequencies from the ref_freq_data, or the parent hessian</span>
+    <span class="k">if</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># the frequency given here is in cm-1</span>
+        <span class="n">frequencies</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ff</span><span class="o">.</span><span class="n">FortranRecordReader</span><span class="p">(</span><span class="s1">&#39;(A31, 12F8.2)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">)</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="fill_in_excitation_energies"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_auto.fill_in_excitation_energies">[docs]</a><span class="k">def</span> <span class="nf">fill_in_excitation_energies</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">el_range</span><span class="p">,</span> <span class="n">excitation_energies</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+        <span class="n">excitation_energies</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coefficient_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="fill_in_linear_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_auto.fill_in_linear_couplings">[docs]</a><span class="k">def</span> <span class="nf">fill_in_linear_couplings</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">el_range</span><span class="p">,</span> <span class="n">mode_range</span><span class="p">,</span> <span class="n">linear_couplings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mode_range</span><span class="p">:</span>
+        <span class="n">gradient_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>  <span class="c1"># should &#39;read in&#39; the header</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+            <span class="n">linear_couplings</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coefficient_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="fill_in_diagonal_quadratic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_auto.fill_in_diagonal_quadratic_couplings">[docs]</a><span class="k">def</span> <span class="nf">fill_in_diagonal_quadratic_couplings</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">el_range</span><span class="p">,</span> <span class="n">mode_range</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mode_range</span><span class="p">:</span>
+        <span class="n">gradient_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+            <span class="n">quadratic_couplings</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coefficient_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="fill_in_offdiagonal_quadratic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_auto.fill_in_offdiagonal_quadratic_couplings">[docs]</a><span class="k">def</span> <span class="nf">fill_in_offdiagonal_quadratic_couplings</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">el_range</span><span class="p">,</span> <span class="n">mode_range</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mode_range</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">)</span>  <span class="c1"># &#39;reading in&#39; the first line/title</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+                <span class="n">quadratic_couplings</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coefficient_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+            <span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="confirm_symmetry_in_surfaces"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_auto.confirm_symmetry_in_surfaces">[docs]</a><span class="k">def</span> <span class="nf">confirm_symmetry_in_surfaces</span><span class="p">(</span><span class="n">el_range</span><span class="p">,</span> <span class="n">linear_couplings</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; check for symmetry in surfaces &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+            <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">linear_couplings</span><span class="p">[:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="n">linear_couplings</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">]))</span>
+            <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">]))</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="confirm_symmetry_in_modes"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_auto.confirm_symmetry_in_modes">[docs]</a><span class="k">def</span> <span class="nf">confirm_symmetry_in_modes</span><span class="p">(</span><span class="n">mode_range</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; check for symmetry in modes &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mode_range</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">mode_range</span><span class="p">:</span>
+            <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">quadratic_couplings</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">quadratic_couplings</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]))</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="read_model_auto_file"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_auto.read_model_auto_file">[docs]</a><span class="k">def</span> <span class="nf">read_model_auto_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    if the shift to MCTDH file structure is permananent this function will no longer be needed</span>
+
+<span class="sd">    Read Vibronic Model file (cp.auto) which</span>
+<span class="sd">    contains all information on the approximate</span>
+<span class="sd">    Born-Oppenheimer Ground State PES.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    number of electronic states</span>
+<span class="sd">    number of normal modes</span>
+
+<span class="sd">    Excitation energies: (nel, nel)</span>
+<span class="sd">    frequencies (nmode)</span>
+<span class="sd">    linear couplings: (nmode, nel, nel)</span>
+<span class="sd">    quadratic couplings: (nmode, nmode, nel, nel)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nel</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># Number of minima [energy wells]</span>
+    <span class="n">nmode</span> <span class="o">=</span> <span class="mi">12</span>  <span class="c1"># Number of normal modes</span>
+    <span class="n">el_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">nel</span><span class="p">)</span>
+    <span class="n">mode_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmode</span><span class="p">)</span>
+
+    <span class="c1"># Read file (Iterator object)</span>
+    <span class="n">file_object</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+
+    <span class="c1"># first lets strip out all the blank lines and lines like ------</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">file_object</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span> <span class="k">if</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;--------&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()))]</span>
+    <span class="n">f_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>  <span class="c1"># make an iterator</span>
+
+    <span class="c1"># =====</span>
+    <span class="c1"># Title</span>
+    <span class="c1"># =====</span>
+
+    <span class="n">title_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+
+    <span class="c1"># ==========================</span>
+    <span class="c1"># 0. Header and Normal modes</span>
+    <span class="c1"># ==========================</span>
+
+    <span class="c1"># Initialize Variables</span>
+    <span class="n">excitation_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nel</span><span class="p">,</span> <span class="n">nel</span><span class="p">))</span>
+    <span class="n">frequencies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nmode</span><span class="p">))</span>
+    <span class="n">linear_couplings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nmode</span><span class="p">,</span> <span class="n">nel</span><span class="p">,</span> <span class="n">nel</span><span class="p">))</span>
+    <span class="n">quadratic_couplings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nmode</span><span class="p">,</span> <span class="n">nmode</span><span class="p">,</span> <span class="n">nel</span><span class="p">,</span> <span class="n">nel</span><span class="p">))</span>
+
+    <span class="n">read_header</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">nel</span><span class="p">,</span> <span class="n">nmode</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">)</span>
+
+    <span class="c1"># ==================</span>
+    <span class="c1"># 1. Parent Gradient</span>
+    <span class="c1"># ==================</span>
+
+    <span class="n">title_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="c1"># gradient_header_parent = ff.FortranRecordReader(&#39;(t3, A17, i4, t22, A15, E16.10)&#39;)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mode_range</span><span class="p">:</span>
+        <span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">)</span>
+
+    <span class="c1"># =================</span>
+    <span class="c1"># 2. Parent Hessian</span>
+    <span class="c1"># =================</span>
+
+    <span class="n">title_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="c1"># hessian_header_parent = ff.FortranRecordReader(&#39;(t3, A17, i4, t22, A15, F8.2, A5, F12.6, A5)&#39;)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mode_range</span><span class="p">:</span>
+            <span class="c1"># store the value incase exception occurs</span>
+            <span class="n">temp_str</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">)</span>
+            <span class="n">frequencies</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">temp_str</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">&quot;cm-1&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">&quot;eV&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err_obj</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Having issues parsing the Hessian parent energy, why are the frequences not digits?&quot;</span><span class="p">,</span> <span class="n">temp_str</span><span class="p">,</span> <span class="n">temp_str</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">&quot;cm-1&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">],</span> <span class="n">temp_str</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">&quot;cm-1&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">&quot;eV&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">raise</span> <span class="n">err_obj</span>
+
+    <span class="c1"># ========================</span>
+    <span class="c1"># 3. Reference Hamiltonian</span>
+    <span class="c1"># ========================</span>
+
+    <span class="n">title_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">el_range</span><span class="p">:</span>
+        <span class="n">excitation_energies</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">coefficient_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="n">fill_in_excitation_energies</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">el_range</span><span class="p">,</span> <span class="n">excitation_energies</span><span class="p">)</span>
+
+    <span class="c1"># ===============================</span>
+    <span class="c1"># 4. Linear couplings (gradients)</span>
+    <span class="c1"># ===============================</span>
+
+    <span class="n">title_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="n">fill_in_linear_couplings</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">el_range</span><span class="p">,</span> <span class="n">mode_range</span><span class="p">,</span> <span class="n">linear_couplings</span><span class="p">)</span>
+
+    <span class="c1"># ========================================================</span>
+    <span class="c1"># 5. Quadratic couplings [Diagonal corrections of Hessian]</span>
+    <span class="c1"># ========================================================</span>
+
+    <span class="n">title_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="n">fill_in_diagonal_quadratic_couplings</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">el_range</span><span class="p">,</span> <span class="n">mode_range</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">)</span>
+
+    <span class="c1"># ============================================================</span>
+    <span class="c1"># 6. Quadratic couplings [Off-diagonal corrections of Hessian]</span>
+    <span class="c1"># ============================================================</span>
+
+    <span class="n">title_header</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f_iter</span><span class="p">))</span>
+    <span class="n">fill_in_offdiagonal_quadratic_couplings</span><span class="p">(</span><span class="n">f_iter</span><span class="p">,</span> <span class="n">el_range</span><span class="p">,</span> <span class="n">mode_range</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">)</span>
+
+    <span class="n">confirm_symmetry_in_surfaces</span><span class="p">(</span><span class="n">el_range</span><span class="p">,</span> <span class="n">linear_couplings</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">)</span>
+    <span class="n">confirm_symmetry_in_modes</span><span class="p">(</span><span class="n">mode_range</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">nel</span><span class="p">,</span> <span class="n">nmode</span><span class="p">,</span> <span class="n">excitation_energies</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">,</span> <span class="n">linear_couplings</span><span class="p">,</span> <span class="n">quadratic_couplings</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

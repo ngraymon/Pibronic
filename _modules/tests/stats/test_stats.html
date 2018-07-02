@@ -1,0 +1,182 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tests.stats.test_stats &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tests.stats.test_stats</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">..context</span> <span class="k">import</span> <span class="n">pibronic</span>
+<span class="kn">import</span> <span class="nn">pibronic.stats</span> <span class="k">as</span> <span class="nn">st</span>
+<span class="kn">import</span> <span class="nn">pibronic.data.file_structure</span> <span class="k">as</span> <span class="nn">fs</span>
+<span class="kn">from</span> <span class="nn">pibronic.constants</span> <span class="k">import</span> <span class="n">boltzman</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pytest</span>
+
+
+<div class="viewcode-block" id="test_calculate_basic_property_terms"><a class="viewcode-back" href="../../../tests.stats.html#tests.stats.test_stats.test_calculate_basic_property_terms">[docs]</a><span class="k">def</span> <span class="nf">test_calculate_basic_property_terms</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;obviously not a good test at the moment&quot;&quot;&quot;</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">delta_beta</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">g_plus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">g_minus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">calculate_basic_property_terms</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">g_plus</span><span class="p">,</span> <span class="n">g_minus</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ret</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">g</span> <span class="o">/</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ret</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ret</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="test_calculate_alpha_terms"><a class="viewcode-back" href="../../../tests.stats.html#tests.stats.test_stats.test_calculate_alpha_terms">[docs]</a><span class="k">def</span> <span class="nf">test_calculate_alpha_terms</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;obviously not a good test at the moment&quot;&quot;&quot;</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">delta_beta</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">g_plus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">g_minus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">alpha_plus</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="n">alpha_minus</span> <span class="o">=</span> <span class="mf">2.0</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">calculate_alpha_terms</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">g_plus</span><span class="p">,</span> <span class="n">g_minus</span><span class="p">,</span> <span class="n">alpha_plus</span><span class="p">,</span> <span class="n">alpha_minus</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ret</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mf">4.0</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ret</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mf">2.0</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">alpha_plus</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ret</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="n">alpha_minus</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="test_estimate_basic_properties"><a class="viewcode-back" href="../../../tests.stats.html#tests.stats.test_stats.test_estimate_basic_properties">[docs]</a><span class="k">def</span> <span class="nf">test_estimate_basic_properties</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;obviously not a good test at the moment&quot;&quot;&quot;</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="mf">300.00</span>
+    <span class="n">g_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">sym1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">sym2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">estimate_basic_properties</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">g_r</span><span class="p">,</span> <span class="n">sym1</span><span class="p">,</span> <span class="n">sym2</span><span class="p">)</span>
+    <span class="n">kBT</span> <span class="o">=</span> <span class="n">boltzman</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Z error&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.0</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;E error&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">kBT</span>
+    <span class="k">assert</span> <span class="n">ret</span><span class="p">[</span><span class="s2">&quot;Cv error&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="test_add_harmonic_contribution"><a class="viewcode-back" href="../../../tests.stats.html#tests.stats.test_stats.test_add_harmonic_contribution">[docs]</a><span class="k">def</span> <span class="nf">test_add_harmonic_contribution</span><span class="p">():</span>
+    <span class="n">nums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">test_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;E&quot;</span><span class="p">:</span> <span class="n">nums</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s2">&quot;Cv&quot;</span><span class="p">:</span> <span class="n">nums</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+
+    <span class="n">E_harmonic</span> <span class="o">=</span> <span class="n">nums</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">Cv_harmonic</span> <span class="o">=</span> <span class="n">nums</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+    <span class="n">st</span><span class="o">.</span><span class="n">add_harmonic_contribution</span><span class="p">(</span><span class="n">test_dict</span><span class="p">,</span> <span class="n">E_harmonic</span><span class="p">,</span> <span class="n">Cv_harmonic</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">test_dict</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">nums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">nums</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">test_dict</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">nums</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">nums</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="path"><a class="viewcode-back" href="../../../tests.stats.html#tests.stats.test_stats.path">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">path</span><span class="p">():</span>
+    <span class="c1"># does this work when deployed?</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">pibronic</span><span class="p">))),</span> <span class="s2">&quot;tests/test_models/&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FS"><a class="viewcode-back" href="../../../tests.stats.html#tests.stats.test_stats.FS">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="k">def</span> <span class="nf">FS</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">id_rho</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

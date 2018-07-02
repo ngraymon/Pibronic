@@ -9,7 +9,7 @@
     <title>pibronic.data.postprocessing &#8212; Pibronic 0.1.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,6 +28,8 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <h1>Source code for pibronic.data.postprocessing</h1><div class="highlight"><pre>
@@ -38,20 +40,21 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="c1"># system imports</span>
-<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
-<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+<span class="c1"># import multiprocessing as mp</span>
+<span class="c1"># import itertools as it</span>
 <span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">subprocess</span>
-<span class="kn">import</span> <span class="nn">socket</span>
+<span class="c1"># import subprocess</span>
+<span class="c1"># import socket</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">glob</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="c1"># import sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span>
 
 <span class="c1"># third party imports</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">newaxis</span> <span class="k">as</span> <span class="n">NEW</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">float64</span> <span class="k">as</span> <span class="n">F64</span>
+<span class="c1"># from numpy import newaxis as NEW</span>
+<span class="c1"># from numpy import float64 as F64</span>
 
 <span class="c1"># local imports</span>
 <span class="c1"># from ..data import vibronic_model_io as vIO</span>
@@ -110,6 +113,122 @@
     <span class="n">list_sos_rho</span> <span class="o">=</span> <span class="n">retrive_sos_sampling_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">list_pimc</span><span class="p">,</span> <span class="n">list_jackknife</span><span class="p">,</span> <span class="n">list_sos_vib</span><span class="p">,</span> <span class="n">list_sos_rho</span></div>
+
+
+<span class="c1"># note that the way the split()&#39;s are coded for all the following extract_ functions</span>
+<span class="c1"># will pose problems if the naming scheme for the files is changed</span>
+<span class="c1"># it might be good to eventually link them to the file_name module in the future</span>
+
+<div class="viewcode-block" id="extract_bead_value_from_trotter_file_path"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_bead_value_from_trotter_file_path">[docs]</a><span class="k">def</span> <span class="nf">extract_bead_value_from_trotter_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says, returns an int &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;trotter_P&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_B&quot;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="extract_trotter_paramater_list"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_trotter_paramater_list">[docs]</a><span class="k">def</span> <span class="nf">extract_trotter_paramater_list</span><span class="p">(</span><span class="n">list_trotter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a list of file-paths to results from trotter calculations and return a dictionary with integer keys representing possible basis sizes, whose corresponding values are lists of all possible bead values for that given basis size. &quot;&quot;&quot;</span>
+    <span class="n">tL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">extract_bead_value_from_trotter_file_path</span><span class="p">,</span> <span class="n">list_trotter</span><span class="p">)</span>
+
+    <span class="n">trotterDict</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">tL</span><span class="p">:</span>
+        <span class="n">trotterDict</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="k">return</span> <span class="n">trotterDict</span></div>
+
+
+<div class="viewcode-block" id="extract_basis_value_from_sos_file_path"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_basis_value_from_sos_file_path">[docs]</a><span class="k">def</span> <span class="nf">extract_basis_value_from_sos_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says, returns an int &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_B&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="extract_sos_basis_paramater_list"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_sos_basis_paramater_list">[docs]</a><span class="k">def</span> <span class="nf">extract_sos_basis_paramater_list</span><span class="p">(</span><span class="n">list_vib</span><span class="p">,</span> <span class="n">list_rho</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a list of file-paths to results from sos calculations (both coupled and rho) and return a list of all the unique &quot;&quot;&quot;</span>
+    <span class="n">cL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">extract_basis_value_from_sos_file_path</span><span class="p">,</span> <span class="n">list_vib</span><span class="p">)</span>
+    <span class="n">sL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">extract_basis_value_from_sos_file_path</span><span class="p">,</span> <span class="n">list_rho</span><span class="p">)</span>
+
+    <span class="n">list_sos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cL</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">sL</span><span class="p">))</span>
+    <span class="n">list_sos</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">list_sos</span></div>
+
+
+<div class="viewcode-block" id="extract_bead_value_from_pimc_file_path"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_bead_value_from_pimc_file_path">[docs]</a><span class="k">def</span> <span class="nf">extract_bead_value_from_pimc_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says, returns an int &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;P&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="extract_bead_paramater_list"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_bead_paramater_list">[docs]</a><span class="k">def</span> <span class="nf">extract_bead_paramater_list</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a list of file-paths to results from pimc calculations and return a list of all the unique bead values&quot;&quot;&quot;</span>
+    <span class="n">pL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">extract_bead_value_from_pimc_file_path</span><span class="p">,</span> <span class="n">list_pimc</span><span class="p">)</span>
+    <span class="n">list_bead</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pL</span><span class="p">))</span>  <span class="c1"># the use of the set object removes all duplicate elements</span>
+    <span class="n">list_bead</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">list_bead</span></div>
+
+
+<div class="viewcode-block" id="extract_temperature_value_from_pimc_file_path"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_temperature_value_from_pimc_file_path">[docs]</a><span class="k">def</span> <span class="nf">extract_temperature_value_from_pimc_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says, returns a float&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_J&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="extract_temperature_paramater_list"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_temperature_paramater_list">[docs]</a><span class="k">def</span> <span class="nf">extract_temperature_paramater_list</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a list of file-paths to results from pimc calculations and return a list of all the unique temperature values (as floats)&quot;&quot;&quot;</span>
+
+    <span class="c1"># this option would be to specifically only select temperatures from thermo files instead of just generally from all output files, it is not clear which is better</span>
+    <span class="c1"># tempL = map(lambda path: int(path.split(&quot;_T&quot;)[1].split(&quot;_thermo&quot;)[0]), list_pimc)</span>
+    <span class="n">tempL</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">extract_temperature_value_from_pimc_file_path</span><span class="p">,</span> <span class="n">list_pimc</span><span class="p">)</span>
+    <span class="n">list_temperature</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tempL</span><span class="p">))</span>  <span class="c1"># the use of the set object removes all duplicate elements</span>
+    <span class="n">list_temperature</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">list_temperature</span></div>
+
+
+<div class="viewcode-block" id="extract_job_value_from_pimc_file_path"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_job_value_from_pimc_file_path">[docs]</a><span class="k">def</span> <span class="nf">extract_job_value_from_pimc_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says, returns an int&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_J&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_data_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="extract_parameter_lists"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_parameter_lists">[docs]</a><span class="k">def</span> <span class="nf">extract_parameter_lists</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">,</span> <span class="n">list_vib</span><span class="p">,</span> <span class="n">list_rho</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; just assume that we directly use the extract_trotter_paramater_list() function for now &quot;&quot;&quot;</span>
+    <span class="n">bL</span> <span class="o">=</span> <span class="n">extract_sos_basis_paramater_list</span><span class="p">(</span><span class="n">list_vib</span><span class="p">,</span> <span class="n">list_rho</span><span class="p">)</span>
+    <span class="n">pL</span> <span class="o">=</span> <span class="n">extract_bead_paramater_list</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">)</span>
+    <span class="n">tL</span> <span class="o">=</span> <span class="n">extract_temperature_paramater_list</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pL</span><span class="p">,</span> <span class="n">tL</span><span class="p">,</span> <span class="n">bL</span></div>
+
+
+<div class="viewcode-block" id="extract_bead_value_from_thermo_file_path"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_bead_value_from_thermo_file_path">[docs]</a><span class="k">def</span> <span class="nf">extract_bead_value_from_thermo_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says, returns an int &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;P&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="extract_temperature_value_from_thermo_file_path"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_temperature_value_from_thermo_file_path">[docs]</a><span class="k">def</span> <span class="nf">extract_temperature_value_from_thermo_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says, returns a float&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_T&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_X&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="extract_sample_value_from_thermo_file_path"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.extract_sample_value_from_thermo_file_path">[docs]</a><span class="k">def</span> <span class="nf">extract_sample_value_from_thermo_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; does what it says, returns an int&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_X&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_thermo&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="prune_results_using_hashes"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.prune_results_using_hashes">[docs]</a><span class="k">def</span> <span class="nf">prune_results_using_hashes</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">list_pimc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a list of file paths (strings) to different results and a FileStructure object</span>
+<span class="sd">    returns a subset of the input list where each returned file path exists and has a</span>
+<span class="sd">    &#39;valid&#39; hash, i.e. the same as in the FileStructure object&quot;&quot;&quot;</span>
+    <span class="n">output_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="n">list_pimc</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">file_path</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s1">&#39;.npz&#39;</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;hash_vib&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">file</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;hash_rho&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">file</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;hash_vib&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_vib</span> <span class="ow">and</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;hash_rho&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_rho</span><span class="p">:</span>
+                    <span class="n">output_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">file_path</span><span class="p">[</span><span class="o">-</span><span class="mi">6</span><span class="p">:]</span> <span class="o">==</span> <span class="s1">&#39;thermo&#39;</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;hash_vib&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;hash_rho&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;hash_vib&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_vib</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;hash_rho&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_rho</span><span class="p">:</span>
+                <span class="n">output_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;file path </span><span class="si">{:s}</span><span class="s2"> undefined&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">output_list</span></div>
 
 
 <div class="viewcode-block" id="retrive_file_paths_for_jackknife"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.retrive_file_paths_for_jackknife">[docs]</a><span class="k">def</span> <span class="nf">retrive_file_paths_for_jackknife</span><span class="p">(</span><span class="n">FS</span><span class="p">):</span>
@@ -207,9 +326,8 @@
     <span class="k">return</span> <span class="n">value_dict</span></div>
 
 
-<div class="viewcode-block" id="load_data"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.load_data">[docs]</a><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">pimc_results</span><span class="p">,</span> <span class="n">rhoArgs</span><span class="p">):</span>
+<div class="viewcode-block" id="load_pimc_data"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.load_pimc_data">[docs]</a><span class="k">def</span> <span class="nf">load_pimc_data</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">pimc_results</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; load data from all files with same P and T&quot;&quot;&quot;</span>
-
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this usuage of FS.template_pimc.format(P=P, T=T, J=&quot;*&quot;) raises a good question about the design!</span>
 <span class="sd">    possible ways to implement:</span>
@@ -222,32 +340,75 @@
     <span class="n">path_data_points</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_pimc</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
     <span class="n">list_of_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">path_data_points</span><span class="p">)]</span>
     <span class="n">pimc_results</span><span class="o">.</span><span class="n">load_multiple_results</span><span class="p">(</span><span class="n">list_of_files</span><span class="p">)</span>
-    <span class="n">path_sos</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_sos_rho</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">B</span><span class="o">=</span><span class="n">B</span><span class="p">)</span>
+
+    <span class="c1"># TODO - add support for passing in the optional desired_number_of_samples paramter to the load_multiple_results method</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="load_analytic_data"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.load_analytic_data">[docs]</a><span class="k">def</span> <span class="nf">load_analytic_data</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">analytic</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; load data from analytic_results.txt with same T into the dictionary analytic&quot;&quot;&quot;</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_analytic_rho</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_sos</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">rho_file</span><span class="p">:</span>
-            <span class="n">rho_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">rho_file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;This file doesn&#39;t exist:</span><span class="se">\n</span><span class="si">{path:s}</span><span class="s2">&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">in_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+            <span class="c1"># make sure the analytic data is up to date!!</span>
+            <span class="k">assert</span> <span class="n">in_dict</span><span class="p">[</span><span class="s2">&quot;hash_vib&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_vib</span><span class="p">,</span> <span class="s2">&quot;wrong vib hash&quot;</span>
+            <span class="k">assert</span> <span class="n">in_dict</span><span class="p">[</span><span class="s2">&quot;hash_rho&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_rho</span><span class="p">,</span> <span class="s2">&quot;wrong rho hash&quot;</span>
+            <span class="c1"># TODO - should make a class function in a new module that handles analytic stuff ??</span>
+            <span class="n">temperature</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">temperature</span> <span class="ow">in</span> <span class="n">in_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s2">&quot;no analytical results for temperature </span><span class="si">{:s}</span><span class="s2"> in file </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+            <span class="n">analytic</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_dict</span><span class="p">[</span><span class="n">temperature</span><span class="p">][</span><span class="s2">&quot;Z_sampling&quot;</span><span class="p">]</span>
+            <span class="n">analytic</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_dict</span><span class="p">[</span><span class="n">temperature</span><span class="p">][</span><span class="s2">&quot;E_sampling&quot;</span><span class="p">]</span>
+            <span class="n">analytic</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_dict</span><span class="p">[</span><span class="n">temperature</span><span class="p">][</span><span class="s2">&quot;Cv_sampling&quot;</span><span class="p">]</span>
+
+            <span class="n">analytic</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">analytic</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">in_dict</span><span class="p">[</span><span class="n">temperature</span><span class="p">][</span><span class="s2">&quot;Z_sampling+beta&quot;</span><span class="p">]</span>
+            <span class="n">analytic</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">analytic</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">in_dict</span><span class="p">[</span><span class="n">temperature</span><span class="p">][</span><span class="s2">&quot;Z_sampling-beta&quot;</span><span class="p">]</span>
+
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="c1"># skip if we cannot obtain all the necessary data</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipped data from </span><span class="si">{:s}</span><span class="s2"> at temperature </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">T</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="n">err</span>  <span class="c1"># we cannot proceed at the moment since stats.py needs this file</span>
+        <span class="k">return</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="load_rho_sos_data"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.postprocessing.load_rho_sos_data">[docs]</a><span class="k">def</span> <span class="nf">load_rho_sos_data</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">rho_args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; load data from all files with same P and T into the dictionary rho_args&quot;&quot;&quot;</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_sos_rho</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">B</span><span class="o">=</span><span class="n">B</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;This file doesn&#39;t exist:</span><span class="se">\n</span><span class="si">{path:s}</span><span class="s2">&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">rho_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
             <span class="c1"># TODO - should make a class function in a new module that handles sos stuff ??</span>
             <span class="n">input_temp_index</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
             <span class="c1"># make sure the temperature matches</span>
             <span class="k">assert</span> <span class="n">T</span> <span class="o">==</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">],</span> <span class="s2">&quot;different temperatures&quot;</span>
 
-            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
-            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;E_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
-            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Cv_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rho_args</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rho_args</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;E_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rho_args</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Cv_sampling&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
 
-            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling+beta&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
-            <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rhoArgs</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling-beta&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rho_args</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_args</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling+beta&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
+            <span class="n">rho_args</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_args</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">rho_dict</span><span class="p">[</span><span class="s2">&quot;Z_sampling-beta&quot;</span><span class="p">][</span><span class="n">input_temp_index</span><span class="p">]</span>
 
     <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
         <span class="c1"># skip if we cannot obtain all the necessary data</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipped </span><span class="si">{:}</span><span class="s2"> and </span><span class="si">{:}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path_data_points</span><span class="p">,</span> <span class="n">path_sos</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipped </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
         <span class="k">return</span>
 
     <span class="k">return</span></div>
 </pre></div>
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -280,8 +441,8 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
 

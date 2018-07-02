@@ -1,0 +1,787 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.vibronic.vibronic_model_io &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.vibronic.vibronic_model_io</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;vibronic_model_io.py should handle the majority of file I/O&quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">float64</span> <span class="k">as</span> <span class="n">F64</span>
+<span class="kn">from</span> <span class="nn">numpy.random</span> <span class="k">import</span> <span class="n">uniform</span> <span class="k">as</span> <span class="n">Uniform</span>
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">..log_conf</span> <span class="k">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_structure</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_name</span>
+<span class="kn">from</span> <span class="nn">.vibronic_model_keys</span> <span class="k">import</span> <span class="n">VibronicModelKeys</span> <span class="k">as</span> <span class="n">VMK</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">model_auto</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">model_op</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">model_h</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">suppress</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Print Precision!</span>
+
+<span class="c1"># TODO - made the design decision that if a key is not present in the json file that implies all the values are zero</span>
+<span class="c1"># - need to make sure this is enforced across all the code</span>
+
+
+<div class="viewcode-block" id="model_shape_dict"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.model_shape_dict">[docs]</a><span class="k">def</span> <span class="nf">model_shape_dict</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file</span>
+<span class="sd">    Takes A - number of surfaces and N - number of modes</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dictionary</span> <span class="o">=</span> <span class="p">{</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">:</span>  <span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">:</span>  <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G3</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G4</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">dictionary</span></div>
+
+
+<div class="viewcode-block" id="sample_shape_dict"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.sample_shape_dict">[docs]</a><span class="k">def</span> <span class="nf">sample_shape_dict</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file</span>
+<span class="sd">    Takes A - number of surfaces and N - number of modes</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dictionary</span> <span class="o">=</span> <span class="p">{</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">:</span>  <span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">:</span>  <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G3</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G4</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                  <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">dictionary</span></div>
+
+
+<div class="viewcode-block" id="model_array_diagonal_in_surfaces"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.model_array_diagonal_in_surfaces">[docs]</a><span class="k">def</span> <span class="nf">model_array_diagonal_in_surfaces</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; boolean function that returns true if the provided numpy array is diagonal or symmetric in the surface dimension</span>
+<span class="sd">    where the surface dimensions (A) are by convention the last two dimensions</span>
+<span class="sd">    this function assumes that the array is properly formatted</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">new_dims</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+    <span class="c1"># swap the last two dimensions, which by convention are the surface dimensions</span>
+    <span class="n">new_dims</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">new_dims</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_dims</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">new_dims</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">array</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">new_dims</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="model_zeros_template_json_dict"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.model_zeros_template_json_dict">[docs]</a><span class="k">def</span> <span class="nf">model_zeros_template_json_dict</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a dictionary that is a valid model, where all values (other than states and modes) are set to 0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">model_shape_dict</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+    <span class="n">dictionary</span> <span class="o">=</span> <span class="p">{</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">N</span><span class="p">:</span> <span class="n">N</span><span class="p">,</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">A</span><span class="p">:</span> <span class="n">A</span><span class="p">,</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G3</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">),</span>
+                  <span class="n">VMK</span><span class="o">.</span><span class="n">G4</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">),</span>
+                  <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">dictionary</span></div>
+
+
+<div class="viewcode-block" id="verify_model_parameters"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.verify_model_parameters">[docs]</a><span class="k">def</span> <span class="nf">verify_model_parameters</span><span class="p">(</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;make sure the provided model parameters follow the file conventions&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">VMK</span><span class="o">.</span><span class="n">N</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;need the number of modes&quot;</span>
+    <span class="k">assert</span> <span class="n">VMK</span><span class="o">.</span><span class="n">A</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;need the number of surfaces&quot;</span>
+
+    <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">_extract_dimensions_from_dictionary</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">shape_dict</span> <span class="o">=</span> <span class="n">model_shape_dict</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">shape_dict</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">shape_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> have incorrect shape&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Found key </span><span class="si">{key}</span><span class="s2"> which is not present in the default dictionary&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="verify_sample_parameters"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.verify_sample_parameters">[docs]</a><span class="k">def</span> <span class="nf">verify_sample_parameters</span><span class="p">(</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;make sure the provided sample parameters follow the file conventions&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">VMK</span><span class="o">.</span><span class="n">N</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;need the number of modes&quot;</span>
+    <span class="k">assert</span> <span class="n">VMK</span><span class="o">.</span><span class="n">A</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;need the number of surfaces&quot;</span>
+
+    <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">_extract_dimensions_from_dictionary</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">shape_dict</span> <span class="o">=</span> <span class="n">sample_shape_dict</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">shape_dict</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">shape_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> have incorrect shape&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Found key </span><span class="si">{key}</span><span class="s2"> which is not present in the default dictionary&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span></div>
+
+
+<span class="k">def</span> <span class="nf">_hash</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;creates a sha512 hash of the input string and returns the byte representation&quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha512</span><span class="p">()</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">m</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="create_model_hash"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_model_hash">[docs]</a><span class="k">def</span> <span class="nf">create_model_hash</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; create a has of the coupled_model.json file&#39;s contents</span>
+<span class="sd">    this is used to confirm that result files were generated for the current model and not an older one</span>
+<span class="sd">    uses a FileStructure or an absolute path to the file&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">FS</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;no arguments provided&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">_hash</span><span class="p">(</span><span class="n">string</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_sampling_hash"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_sampling_hash">[docs]</a><span class="k">def</span> <span class="nf">create_sampling_hash</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; create a has of the sampling_model.json file&#39;s contents</span>
+<span class="sd">    this is used to confirm that result files were generated for the current model and not an older one</span>
+<span class="sd">    uses a FileStructure or an absolute path to the file&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">FS</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;no arguments provided&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_model</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">_hash</span><span class="p">(</span><span class="n">string</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_default_root"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.generate_default_root">[docs]</a><span class="k">def</span> <span class="nf">generate_default_root</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;backwards compatibility fix for functions that rely on having a predefined default_root&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;/work/ngraymon/pimc/&quot;</span></div>
+
+
+<div class="viewcode-block" id="pretty_print_model"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.pretty_print_model">[docs]</a><span class="k">def</span> <span class="nf">pretty_print_model</span><span class="p">(</span><span class="n">id_data</span><span class="p">,</span> <span class="n">unitsOfeV</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;one method of printing the models in a human readable format - outdated and should probably be removed or modified&quot;&quot;&quot;</span>
+
+    <span class="c1"># import pandas as pd</span>
+    <span class="kn">from</span> <span class="nn">xarray</span> <span class="k">import</span> <span class="n">DataArray</span> <span class="k">as</span> <span class="n">dArr</span>
+
+    <span class="n">path_root</span> <span class="o">=</span> <span class="n">generate_default_root</span><span class="p">()</span>
+    <span class="n">FS</span> <span class="o">=</span> <span class="n">file_structure</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">)</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="n">load_model_from_JSON</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">)</span>
+
+    <span class="c1"># parameter values</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">A</span><span class="p">]</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">N</span><span class="p">]</span>
+    <span class="n">States</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+    <span class="n">Modes</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+
+    <span class="c1"># formatting</span>
+    <span class="n">a_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">A</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+    <span class="n">b_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;b</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">A</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+    <span class="n">i_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;i</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+    <span class="n">j_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;j</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+
+    <span class="c1"># label the arrays for readability</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+    <span class="n">omega</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+    <span class="n">linear</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+    <span class="n">quadratic</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+
+    <span class="c1"># by default convert the output to wavenumbers</span>
+    <span class="n">conversionFactor</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">unitsOfeV</span> <span class="k">else</span> <span class="n">constants</span><span class="o">.</span><span class="n">wavenumber_per_eV</span>
+
+    <span class="c1"># stringify the lists</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Modes</span><span class="p">:</span>
+        <span class="n">omega</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">conversionFactor</span>
+        <span class="n">omega</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">omega</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">States</span><span class="p">,</span> <span class="n">States</span><span class="p">):</span>
+        <span class="n">energy</span><span class="p">[</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">*=</span> <span class="n">conversionFactor</span>
+        <span class="n">energy</span><span class="p">[</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">energy</span><span class="p">[</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">States</span><span class="p">,</span> <span class="n">States</span><span class="p">,</span> <span class="n">Modes</span><span class="p">):</span>
+        <span class="n">linear</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">*=</span> <span class="n">conversionFactor</span>
+        <span class="n">linear</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">linear</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">States</span><span class="p">,</span> <span class="n">States</span><span class="p">,</span> <span class="n">Modes</span><span class="p">,</span> <span class="n">Modes</span><span class="p">):</span>
+        <span class="n">quadratic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">*=</span> <span class="n">conversionFactor</span>
+        <span class="n">quadratic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">quadratic</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">b</span><span class="p">])</span>
+
+    <span class="c1"># load the data into xarray&#39;s DataArrays</span>
+    <span class="n">omegaArray</span> <span class="o">=</span> <span class="n">dArr</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">,</span>
+                      <span class="n">coords</span><span class="o">=</span><span class="p">[</span><span class="n">i_labels</span><span class="p">],</span>
+                      <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mode i&#39;</span><span class="p">],)</span>
+
+    <span class="n">energyArray</span> <span class="o">=</span> <span class="n">dArr</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">,</span>
+                       <span class="n">coords</span><span class="o">=</span><span class="p">[</span><span class="n">a_labels</span><span class="p">,</span> <span class="n">b_labels</span><span class="p">],</span>
+                       <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;surface a&#39;</span><span class="p">,</span> <span class="s1">&#39;surface b&#39;</span><span class="p">],)</span>
+
+    <span class="n">linArray</span> <span class="o">=</span> <span class="n">dArr</span><span class="p">(</span><span class="n">linear</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">,</span>
+                    <span class="n">coords</span><span class="o">=</span><span class="p">[</span><span class="n">i_labels</span><span class="p">,</span> <span class="n">a_labels</span><span class="p">,</span> <span class="n">b_labels</span><span class="p">],</span>
+                    <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mode i&#39;</span><span class="p">,</span> <span class="s1">&#39;surface a&#39;</span><span class="p">,</span> <span class="s1">&#39;surface b&#39;</span><span class="p">],)</span>
+
+    <span class="n">quadArray</span> <span class="o">=</span> <span class="n">dArr</span><span class="p">(</span><span class="n">quadratic</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">,</span>
+                     <span class="n">coords</span><span class="o">=</span><span class="p">[</span><span class="n">i_labels</span><span class="p">,</span> <span class="n">j_labels</span><span class="p">,</span> <span class="n">a_labels</span><span class="p">,</span> <span class="n">b_labels</span><span class="p">],</span>
+                     <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mode i&#39;</span><span class="p">,</span> <span class="s1">&#39;mode j &#39;</span><span class="p">,</span> <span class="s1">&#39;surface a&#39;</span><span class="p">,</span> <span class="s1">&#39;surface b&#39;</span><span class="p">],)</span>
+
+    <span class="c1"># print the data, relying on panda&#39;s DataArrays to printin a human legible manner</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">omegaArray</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">(),</span>
+          <span class="n">energyArray</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">(),</span>
+          <span class="n">linArray</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">(),</span>
+          <span class="n">quadArray</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">(),</span>
+          <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+          <span class="p">)</span>
+
+    <span class="k">return</span></div>
+
+
+<span class="k">def</span> <span class="nf">_generate_linear_terms</span><span class="p">(</span><span class="n">linear_terms</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">displacement</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; generate linear terms that are &#39;reasonable&#39; &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">]):</span>
+        <span class="n">upTri</span> <span class="o">=</span> <span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="n">displacement</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">displacement</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">])</span>
+        <span class="c1"># force the linear terms to be symmetric</span>
+        <span class="n">linear_terms</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">upTri</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">upTri</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span>
+
+
+<span class="k">def</span> <span class="nf">_generate_quadratic_terms</span><span class="p">(</span><span class="n">quadratic_terms</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">displacement</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; generate quadratic terms that are &#39;reasonable&#39; &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">combinations_with_replacement</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">upTri</span> <span class="o">=</span> <span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="n">displacement</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">displacement</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">])</span>
+        <span class="c1"># force the quadratic terms to be symmetric</span>
+        <span class="n">quadratic_terms</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">upTri</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">upTri</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">quadratic_terms</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">upTri</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">upTri</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span>
+
+
+<span class="k">def</span> <span class="nf">_remove_coupling_from_generated_model</span><span class="p">(</span><span class="n">modes</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">linear_terms</span><span class="p">,</span> <span class="n">quadratic_terms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+    <span class="n">energy</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">energy</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">modes</span><span class="p">:</span>
+        <span class="n">linear_terms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">linear_terms</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">modes</span><span class="p">,</span> <span class="n">modes</span><span class="p">):</span>
+        <span class="n">quadratic_terms</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">quadratic_terms</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="o">...</span><span class="p">]))</span>
+    <span class="k">return</span>
+
+
+<div class="viewcode-block" id="generate_vibronic_model_data"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.generate_vibronic_model_data">[docs]</a><span class="k">def</span> <span class="nf">generate_vibronic_model_data</span><span class="p">(</span><span class="n">paramDict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;redo this one but otherwise its fine returns e,w,l,q filled with appropriate values&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">paramDict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">paramDict</span> <span class="o">=</span> <span class="p">{</span>   <span class="c1"># default values</span>
+                        <span class="s1">&#39;frequency_range&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">],</span>
+                        <span class="s1">&#39;energy_range&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">],</span>
+                        <span class="s1">&#39;quadratic_scaling&#39;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">,</span>
+                        <span class="s1">&#39;linear_scaling&#39;</span><span class="p">:</span> <span class="mf">0.04</span><span class="p">,</span>
+                        <span class="s1">&#39;nonadiabatic&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s1">&#39;numStates&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                        <span class="s1">&#39;numModes&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                        <span class="p">}</span>
+    <span class="c1"># readability</span>
+    <span class="n">minE</span><span class="p">,</span> <span class="n">maxE</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;energy_range&#39;</span><span class="p">]</span>
+    <span class="n">minFreq</span><span class="p">,</span> <span class="n">maxFreq</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;frequency_range&#39;</span><span class="p">]</span>
+
+    <span class="c1"># ranges for convenience</span>
+    <span class="n">numModes</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;numModes&#39;</span><span class="p">]</span>
+    <span class="c1"># numStates = paramDict[&#39;numStates&#39;]</span>
+    <span class="n">Modes</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">numModes</span><span class="p">)</span>
+    <span class="c1"># States = range(numStates)</span>
+
+    <span class="c1"># generate the array dimensions</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">model_shape_dict</span><span class="p">(</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;numStates&#39;</span><span class="p">],</span> <span class="n">numModes</span><span class="p">)</span>
+
+    <span class="c1"># initialize arrays</span>
+    <span class="n">frequencies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">])</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">])</span>
+    <span class="n">linear_terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">])</span>
+    <span class="n">quadratic_terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">])</span>
+
+    <span class="c1"># generate frequencies</span>
+    <span class="n">frequencies</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minFreq</span><span class="p">,</span> <span class="n">maxFreq</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">numModes</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
+
+    <span class="c1"># generate energy</span>
+    <span class="n">energy</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">Uniform</span><span class="p">(</span><span class="n">minE</span><span class="p">,</span> <span class="n">maxE</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">])</span>
+    <span class="c1"># force the energy to be symmetric</span>
+    <span class="n">energy</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="c1"># calculate the linear displacement</span>
+    <span class="n">l_shift</span> <span class="o">=</span> <span class="n">frequencies</span> <span class="o">/</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;linear_scaling&#39;</span><span class="p">]</span>
+    <span class="n">_generate_linear_terms</span><span class="p">(</span><span class="n">linear_terms</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">l_shift</span><span class="p">)</span>
+
+    <span class="c1"># calculate the quadratic displacement</span>
+    <span class="n">q_shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">frequencies</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">))</span> <span class="o">/</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;quadratic_scaling&#39;</span><span class="p">]</span>
+    <span class="n">_generate_quadratic_terms</span><span class="p">(</span><span class="n">quadratic_terms</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">q_shift</span><span class="p">,</span> <span class="n">Modes</span><span class="p">)</span>
+
+    <span class="c1"># if we are building a harmonic model then zero out all off-diagonal entries</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;nonadiabatic&#39;</span><span class="p">]:</span>
+        <span class="n">_remove_coupling_from_generated_model</span><span class="p">(</span><span class="n">Modes</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">linear_terms</span><span class="p">,</span> <span class="n">quadratic_terms</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">model_array_diagonal_in_surfaces</span><span class="p">(</span><span class="n">energy</span><span class="p">),</span> <span class="s2">&quot;energy not symmetric in surfaces&quot;</span>
+    <span class="k">assert</span> <span class="n">model_array_diagonal_in_surfaces</span><span class="p">(</span><span class="n">linear_terms</span><span class="p">),</span> <span class="s2">&quot;linear_terms not symmetric in surfaces&quot;</span>
+    <span class="k">assert</span> <span class="n">model_array_diagonal_in_surfaces</span><span class="p">(</span><span class="n">quadratic_terms</span><span class="p">),</span> <span class="s2">&quot;quadratic_terms not symmetric in surfaces&quot;</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">quadratic_terms</span><span class="p">,</span> <span class="n">quadratic_terms</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span> <span class="s2">&quot;quadratic_terms not symmetric in surfaces&quot;</span>
+
+    <span class="c1"># TODO - which of these returns is the correct one to use?</span>
+    <span class="c1"># # and we are done</span>
+    <span class="c1"># return_dict = {VMK.N: numModes,</span>
+    <span class="c1">#                VMK.A: numStates,</span>
+    <span class="c1">#                VMK.E: energy,</span>
+    <span class="c1">#                VMK.w: frequencies,</span>
+    <span class="c1">#                VMK.G1: linear_terms,</span>
+    <span class="c1">#                VMK.G2: quadratic_terms,</span>
+    <span class="c1">#                }</span>
+    <span class="c1"># return return_dict</span>
+
+    <span class="k">return</span> <span class="n">energy</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">,</span> <span class="n">linear_terms</span><span class="p">,</span> <span class="n">quadratic_terms</span></div>
+
+
+<div class="viewcode-block" id="read_model_h_file"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.read_model_h_file">[docs]</a><span class="k">def</span> <span class="nf">read_model_h_file</span><span class="p">(</span><span class="n">path_file_h</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to maintain functionality - possible remove in the future&quot;&quot;&quot;</span>
+    <span class="n">model_h</span><span class="o">.</span><span class="n">read_model_h_file</span><span class="p">(</span><span class="n">path_file_h</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="read_model_op_file"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.read_model_op_file">[docs]</a><span class="k">def</span> <span class="nf">read_model_op_file</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to maintain functionality - possible remove in the future&quot;&quot;&quot;</span>
+    <span class="n">model_op</span><span class="o">.</span><span class="n">read_model_op_file</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="create_coupling_from_h_file"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_coupling_from_h_file">[docs]</a><span class="k">def</span> <span class="nf">create_coupling_from_h_file</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">path_file_h</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;assumes that the path_file_h is in electronic_structure&quot;&quot;&quot;</span>
+    <span class="c1"># A, N, E, w, l, q = read_model_h_file(path_file_h)</span>
+    <span class="n">model_dict</span> <span class="o">=</span> <span class="n">read_model_h_file</span><span class="p">(</span><span class="n">path_file_h</span><span class="p">)</span>
+    <span class="n">save_model_to_JSON</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">model_dict</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created </span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">from</span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">path_file_h</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span></div>
+
+
+<div class="viewcode-block" id="create_coupling_from_op_file"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_coupling_from_op_file">[docs]</a><span class="k">def</span> <span class="nf">create_coupling_from_op_file</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">path_file_op</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;assumes that the path_file_op is in electronic_structure&quot;&quot;&quot;</span>
+    <span class="c1"># A, N, E, w, l, q = read_model_h_file(path_file_op)</span>
+    <span class="n">model_dict</span> <span class="o">=</span> <span class="n">read_model_op_file</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">)</span>
+    <span class="n">save_model_to_JSON</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">model_dict</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created </span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">from</span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">path_file_op</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span></div>
+
+
+<div class="viewcode-block" id="create_coupling_from_op_hyperlink"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_coupling_from_op_hyperlink">[docs]</a><span class="k">def</span> <span class="nf">create_coupling_from_op_hyperlink</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;assumes that the path_file_op is in electronic_structure&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">urllib</span>
+
+    <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;This function is currently unfinished&quot;</span>
+
+    <span class="n">request</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="c1"># response is now a string you can search through containing the page&#39;s html</span>
+        <span class="c1"># A, N, E, w, l, q = read_model_h_file(path_file_op)</span>
+        <span class="c1"># args = read_model_op_file(path_file_op)  # need to make a choice about the function here</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">save_model_to_JSON</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created </span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">from</span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">url</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="c1"># The url wasn&#39;t valid</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Incorrect https link </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">url</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="read_model_auto_file"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.read_model_auto_file">[docs]</a><span class="k">def</span> <span class="nf">read_model_auto_file</span><span class="p">(</span><span class="n">path_file_auto</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to maintain functionality - possible remove in the future&quot;&quot;&quot;</span>
+    <span class="n">model_auto</span><span class="o">.</span><span class="n">read_model_auto_file</span><span class="p">(</span><span class="n">path_file_auto</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<span class="k">def</span> <span class="nf">_extract_dimensions_from_dictionary</span><span class="p">(</span><span class="n">dictionary</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">N</span><span class="p">])</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">A</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">A</span><span class="p">,</span> <span class="n">N</span>
+
+
+<span class="k">def</span> <span class="nf">_extract_dimensions_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;invalid path:</span><span class="se">\n</span><span class="si">{path:s}</span><span class="s2">&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">input_dictionary</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="n">VMK</span><span class="o">.</span><span class="n">change_dictionary_keys_from_strings_to_enum_members</span><span class="p">(</span><span class="n">input_dictionary</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_extract_dimensions_from_dictionary</span><span class="p">(</span><span class="n">input_dictionary</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="extract_dimensions_of_coupled_model"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.extract_dimensions_of_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">extract_dimensions_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">FS</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;no arguments provided&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span>
+    <span class="k">return</span> <span class="n">_extract_dimensions_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extract_dimensions_of_sampling_model"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.extract_dimensions_of_sampling_model">[docs]</a><span class="k">def</span> <span class="nf">extract_dimensions_of_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot; TODO - it might be nice to have the ability to specify id_data or id_rho, although this should be done in a way that queries file_structure so as to not &quot;leak&quot; the file structure out to other areas of the code</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">FS</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;no arguments provided&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_model</span>
+    <span class="k">return</span> <span class="n">_extract_dimensions_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_save_to_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">):</span>
+    <span class="n">VMK</span><span class="o">.</span><span class="n">change_dictionary_keys_from_enum_members_to_strings</span><span class="p">(</span><span class="n">dictionary</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot; converts each numpy array to a list so that json can serialize them properly&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Value </span><span class="si">{value}</span><span class="s2"> with Key </span><span class="si">{key}</span><span class="s2"> does not appear to be an ndarray&quot;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">target_file</span><span class="p">:</span>
+        <span class="n">target_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">dictionary</span><span class="p">))</span>
+
+    <span class="k">return</span>
+
+
+<div class="viewcode-block" id="save_model_to_JSON"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.save_model_to_JSON">[docs]</a><span class="k">def</span> <span class="nf">save_model_to_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper for _save_to_JSON</span>
+<span class="sd">    calls verify_model_parameters() before calling _save_to_JSON()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">verify_model_parameters</span><span class="p">(</span><span class="n">dictionary</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Saving model to </span><span class="si">{path:s}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">_save_to_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="save_sample_to_JSON"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.save_sample_to_JSON">[docs]</a><span class="k">def</span> <span class="nf">save_sample_to_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper for _save_to_JSON</span>
+<span class="sd">    calls verify_sample_parameters() before calling _save_to_JSON()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">verify_sample_parameters</span><span class="p">(</span><span class="n">dictionary</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Saving sample to </span><span class="si">{path:s}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">_save_to_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<span class="k">def</span> <span class="nf">_load_inplace_from_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;overwrites all provided values in place with the values stored in the .json file located at path&quot;&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">input_dictionary</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+    <span class="n">VMK</span><span class="o">.</span><span class="n">change_dictionary_keys_from_strings_to_enum_members</span><span class="p">(</span><span class="n">input_dictionary</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)):</span>
+            <span class="c1"># this is a safer way of forcing the input arrays that have no corresponding key in the input_dictionary to have zero values</span>
+            <span class="c1"># although this might not be necessary, it is a safer alternative at the moment</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_dictionary</span><span class="p">:</span>
+                <span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">input_dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
+    <span class="k">return</span>
+
+
+<span class="k">def</span> <span class="nf">_load_from_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;returns a dictionary filled with the values stored in the .json file located at path&quot;&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">input_dictionary</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+    <span class="n">VMK</span><span class="o">.</span><span class="n">change_dictionary_keys_from_strings_to_enum_members</span><span class="p">(</span><span class="n">input_dictionary</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">input_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># if we don&#39;t predefine the shape, can we run into problems?</span>
+            <span class="n">input_dictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
+
+    <span class="c1"># special case to always create an array of energies that are 0.0 if not provided in the .json file</span>
+    <span class="k">if</span> <span class="n">VMK</span><span class="o">.</span><span class="n">E</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_dictionary</span><span class="p">:</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">_extract_dimensions_from_dictionary</span><span class="p">(</span><span class="n">input_dictionary</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">model_shape_dict</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+        <span class="n">input_dictionary</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
+
+    <span class="c1"># TODO - design decision about which arrays to fill with zeros by default?</span>
+
+    <span class="k">return</span> <span class="n">input_dictionary</span>
+
+
+<div class="viewcode-block" id="load_model_from_JSON"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.load_model_from_JSON">[docs]</a><span class="k">def</span> <span class="nf">load_model_from_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path</span>
+
+<span class="sd">    if kwargs is provided then all values are overwritten (in place) with the values stored in the .json file located at path</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Loading model from </span><span class="si">{path:s}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># no arrays were provided so return newly created arrays after filling them with the approriate values</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">dictionary</span><span class="p">):</span>
+        <span class="n">new_model_dict</span> <span class="o">=</span> <span class="n">_load_from_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="c1"># TODO - we might want to make sure that none of the values in the dictionary have all zero values or are None</span>
+
+        <span class="n">verify_model_parameters</span><span class="p">(</span><span class="n">new_model_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_model_dict</span>
+
+    <span class="c1"># arrays were provided so fill them with the appropriate values</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">verify_model_parameters</span><span class="p">(</span><span class="n">dictionary</span><span class="p">)</span>
+        <span class="n">_load_inplace_from_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">)</span>
+        <span class="c1"># check twice? might as well be cautious for the moment until test cases are written</span>
+        <span class="n">verify_model_parameters</span><span class="p">(</span><span class="n">dictionary</span><span class="p">)</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="load_sample_from_JSON"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.load_sample_from_JSON">[docs]</a><span class="k">def</span> <span class="nf">load_sample_from_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path</span>
+
+<span class="sd">    if kwargs is provided then all values are overwritten (in place) with the values stored in the .json file located at path</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Loading rho model (sampling model) from </span><span class="si">{path:s}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># no arrays were provided so return newly created arrays after filling them with the approriate values</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">dictionary</span><span class="p">):</span>
+        <span class="n">new_model_dict</span> <span class="o">=</span> <span class="n">_load_from_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="c1"># TODO - we might want to make sure that none of the values in the dictionary have all zero values or are None</span>
+
+        <span class="n">verify_sample_parameters</span><span class="p">(</span><span class="n">new_model_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_model_dict</span>
+
+    <span class="c1"># arrays were provided so fill them with the appropriate values</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">verify_sample_parameters</span><span class="p">(</span><span class="n">dictionary</span><span class="p">)</span>
+        <span class="n">_load_inplace_from_JSON</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">)</span>
+        <span class="c1"># check twice? might as well be cautious for the moment until test cases are written</span>
+        <span class="n">verify_sample_parameters</span><span class="p">(</span><span class="n">dictionary</span><span class="p">)</span>
+    <span class="k">return</span></div>
+<span class="c1"># ------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="remove_coupling_from_model"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.remove_coupling_from_model">[docs]</a><span class="k">def</span> <span class="nf">remove_coupling_from_model</span><span class="p">(</span><span class="n">path_source</span><span class="p">,</span> <span class="n">path_destination</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;reads in a model from path_source whose values can have dimensionality (..., A, A)</span>
+<span class="sd">    creates a new model whose values have dimensionality (..., A) from the diagonal of the A dimension of the input model</span>
+<span class="sd">    saves the new model to the provided path_destination&quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="n">load_model_from_JSON</span><span class="p">(</span><span class="n">path_source</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">ndims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">axis1</span><span class="o">=</span><span class="n">ndims</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="n">ndims</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">save_sample_to_JSON</span><span class="p">(</span><span class="n">path_destination</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="create_harmonic_model"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_harmonic_model">[docs]</a><span class="k">def</span> <span class="nf">create_harmonic_model</span><span class="p">(</span><span class="n">FS</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper function to refresh harmonic model&quot;&quot;&quot;</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">coupled_model</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">harmonic_model</span>
+    <span class="n">remove_coupling_from_model</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Created harmonic model </span><span class="si">{:s}</span><span class="s2"> by removing coupling from </span><span class="si">{:s}</span><span class="s2">&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">source</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dest</span></div>
+
+
+<div class="viewcode-block" id="create_basic_sampling_model"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_basic_sampling_model">[docs]</a><span class="k">def</span> <span class="nf">create_basic_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper function to make the simplest sampling model&quot;&quot;&quot;</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">create_harmonic_model</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sampling_model</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Sampling model </span><span class="si">{:s}</span><span class="s2"> already exists!&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dest</span><span class="p">))</span>
+
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Created sampling model </span><span class="si">{:s}</span><span class="s2"> by copying </span><span class="si">{:s}</span><span class="s2">&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">source</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dest</span></div>
+
+
+<div class="viewcode-block" id="create_random_orthonormal_matrix"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_random_orthonormal_matrix">[docs]</a><span class="k">def</span> <span class="nf">create_random_orthonormal_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;returns a orthonormal matrix, just a wrapper for scipy.stats.ortho_group.rvs()&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">ortho_group</span>
+    <span class="k">return</span> <span class="n">ortho_group</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">A</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_orthonormal_matrix_lambda_close_to_identity"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_orthonormal_matrix_lambda_close_to_identity">[docs]</a><span class="k">def</span> <span class="nf">create_orthonormal_matrix_lambda_close_to_identity</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">tuning_parameter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;returns a orthonormal matrix which is identity if lambda is 0</span>
+<span class="sd">    the larger the value of lambda the &#39;farther&#39; away the matrix is from identity</span>
+<span class="sd">    takes: number of surfaces and lambda value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="k">import</span> <span class="n">expm</span>
+
+    <span class="c1"># TODO - this function should probably be in another module that provides general math</span>
+    <span class="c1"># functions for all modules</span>
+
+    <span class="c1"># scale the tuning parameter by the size of the matrix</span>
+    <span class="n">tuning_parameter</span> <span class="o">/=</span> <span class="n">A</span>
+    <span class="c1"># create a random matrix</span>
+    <span class="n">rand_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
+    <span class="c1"># generate a skew symmetric matrix</span>
+    <span class="n">skew_matrix</span> <span class="o">=</span> <span class="n">rand_matrix</span> <span class="o">-</span> <span class="n">rand_matrix</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># generate an orthonormal matrix, which depends on the tuning parameter</span>
+    <span class="n">ortho_matrix</span> <span class="o">=</span> <span class="n">expm</span><span class="p">(</span><span class="n">tuning_parameter</span> <span class="o">*</span> <span class="n">skew_matrix</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">ortho_matrix</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ortho_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">A</span><span class="p">)),</span> <span class="s2">&quot;matrix is not orthonormal&quot;</span>
+    <span class="k">return</span> <span class="n">ortho_matrix</span></div>
+
+
+<div class="viewcode-block" id="create_fake_coupled_model"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.vibronic_model_io.create_fake_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">create_fake_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">tuning_parameter</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix</span>
+<span class="sd">    for a tuning_parameter of 0 the transformation matrix (U) is identity</span>
+<span class="sd">    the larger the value of tuning_parameter the &quot;farther&quot; away from identity U becomes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">),</span> <span class="s2">&quot;coupled_model file doesn&#39;t exist!&quot;</span>
+
+    <span class="n">model_dict</span> <span class="o">=</span> <span class="n">load_model_from_JSON</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">)</span>
+    <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">_extract_dimensions_from_dictionary</span><span class="p">(</span><span class="n">model_dict</span><span class="p">)</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">create_orthonormal_matrix_lambda_close_to_identity</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">tuning_parameter</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="n">model_dict</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">,</span> <span class="n">VMK</span><span class="o">.</span><span class="n">key_list</span><span class="p">()):</span>
+
+        <span class="c1"># the array of coefficients that we are going to modify</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">model_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+
+        <span class="c1"># TODO - do we really need to assert this? should this already have been called when we loaded the model?</span>
+        <span class="k">assert</span> <span class="n">model_array_diagonal_in_surfaces</span><span class="p">(</span><span class="n">array</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2"> not diagonal in surfaces&quot;</span>
+        <span class="sd">&quot;&quot;&quot; we assert if the array is diagonal in modes inside each if statement because the checks are all unique, the surface check is the same because all arrays have the same structure where the last two dimensions are the surface dimensions &quot;&quot;&quot;</span>
+
+        <span class="c1"># simulating a case statement</span>
+        <span class="n">op_switcher</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">old</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bj,jk,ck-&gt;bc&#39;</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">U</span><span class="p">),</span>
+                        <span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">old</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bj,ajk,ck-&gt;abc&#39;</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">U</span><span class="p">),</span>
+                        <span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">old</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;cj,abjk,dk-&gt;abcd&#39;</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">U</span><span class="p">),</span>
+                        <span class="n">VMK</span><span class="o">.</span><span class="n">G3</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">old</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;dj,abcjk,ek-&gt;abcde&#39;</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">U</span><span class="p">),</span>
+                        <span class="n">VMK</span><span class="o">.</span><span class="n">G4</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">old</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ej,abcdjk,fk-&gt;abcdef&#39;</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">U</span><span class="p">),</span>
+                        <span class="p">}</span>
+
+        <span class="c1"># calculate the new Hamiltonian, by preforming the transformation with the matrix U</span>
+        <span class="n">new_values</span> <span class="o">=</span> <span class="n">op_switcher</span><span class="p">[</span><span class="n">key</span><span class="p">](</span><span class="n">array</span><span class="p">)</span>
+
+        <span class="c1"># number of modes in each array</span>
+        <span class="n">mode_switcher</span> <span class="o">=</span> <span class="p">{</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="n">VMK</span><span class="o">.</span><span class="n">G3</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="n">VMK</span><span class="o">.</span><span class="n">G4</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+
+        <span class="c1"># make sure that the transformation was indeed unitary</span>
+        <span class="k">for</span> <span class="n">iters</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">it</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="n">mode_switcher</span><span class="p">[</span><span class="n">key</span><span class="p">])):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">iters</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">new_values</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">U</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">T</span><span class="p">)))</span>
+
+        <span class="c1"># overwrite the previous array with the new values</span>
+        <span class="n">array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">new_values</span>
+
+    <span class="c1"># now we need to backup the old model and save the new one</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">original_model</span>
+    <span class="c1"># backup the old model</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+    <span class="c1"># save the new one</span>
+    <span class="n">save_model_to_JSON</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">model_dict</span><span class="p">)</span>
+
+    <span class="c1"># save the orthogonal matrix in case we need to use it later</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="s2">&quot;orthogonal_matrix&quot;</span><span class="p">),</span> <span class="n">U</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<span class="k">if</span> <span class="p">(</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Currently does nothing&quot;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

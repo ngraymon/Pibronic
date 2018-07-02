@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.pimc.minimal &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.pimc.pimc &#8212; Pibronic 0.1.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -32,8 +32,8 @@
 
           <div class="body" role="main">
             
-  <h1>Source code for pibronic.pimc.minimal</h1><div class="highlight"><pre>
-<span></span><span class="c1"># minimal.py</span>
+  <h1>Source code for pibronic.pimc.pimc</h1><div class="highlight"><pre>
+<span></span><span class="c1"># pimc.py</span>
 
 <span class="c1"># system imports</span>
 <span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
@@ -56,8 +56,9 @@
 <span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">hbar</span>
 <span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_structure</span>
 <span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_name</span>  <span class="c1"># do we need this?</span>
-<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">vibronic_model_io</span> <span class="k">as</span> <span class="n">vIO</span>
-<span class="kn">from</span> <span class="nn">..data.vibronic_model_keys</span> <span class="k">import</span> <span class="n">VibronicModelKeys</span> <span class="k">as</span> <span class="n">VMK</span>
+<span class="c1"># from ..data import vibronic_model_io as vIO</span>
+<span class="c1"># from ..data.vibronic_model_keys import VibronicModelKeys as VMK</span>
+<span class="kn">from</span> <span class="nn">..vibronic</span> <span class="k">import</span> <span class="n">vIO</span><span class="p">,</span> <span class="n">VMK</span>
 <span class="c1"># from ..server import job_boss</span>
 <span class="kn">from</span> <span class="nn">..server.server</span> <span class="k">import</span> <span class="n">ServerExecutionParameters</span> <span class="k">as</span> <span class="n">SEP</span>
 
@@ -69,6 +70,20 @@
 <span class="sd">Will have to think carefully about recording the random inputs that are sampled in a robust and cohesive manner</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+           <span class="s2">&quot;ModelClass&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;ModelVibronic&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;ModelVibronicPM&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;ModelSampling&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;BoxData&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;BoxDataPM&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;BoxResult&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;BoxResultPM&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;block_compute&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;block_compute_pm&quot;</span><span class="p">,</span>
+           <span class="p">]</span>
+
+
 <span class="n">float_tolerance</span> <span class="o">=</span> <span class="mf">1e-23</span>
 
 <span class="sd">&quot;&quot;&quot; TODO - eventually this should be replaced so that each time a sample is drawn</span>
@@ -78,7 +93,7 @@
 <span class="c1"># np.random.seed(232942)  # pick our seed</span>
 
 
-<div class="viewcode-block" id="TemperatureDependentClass"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.TemperatureDependentClass">[docs]</a><span class="k">class</span> <span class="nc">TemperatureDependentClass</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">TemperatureDependentClass</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;store temperture dependent constants here&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">tau</span><span class="p">):</span>
         <span class="c1"># construct the coth and csch tensors</span>
@@ -108,10 +123,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;BPAA&#39;</span><span class="p">])</span>
         <span class="c1"># cache for the Omatrix scaling factor on each block loop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">omatrix_scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;BP&#39;</span><span class="p">])</span>
-        <span class="k">return</span></div>
+        <span class="k">return</span>
 
 
-<div class="viewcode-block" id="ModelClass"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelClass">[docs]</a><span class="k">class</span> <span class="nc">ModelClass</span><span class="p">:</span>
+<div class="viewcode-block" id="ModelClass"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelClass">[docs]</a><span class="k">class</span> <span class="nc">ModelClass</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;information describing a quantum mechanical system&quot;&quot;&quot;</span>
     <span class="n">states</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">modes</span> <span class="o">=</span> <span class="mi">0</span>
@@ -130,14 +145,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mode_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">modes</span><span class="p">)</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="ModelClass.from_json_file"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelClass.from_json_file">[docs]</a>    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="ModelClass.from_json_file"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelClass.from_json_file">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_json_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;constructor wrapper&quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">target_file</span><span class="p">:</span>
             <span class="n">file_data</span> <span class="o">=</span> <span class="n">target_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_data</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ModelClass.load_model"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelClass.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelClass.load_model"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelClass.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
         <span class="c1"># I think this fails if the list elements are multidimensional numpy arrays</span>
         <span class="c1"># carefully check this</span>
@@ -171,7 +186,7 @@
         <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="ModelVibronic"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronic">[docs]</a><span class="k">class</span> <span class="nc">ModelVibronic</span><span class="p">(</span><span class="n">ModelClass</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronic"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronic">[docs]</a><span class="k">class</span> <span class="nc">ModelVibronic</span><span class="p">(</span><span class="n">ModelClass</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;stores information about the system of interest&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">states</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">modes</span><span class="p">)</span>
@@ -191,14 +206,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state_shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;AN&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="ModelVibronic.compute_linear_displacement"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronic.compute_linear_displacement">[docs]</a>    <span class="k">def</span> <span class="nf">compute_linear_displacement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronic.compute_linear_displacement"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronic.compute_linear_displacement">[docs]</a>    <span class="k">def</span> <span class="nf">compute_linear_displacement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;compute the energy shift equivalent to a linear displacement&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">states</span><span class="p">):</span>
             <span class="c1"># UNDO - we would have to untransform the prefactor here</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">delta_weight</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">[:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">**</span><span class="mf">2.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelVibronic.compute_weight_for_each_state"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronic.compute_weight_for_each_state">[docs]</a>    <span class="k">def</span> <span class="nf">compute_weight_for_each_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modified_energy</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronic.compute_weight_for_each_state"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronic.compute_weight_for_each_state">[docs]</a>    <span class="k">def</span> <span class="nf">compute_weight_for_each_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modified_energy</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;these are the weights for the oscillators associated with each state&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;you shall not pass&quot;</span>  <span class="c1"># haha it doesn&#39;t do anything anymore</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="p">(</span><span class="n">modified_energy</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_weight</span><span class="p">)</span>
@@ -208,7 +223,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelVibronic.optimize_energy"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronic.optimize_energy">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronic.optimize_energy"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronic.optimize_energy">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; shift the energy to reduce the order of the raw partition function value &quot;&quot;&quot;</span>
 
         <span class="c1"># -- CURRENTLY DOES NOTHING -- #</span>
@@ -222,12 +237,12 @@
 
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelVibronic.initialize_TDP_object"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronic.initialize_TDP_object">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_TDP_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronic.initialize_TDP_object"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronic.initialize_TDP_object">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_TDP_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;creates the TemperatureDependentClass object&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">const</span> <span class="o">=</span> <span class="n">TemperatureDependentClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelVibronic.finish_folding_in_terms"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronic.finish_folding_in_terms">[docs]</a>    <span class="k">def</span> <span class="nf">finish_folding_in_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronic.finish_folding_in_terms"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronic.finish_folding_in_terms">[docs]</a>    <span class="k">def</span> <span class="nf">finish_folding_in_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; set the terms we &#39;folded in&#39; to zero &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">states</span><span class="p">):</span>
             <span class="c1"># we &#39;fold&#39; the linear term into the harmonic oscillator</span>
@@ -239,7 +254,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">energy</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelVibronic.precompute"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronic.precompute">[docs]</a>    <span class="k">def</span> <span class="nf">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronic.precompute"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronic.precompute">[docs]</a>    <span class="k">def</span> <span class="nf">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;precompute some constants&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">compute_linear_displacement</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -257,7 +272,7 @@
         <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="ModelVibronicPM"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronicPM">[docs]</a><span class="k">class</span> <span class="nc">ModelVibronicPM</span><span class="p">(</span><span class="n">ModelVibronic</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronicPM"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronicPM">[docs]</a><span class="k">class</span> <span class="nc">ModelVibronicPM</span><span class="p">(</span><span class="n">ModelVibronic</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;plus minus version of ModelVibronic&quot;&quot;&quot;</span>
     <span class="n">delta_beta</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">beta_plus</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -270,7 +285,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">delta_beta</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">delta_beta</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="ModelVibronicPM.initialize_TDP_object"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronicPM.initialize_TDP_object">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_TDP_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronicPM.initialize_TDP_object"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronicPM.initialize_TDP_object">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_TDP_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;creates the TemperatureDependentClass object&quot;&quot;&quot;</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">initialize_TDP_object</span><span class="p">()</span>
@@ -280,7 +295,7 @@
         <span class="k">return</span></div>
 
     <span class="c1"># precompute some constants</span>
-<div class="viewcode-block" id="ModelVibronicPM.precompute"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelVibronicPM.precompute">[docs]</a>    <span class="k">def</span> <span class="nf">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelVibronicPM.precompute"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelVibronicPM.precompute">[docs]</a>    <span class="k">def</span> <span class="nf">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c1"># store extra constants</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">beta_plus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_beta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">beta_minus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_beta</span>
@@ -291,7 +306,7 @@
         <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="ModelSampling"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling">[docs]</a><span class="k">class</span> <span class="nc">ModelSampling</span><span class="p">(</span><span class="n">ModelClass</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling">[docs]</a><span class="k">class</span> <span class="nc">ModelSampling</span><span class="p">(</span><span class="n">ModelClass</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;stores information about the system of interest&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c1"># copy the sizes of the parameters</span>
@@ -301,7 +316,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">beta</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="ModelSampling.load_model"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filePath</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.load_model"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filePath</span><span class="p">):</span>
         <span class="n">newStates</span><span class="p">,</span> <span class="n">sameModes</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_sampling_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">filePath</span><span class="p">)</span>
 
         <span class="c1"># replace the vibronic models state size with rho&#39;s state size</span>
@@ -345,7 +360,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">]</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelSampling.draw_sample"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.draw_sample">[docs]</a>    <span class="k">def</span> <span class="nf">draw_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.draw_sample"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.draw_sample">[docs]</a>    <span class="k">def</span> <span class="nf">draw_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates collective co-ordinates and stores them in self.cc_samples with dimensions BNP&quot;&quot;&quot;</span>
         <span class="c1"># collective co-ordinate samples</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cc_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
@@ -355,12 +370,12 @@
                                     <span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelSampling.compute_linear_displacement"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.compute_linear_displacement">[docs]</a>    <span class="k">def</span> <span class="nf">compute_linear_displacement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.compute_linear_displacement"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.compute_linear_displacement">[docs]</a>    <span class="k">def</span> <span class="nf">compute_linear_displacement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;compute the energy shift equivalent to a linear displacement&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delta_weight</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="o">**</span><span class="mf">2.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">[:,</span> <span class="n">NEW</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelSampling.compute_weight_for_each_state"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.compute_weight_for_each_state">[docs]</a>    <span class="k">def</span> <span class="nf">compute_weight_for_each_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.compute_weight_for_each_state"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.compute_weight_for_each_state">[docs]</a>    <span class="k">def</span> <span class="nf">compute_weight_for_each_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="sd">&quot;&quot;&quot;these are the weights for the oscillators associated with each state&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_weight</span><span class="p">))</span>
@@ -374,7 +389,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span><span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelSampling.optimize_energy"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.optimize_energy">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.optimize_energy"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.optimize_energy">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; shift the energy to reduce the order of the raw partition function value &quot;&quot;&quot;</span>
 
         <span class="c1"># -- CURRENTLY DOES NOTHING -- #</span>
@@ -388,12 +403,12 @@
 
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelSampling.initialize_TDP_object"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.initialize_TDP_object">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_TDP_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.initialize_TDP_object"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.initialize_TDP_object">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_TDP_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;creates the TemperatureDependentClass object&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">const</span> <span class="o">=</span> <span class="n">TemperatureDependentClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelSampling.finish_folding_in_terms"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.finish_folding_in_terms">[docs]</a>    <span class="k">def</span> <span class="nf">finish_folding_in_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.finish_folding_in_terms"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.finish_folding_in_terms">[docs]</a>    <span class="k">def</span> <span class="nf">finish_folding_in_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; set the terms we &#39;folded in&#39; to zero &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">):</span>
             <span class="c1"># we &#39;fold&#39; the linear term into the harmonic oscillator</span>
@@ -402,7 +417,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">[:,</span> <span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModelSampling.compute_sampling_constants"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.compute_sampling_constants">[docs]</a>    <span class="k">def</span> <span class="nf">compute_sampling_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.compute_sampling_constants"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.compute_sampling_constants">[docs]</a>    <span class="k">def</span> <span class="nf">compute_sampling_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
 
         <span class="c1"># generate random surfaces to draw samples from</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_sources</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">),</span>
@@ -444,7 +459,7 @@
         <span class="k">return</span></div>
 
     <span class="c1"># precompute some constants</span>
-<div class="viewcode-block" id="ModelSampling.precompute"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.ModelSampling.precompute">[docs]</a>    <span class="k">def</span> <span class="nf">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelSampling.precompute"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.precompute">[docs]</a>    <span class="k">def</span> <span class="nf">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;precompute some constants&quot;&quot;&quot;</span>
 
         <span class="c1"># HACKS - TEMPORARY CHANGE</span>
@@ -462,7 +477,7 @@
         <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="BoxData"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData">[docs]</a><span class="k">class</span> <span class="nc">BoxData</span><span class="p">:</span>
+<div class="viewcode-block" id="BoxData"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData">[docs]</a><span class="k">class</span> <span class="nc">BoxData</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;use this to pass execution paramters back and forth between methods&quot;&quot;&quot;</span>
     <span class="n">block_size</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">samples</span> <span class="o">=</span> <span class="mi">0</span>
@@ -502,7 +517,11 @@
     <span class="n">_COMMA_REPLACEMENT</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span>
     <span class="n">_SEPARATORS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_COMMA_REPLACEMENT</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BoxData.from_FileStructure"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.from_FileStructure">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="c1"># the hash values for the vibronic model and the gaussian mixture distribution</span>
+    <span class="n">hash_vib</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">hash_rho</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="BoxData.from_FileStructure"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.from_FileStructure">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_FileStructure</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">FS</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;constructor wrapper&quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
@@ -518,7 +537,7 @@
 
         <span class="k">return</span> <span class="n">data</span></div>
 
-<div class="viewcode-block" id="BoxData.build"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.build">[docs]</a>    <span class="nd">@classmethod</span>  <span class="c1"># this feels unnecessary</span>
+<div class="viewcode-block" id="BoxData.build"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.build">[docs]</a>    <span class="nd">@classmethod</span>  <span class="c1"># this feels unnecessary</span>
     <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;constructor wrapper&quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
@@ -526,14 +545,14 @@
         <span class="n">data</span><span class="o">.</span><span class="n">id_rho</span> <span class="o">=</span> <span class="n">id_rho</span>
         <span class="k">return</span> <span class="n">data</span></div>
 
-<div class="viewcode-block" id="BoxData.from_json_file"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.from_json_file">[docs]</a>    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="BoxData.from_json_file"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.from_json_file">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_json_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;constructor wrapper&quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">target_file</span><span class="p">:</span>
             <span class="n">file_data</span> <span class="o">=</span> <span class="n">target_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_json_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_data</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BoxData.from_json_string"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.from_json_string">[docs]</a>    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="BoxData.from_json_string"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.from_json_string">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_json_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json_str</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;constructor wrapper&quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
@@ -543,12 +562,12 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="BoxData.json_serialize"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.json_serialize">[docs]</a>    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="BoxData.json_serialize"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.json_serialize">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">json_serialize</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
         <span class="n">json_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">_SEPARATORS</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">json_str</span></div>
 
-<div class="viewcode-block" id="BoxData.encode_self"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.encode_self">[docs]</a>    <span class="k">def</span> <span class="nf">encode_self</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxData.encode_self"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.encode_self">[docs]</a>    <span class="k">def</span> <span class="nf">encode_self</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;encodes json str with member values or given params&quot;&quot;&quot;</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Encoding data to JSON&quot;</span><span class="p">)</span>
 
@@ -567,12 +586,14 @@
                 <span class="n">SEP</span><span class="o">.</span><span class="n">R</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_rho</span><span class="p">,</span>
                 <span class="n">SEP</span><span class="o">.</span><span class="n">beta</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
                 <span class="n">SEP</span><span class="o">.</span><span class="n">tau</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">,</span>
+                <span class="c1"># &quot;s&quot;: self.hash_vib,</span>
+                <span class="c1"># &quot;x&quot;: self.hash_rho,</span>
             <span class="p">}</span>
         <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_serialize</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></div>
 
     <span class="c1"># is this still used?</span>
-<div class="viewcode-block" id="BoxData.load_json_string"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.load_json_string">[docs]</a>    <span class="k">def</span> <span class="nf">load_json_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_str</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxData.load_json_string"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.load_json_string">[docs]</a>    <span class="k">def</span> <span class="nf">load_json_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_str</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;decodes the json_str and sets member parameters&quot;&quot;&quot;</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Decoding JSON obj&quot;</span><span class="p">)</span>
         <span class="n">json_str</span> <span class="o">=</span> <span class="n">json_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_COMMA_REPLACEMENT</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">)</span>
@@ -592,6 +613,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="n">SEP</span><span class="o">.</span><span class="n">BlkS</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id_data</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="n">SEP</span><span class="o">.</span><span class="n">D</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id_rho</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="n">SEP</span><span class="o">.</span><span class="n">R</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+        <span class="c1"># self.hash_vib = params[]</span>
+        <span class="c1"># self.hash_rho = params[]</span>
 
         <span class="c1"># dumb hacks</span>
         <span class="k">if</span> <span class="n">SEP</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -613,27 +636,23 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">path_vib_model</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_model</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_model</span>
 
+        <span class="n">FS</span><span class="o">.</span><span class="n">generate_model_hashes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_vib</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_rho</span>
+
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
 
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxData.draw_sample"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.draw_sample">[docs]</a>    <span class="k">def</span> <span class="nf">draw_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxData.draw_sample"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.draw_sample">[docs]</a>    <span class="k">def</span> <span class="nf">draw_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Draws samples from the distribution rho -</span>
 <span class="sd">        the rho object fills its cc_samples parameter with collective co-ordinates</span>
 <span class="sd">        which will be transformed to bead dependent co-ordinates by self.transform_sampled_coordinates()&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">draw_sample</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxData.hacky_dmitri_load_sample"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.hacky_dmitri_load_sample">[docs]</a>    <span class="k">def</span> <span class="nf">hacky_dmitri_load_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">draw_sample</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-        <span class="c1"># add surface dependent normal mode displacement (from vibronic model)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
-        <span class="k">return</span></div>
-
-<div class="viewcode-block" id="BoxData.generate_random_R_values"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.generate_random_R_values">[docs]</a>    <span class="k">def</span> <span class="nf">generate_random_R_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">storage_array</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxData.generate_random_R_values"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.generate_random_R_values">[docs]</a>    <span class="k">def</span> <span class="nf">generate_random_R_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">storage_array</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Randomly generates R values that have no relation to the distribution rho or g</span>
 <span class="sd">        they only have the correct dimensions BANP and are shifted appropriately &quot;&quot;&quot;</span>
         <span class="c1"># generate sample points in dimensionless co-ordinates R</span>
@@ -644,20 +663,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxData.hacky_dmitri_sampling_function"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.hacky_dmitri_sampling_function">[docs]</a>    <span class="k">def</span> <span class="nf">hacky_dmitri_sampling_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;the cake is a lie&quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ab,ijb-&gt;ija&#39;</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">circulant_eigvects</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">cc_samples</span><span class="p">,</span>
-                                    <span class="p">)[:,</span> <span class="n">NEW</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">cc_samples</span><span class="p">[:</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
-        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">cc_samples</span><span class="p">[:</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
-        <span class="c1"># remove sample dependent normal mode displacement (from sampling model)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">sample_shift</span><span class="p">[</span><span class="n">sample_view</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
-        <span class="k">return</span></div>
-
-<div class="viewcode-block" id="BoxData.transform_sampled_coordinates"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.transform_sampled_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">transform_sampled_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxData.transform_sampled_coordinates"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.transform_sampled_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">transform_sampled_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;transform from collective co-ordinates to bead dependent co-ordinates&quot;&quot;&quot;</span>
         <span class="c1"># self.qTensor = np.broadcast_to(np.einsum(&#39;ab,ijb-&gt;ija&#39;, self.circulant_eigvects, self.cc_samples), self.size[&#39;XANP&#39;])</span>
         <span class="c1"># self.qTensor = np.einsum(&#39;ab,ijb-&gt;ija&#39;, self.circulant_eigvects, self.cc_samples)[:, NEW, :, :]</span>
@@ -673,8 +679,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxData.initialize_models"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.initialize_models">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="BoxData.initialize_models"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.initialize_models">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vib</span> <span class="o">=</span> <span class="n">ModelVibronic</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -684,8 +690,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxData.preprocess"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxData.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="BoxData.preprocess"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
         <span class="c1"># for readability and clarity we use these letters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;X&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span>
                            <span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">,</span>
@@ -731,7 +737,7 @@
         <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="BoxDataPM"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxDataPM">[docs]</a><span class="k">class</span> <span class="nc">BoxDataPM</span><span class="p">(</span><span class="n">BoxData</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxDataPM"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxDataPM">[docs]</a><span class="k">class</span> <span class="nc">BoxDataPM</span><span class="p">(</span><span class="n">BoxData</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;plus minus version of BoxData&quot;&quot;&quot;</span>
     <span class="n">delta_beta</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">beta_plus</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -750,7 +756,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="BoxDataPM.initialize_models"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxDataPM.initialize_models">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxDataPM.initialize_models"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxDataPM.initialize_models">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vib</span> <span class="o">=</span> <span class="n">ModelVibronicPM</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">)</span>
@@ -761,7 +767,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxDataPM.preprocess"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxDataPM.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxDataPM.preprocess"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxDataPM.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
         <span class="c1"># compute extra constants</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">beta_plus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_beta</span>
@@ -774,27 +780,39 @@
         <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="BoxResult"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResult">[docs]</a><span class="k">class</span> <span class="nc">BoxResult</span><span class="p">:</span>
+<div class="viewcode-block" id="BoxResult"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult">[docs]</a><span class="k">class</span> <span class="nc">BoxResult</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;use this to pass results back and forth between methods&quot;&quot;&quot;</span>
 
     <span class="n">id_job</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># TODO - temporary solution, the preference is to be able to loosely create the object and provide the necessary information later</span>
+    <span class="n">hash_vib</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">hash_rho</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="BoxResult.read_number_of_samples"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResult.read_number_of_samples">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="n">key_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">,</span> <span class="s2">&quot;s_rho&quot;</span><span class="p">,</span> <span class="s2">&quot;s_g&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="BoxResult.read_number_of_samples"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult.read_number_of_samples">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">read_number_of_samples</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path_full</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_full</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_full</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="BoxResult.verify_result_keys_are_present"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResult.verify_result_keys_are_present">[docs]</a>    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="BoxResult.verify_result_keys_are_present"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult.verify_result_keys_are_present">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">verify_result_keys_are_present</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">fileObj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-        <span class="n">key_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;number_of_samples, s_rho&quot;</span><span class="p">,</span> <span class="s2">&quot;s_g&quot;</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">key_list</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">key_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fileObj</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Expected key (</span><span class="si">{:s}</span><span class="s2">) not present in result file</span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">foramt</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">path</span><span class="p">))</span></div>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">path</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="BoxResult.initialize_arrays"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResult.initialize_arrays">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxResult.result_keys_are_present_in"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult.result_keys_are_present_in">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">result_keys_are_present_in</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">key_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="BoxResult.initialize_arrays"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult.initialize_arrays">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scaled_g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scaled_rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="k">return</span></div>
@@ -804,16 +822,24 @@
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">partial_name</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">file_name</span><span class="o">.</span><span class="n">pimc</span><span class="p">()</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">beads</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">samples</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">hash_vib</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">hash_rho</span>
         <span class="k">elif</span> <span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">X</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The BoxResult object has been initialized with 0 samples this could be an issue?&quot;</span><span class="p">)</span>
             <span class="c1"># raise AssertionError(&quot;data or X must be provided to BoxResult __init__&quot;)</span>
+
+        <span class="c1"># assert data is not None, &quot;we can&#39;t take data&#39;s hash values if they don&#39;t exist!&quot;</span>
+        <span class="c1"># FS.generate_model_hashes()  # TODO - possibly remove this in the future?</span>
+        <span class="c1"># TODO - better way of passing the hashes around</span>
+        <span class="c1"># self.hash_vib = data.hash_vib</span>
+        <span class="c1"># self.hash_rho = data.hash_rho</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize_arrays</span><span class="p">()</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="BoxResult.compute_path_to_file"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResult.compute_path_to_file">[docs]</a>    <span class="k">def</span> <span class="nf">compute_path_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxResult.compute_path_to_file"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult.compute_path_to_file">[docs]</a>    <span class="k">def</span> <span class="nf">compute_path_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; used by BoxResultPM as well &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="ow">is</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2"> still has 0 samples - this should not happen&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
@@ -832,13 +858,16 @@
         <span class="c1"># result_view = slice(0, number_of_samples)</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BoxResult.save_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResult.save_results">[docs]</a>    <span class="k">def</span> <span class="nf">save_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxResult.save_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult.save_results">[docs]</a>    <span class="k">def</span> <span class="nf">save_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
         <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_path_to_file</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;we save hash values if they don&#39;t exist!&quot;</span>
         <span class="c1"># save raw data points</span>
         <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">path</span><span class="p">,</span>
+                 <span class="c1"># TODO - fix the hash situation - this is hacky</span>
+                 <span class="n">hash_vib</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span><span class="p">,</span>
+                 <span class="n">hash_rho</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span><span class="p">,</span>
                  <span class="n">number_of_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span>
                  <span class="n">s_rho</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scaled_rho</span><span class="p">,</span>
                  <span class="n">s_g</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scaled_g</span><span class="p">,</span>
@@ -847,10 +876,12 @@
                  <span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxResult.load_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResult.load_results">[docs]</a>    <span class="k">def</span> <span class="nf">load_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_full</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_full</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
-            <span class="n">BoxResult</span><span class="o">.</span><span class="n">verify_result_keys_are_present</span><span class="p">(</span><span class="n">path_full</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<div class="viewcode-block" id="BoxResult.load_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult.load_results">[docs]</a>    <span class="k">def</span> <span class="nf">load_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; load results from one file&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">verify_result_keys_are_present</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="c1"># TODO - check hashes here? - or do we assume they&#39;ve already been checked?</span>
+            <span class="c1"># BoxResult.verify_hashes_are_valid()</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="ow">is</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
             <span class="k">elif</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">:</span>
@@ -861,50 +892,94 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">scaled_rho</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">]</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxResult.load_multiple_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResult.load_multiple_results">[docs]</a>    <span class="k">def</span> <span class="nf">load_multiple_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_paths</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="BoxResult.load_multiple_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResult.load_multiple_results">[docs]</a>    <span class="k">def</span> <span class="nf">load_multiple_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_paths</span><span class="p">,</span> <span class="n">desired_number_of_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; load results from more than one file</span>
+<span class="sd">        the optional argument desired_number_of_samples can be provided</span>
+<span class="sd">        the method will then try to load as many samples UPTO the desired_number_of_samples and no more&quot;&quot;&quot;</span>
         <span class="n">number_of_samples</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_of_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;list_of_paths cannot be empty&quot;</span>
+
+        <span class="n">list_of_bad_paths</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">list_of_paths</span><span class="p">:</span>
             <span class="c1"># should verify path is correct?</span>
             <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
+                <span class="sd">&quot;&quot;&quot; TODO - design decision choice here</span>
+<span class="sd">                This implementation currently prints out a debug message and continues execution assuming it&#39;s job is to scan through and load as many files as possible.</span>
+<span class="sd">                For each path that doesn&#39;t have the data we expect it to have we will remove it from the list.</span>
+<span class="sd">                Another alternative would be to raise an AssertionError if the file it is trying to load does not have the appropriate keys, which is a good approach.</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="c1"># self.__class__.verify_result_keys_are_present(path, data)</span>
+
+                <span class="c1"># TODO - check hashes here? - or do we assume they&#39;ve already been checked?</span>
+                <span class="c1"># BoxResult.verify_hashes_are_valid()</span>
                 <span class="c1"># should verify file is not empty?</span>
-                <span class="n">number_of_samples</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">result_keys_are_present_in</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                    <span class="n">number_of_samples</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">list_of_bad_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="c1"># first lets make sure that we had 1 or more good paths</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">list_of_paths</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># okay now remove all the bad paths!</span>
+        <span class="n">list_of_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">list_of_paths</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">list_of_bad_paths</span><span class="p">))</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_of_paths</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;none of the provided paths were good, i.e. none of them had all the required keys </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key_list</span><span class="p">)</span>
 
         <span class="k">assert</span> <span class="n">number_of_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;number of samples should have changed&quot;</span>
+
+        <span class="k">if</span> <span class="n">desired_number_of_samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">desired_number_of_samples</span> <span class="o">=</span> <span class="n">number_of_samples</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">number_of_samples</span> <span class="o">&gt;=</span> <span class="n">desired_number_of_samples</span><span class="p">:</span>
+                <span class="n">number_of_samples</span> <span class="o">=</span> <span class="n">desired_number_of_samples</span>
+            <span class="k">elif</span> <span class="n">number_of_samples</span> <span class="o">&lt;</span> <span class="n">desired_number_of_samples</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;We found less samples than were requested!!&quot;</span><span class="p">)</span>
+                <span class="c1"># TODO - choose what the correct procedure in this case is, for now we shall not raise an error</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">number_of_samples</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize_arrays</span><span class="p">()</span>
 
         <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">finish</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">list_of_paths</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="n">desired_number_of_samples</span><span class="p">:</span>
+                <span class="k">break</span>
             <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
-                <span class="n">finish</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_g</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">finish</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_g&quot;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_rho</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">finish</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">]</span>
-                <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">),</span> <span class="s2">&quot;Zeros in the denominator&quot;</span>
-                <span class="n">start</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">],</span> <span class="n">desired_number_of_samples</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">),</span> <span class="s2">&quot;Zeros in the denominator&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_g</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">length</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_g&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_rho</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">length</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span>
+                <span class="n">start</span> <span class="o">+=</span> <span class="n">length</span>
         <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="BoxResultPM"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResultPM">[docs]</a><span class="k">class</span> <span class="nc">BoxResultPM</span><span class="p">(</span><span class="n">BoxResult</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxResultPM"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResultPM">[docs]</a><span class="k">class</span> <span class="nc">BoxResultPM</span><span class="p">(</span><span class="n">BoxResult</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;plus minus version of BoxResult&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="BoxResultPM.verify_result_keys_are_present"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResultPM.verify_result_keys_are_present">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="n">key_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;s_gP&quot;</span><span class="p">,</span> <span class="s2">&quot;s_gM&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">BoxResult</span><span class="o">.</span><span class="n">key_list</span>
+
+<div class="viewcode-block" id="BoxResultPM.verify_result_keys_are_present"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResultPM.verify_result_keys_are_present">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">verify_result_keys_are_present</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">fileObj</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">verify_result_keys_are_present</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">fileObj</span><span class="p">)</span>
-        <span class="n">key_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;s_gP&quot;</span><span class="p">,</span> <span class="s2">&quot;s_gM&quot;</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">key_list</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">key_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fileObj</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Expected key (</span><span class="si">{:s}</span><span class="s2">) not present in result file</span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">foramt</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">path</span><span class="p">))</span></div>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">path</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="BoxResultPM.initialize_arrays"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResultPM.initialize_arrays">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxResultPM.result_keys_are_present_in"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResultPM.result_keys_are_present_in">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">result_keys_are_present_in</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">key_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span> <span class="ow">and</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">result_keys_are_present_in</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BoxResultPM.initialize_arrays"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResultPM.initialize_arrays">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">initialize_arrays</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_plus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_minus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_plus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_minus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="k">return</span></div>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -912,12 +987,16 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="BoxResultPM.save_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResultPM.save_results">[docs]</a>    <span class="k">def</span> <span class="nf">save_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxResultPM.save_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResultPM.save_results">[docs]</a>    <span class="k">def</span> <span class="nf">save_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
         <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_path_to_file</span><span class="p">()</span>
 
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;we save hash values if they don&#39;t exist!&quot;</span>
         <span class="c1"># save raw data points</span>
         <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">path</span><span class="p">,</span>
+                 <span class="c1"># TODO - fix the hash situation - this is hacky</span>
+                 <span class="n">hash_vib</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span><span class="p">,</span>
+                 <span class="n">hash_rho</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span><span class="p">,</span>
                  <span class="n">number_of_samples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span>
                  <span class="n">s_rho</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scaled_rho</span><span class="p">,</span>
                  <span class="n">s_g</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scaled_g</span><span class="p">,</span>
@@ -926,45 +1005,84 @@
                  <span class="p">)</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxResultPM.load_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResultPM.load_results">[docs]</a>    <span class="k">def</span> <span class="nf">load_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_full</span><span class="p">):</span>
+<div class="viewcode-block" id="BoxResultPM.load_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResultPM.load_results">[docs]</a>    <span class="k">def</span> <span class="nf">load_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load_results</span><span class="p">(</span><span class="n">path_full</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load_results</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="c1"># this could be more efficient, since we open the file twice</span>
-        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_full</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_plus</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_gP&quot;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_minus</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_gM&quot;</span><span class="p">]</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="BoxResultPM.load_multiple_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.BoxResultPM.load_multiple_results">[docs]</a>    <span class="k">def</span> <span class="nf">load_multiple_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_paths</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="BoxResultPM.load_multiple_results"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxResultPM.load_multiple_results">[docs]</a>    <span class="k">def</span> <span class="nf">load_multiple_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_paths</span><span class="p">,</span> <span class="n">desired_number_of_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; load results from more than one file</span>
+<span class="sd">        the optional argument desired_number_of_samples can be provided</span>
+<span class="sd">        the method will then try to load as many samples UPTO the desired_number_of_samples and no more&quot;&quot;&quot;</span>
         <span class="n">number_of_samples</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_of_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;list_of_paths cannot be empty&quot;</span>
 
-        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">list_of_paths</span><span class="p">:</span>
-            <span class="c1"># should verify path is correct?</span>
-            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
-                <span class="c1"># should verify file is not empty?</span>
-                <span class="n">number_of_samples</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
+        <span class="n">list_of_bad_paths</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">list_of_paths</span><span class="p">:</span>
+                <span class="c1"># should verify path is correct?</span>
+                <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="sd">&quot;&quot;&quot; TODO - design decision choice here</span>
+<span class="sd">                    This implementation currently prints out a debug message and continues execution assuming it&#39;s job is to scan through and load as many files as possible.</span>
+<span class="sd">                    For each path that doesn&#39;t have the data we expect it to have we will remove it from the list.</span>
+<span class="sd">                    Another alternative would be to raise an AssertionError if the file it is trying to load does not have the appropriate keys, which is a good approach.</span>
+<span class="sd">                    &quot;&quot;&quot;</span>
+                    <span class="c1"># self.__class__.verify_result_keys_are_present(path, data)</span>
+
+                    <span class="c1"># TODO - check hashes here? - or do we assume they&#39;ve already been checked?</span>
+                    <span class="c1"># BoxResult.verify_hashes_are_valid()</span>
+                    <span class="c1"># should verify file is not empty?</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">result_keys_are_present_in</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                        <span class="n">number_of_samples</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">list_of_bad_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Did we get another mangled .npz file?</span><span class="se">\n</span><span class="s2">If numpy can&#39;t load the file because it is not a zip file then just delete the offending file and rerun the script&quot;</span><span class="p">)</span>
+            <span class="k">raise</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+        <span class="c1"># first lets make sure that we had 1 or more good paths</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">list_of_paths</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># okay now remove all the bad paths!</span>
+        <span class="n">list_of_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">list_of_paths</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">list_of_bad_paths</span><span class="p">))</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_of_paths</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;none of the provided paths were good, i.e. none of them had all the required keys </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key_list</span><span class="p">)</span>
 
         <span class="k">assert</span> <span class="n">number_of_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;number of samples should have changed&quot;</span>
+
+        <span class="k">if</span> <span class="n">desired_number_of_samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">desired_number_of_samples</span> <span class="o">=</span> <span class="n">number_of_samples</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">number_of_samples</span> <span class="o">&gt;=</span> <span class="n">desired_number_of_samples</span><span class="p">:</span>
+                <span class="n">number_of_samples</span> <span class="o">=</span> <span class="n">desired_number_of_samples</span>
+            <span class="k">elif</span> <span class="n">number_of_samples</span> <span class="o">&lt;</span> <span class="n">desired_number_of_samples</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;We found less samples than were requested!!&quot;</span><span class="p">)</span>
+                <span class="c1"># TODO - choose what the correct procedure in this case is, for now we shall not raise an error</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">number_of_samples</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize_arrays</span><span class="p">()</span>
 
         <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">finish</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">list_of_paths</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="n">desired_number_of_samples</span><span class="p">:</span>
+                <span class="k">break</span>
             <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">data</span><span class="p">:</span>
-                <span class="n">finish</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_g</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">finish</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_g&quot;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_rho</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">finish</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">]</span>
-                <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">),</span> <span class="s2">&quot;Zeros in the denominator&quot;</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_plus</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">finish</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_gP&quot;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_minus</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">finish</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_gM&quot;</span><span class="p">]</span>
-                <span class="n">start</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">],</span> <span class="n">desired_number_of_samples</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">),</span> <span class="s2">&quot;Zeros in the denominator&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_g</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">length</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_g&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_rho</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">length</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_rho&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_plus</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">length</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_gP&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scaled_gofr_minus</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">length</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;s_gM&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span>
+                <span class="n">start</span> <span class="o">+=</span> <span class="n">length</span>
         <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="pos_sym_assert"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.pos_sym_assert">[docs]</a><span class="k">def</span> <span class="nf">pos_sym_assert</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">pos_sym_assert</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;raises error if provided tensor is not positive semi-definite&quot;&quot;&quot;</span>
 
     <span class="c1"># One method is to check if the matrix is positive semi definite within some tolerance</span>
@@ -980,24 +1098,24 @@
         <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;The Covariance matrix is not symmetric positive-semidefinite&quot;</span>
         <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
 
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="scale_o_matricies"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.scale_o_matricies">[docs]</a><span class="k">def</span> <span class="nf">scale_o_matricies</span><span class="p">(</span><span class="n">scalingFactor</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">scale_o_matricies</span><span class="p">(</span><span class="n">scalingFactor</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;divides the O matricies of the models by the scalingFactor&quot;&quot;&quot;</span>
     <span class="n">model_one</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">/=</span> <span class="n">scalingFactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
     <span class="n">model_two</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">/=</span> <span class="n">scalingFactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="un_scale_o_matricies"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.un_scale_o_matricies">[docs]</a><span class="k">def</span> <span class="nf">un_scale_o_matricies</span><span class="p">(</span><span class="n">scalingFactor</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">un_scale_o_matricies</span><span class="p">(</span><span class="n">scalingFactor</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;multiples the O matricies of the models by the scalingFactor&quot;&quot;&quot;</span>
     <span class="n">model_one</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">*=</span> <span class="n">scalingFactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
     <span class="n">model_two</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">*=</span> <span class="n">scalingFactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="build_scaling_factors"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.build_scaling_factors">[docs]</a><span class="k">def</span> <span class="nf">build_scaling_factors</span><span class="p">(</span><span class="n">S12</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_scaling_factors</span><span class="p">(</span><span class="n">S12</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculates the individual and combined scaling factors for both provided models&quot;&quot;&quot;</span>
     <span class="c1"># compute the individual scaling factors</span>
     <span class="n">model_one</span><span class="o">.</span><span class="n">omatrix_scaling</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">model_one</span><span class="o">.</span><span class="n">omatrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
@@ -1005,10 +1123,10 @@
 
     <span class="c1"># compute the combined scaling factor</span>
     <span class="n">S12</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">model_one</span><span class="o">.</span><span class="n">omatrix_scaling</span><span class="p">,</span> <span class="n">model_two</span><span class="o">.</span><span class="n">omatrix_scaling</span><span class="p">)</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="build_o_matrix"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.build_o_matrix">[docs]</a><span class="k">def</span> <span class="nf">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculates the O matrix of a model, storing the result inside the model object&quot;&quot;&quot;</span>
 
     <span class="c1"># name and select the views</span>
@@ -1035,17 +1153,17 @@
 
     <span class="c1"># this only works because omatrix is filled with zeros already</span>
     <span class="n">model</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">*=</span> <span class="n">model</span><span class="o">.</span><span class="n">omatrix_prefactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="build_denominator"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.build_denominator">[docs]</a><span class="k">def</span> <span class="nf">build_denominator</span><span class="p">(</span><span class="n">rho_model</span><span class="p">,</span> <span class="n">outputArray</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_denominator</span><span class="p">(</span><span class="n">rho_model</span><span class="p">,</span> <span class="n">outputArray</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculates the state trace over the bead product of the o matricies of the rho model&quot;&quot;&quot;</span>
     <span class="c1"># outputArray[idx] = rho_model.omatrix.prod(axis=1).sum(axis=1)</span>
     <span class="n">outputArray</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_model</span><span class="o">.</span><span class="n">omatrix</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="diagonalize_coupling_matrix"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.diagonalize_coupling_matrix">[docs]</a><span class="k">def</span> <span class="nf">diagonalize_coupling_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">diagonalize_coupling_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
 
     <span class="c1"># ------------------------------------------------------------------------</span>
     <span class="c1"># shift to surface independent co-ordinates</span>
@@ -1080,10 +1198,10 @@
     <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">coupling_eigvals</span><span class="p">,</span>
      <span class="n">data</span><span class="o">.</span><span class="n">coupling_eigvects</span>
      <span class="p">)</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">coupling_matrix</span><span class="p">,</span> <span class="n">UPLO</span><span class="o">=</span><span class="s1">&#39;L&#39;</span><span class="p">)</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="build_numerator"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.build_numerator">[docs]</a><span class="k">def</span> <span class="nf">build_numerator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="p">,</span> <span class="n">outputArray</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_numerator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="p">,</span> <span class="n">outputArray</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculates the numerator and saves it to the outputArray&quot;&quot;&quot;</span>
 
     <span class="c1"># build the M matrix</span>
@@ -1119,10 +1237,10 @@
     <span class="c1"># if np.any(outputArray[idx] &lt; 0.):</span>
     <span class="c1">#     log.warning(&quot;g(R) had negative values!!!&quot;)</span>
     <span class="c1"># assert np.all(outputArray[idx] &gt;= 0.), &quot;g(R) must always be positive&quot;</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="block_compute_gR"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.block_compute_gR">[docs]</a><span class="k">def</span> <span class="nf">block_compute_gR</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">block_compute_gR</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Compute and save only g(R) for building data_set to train ML algorithm</span>
 <span class="sd">     for block_size # of sampled points in each loop&quot;&quot;&quot;</span>
 
@@ -1153,10 +1271,10 @@
         <span class="n">build_numerator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
 
     <span class="n">result</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="save_gR_with_samples"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.save_gR_with_samples">[docs]</a><span class="k">def</span> <span class="nf">save_gR_with_samples</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">input_R_values</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">save_gR_with_samples</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">input_R_values</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; temporary function to save g(R) results with R values</span>
 <span class="sd">    don&#39;t want to pollute BoxResult with extra functions that might not be necessary in the future</span>
 <span class="sd">    so this will go here for now&quot;&quot;&quot;</span>
@@ -1176,10 +1294,10 @@
              <span class="n">number_of_samples</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span>
              <span class="n">input_R_values</span><span class="o">=</span><span class="n">input_R_values</span><span class="p">,</span>
              <span class="p">)</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="block_compute_rhoR_from_input_samples"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.block_compute_rhoR_from_input_samples">[docs]</a><span class="k">def</span> <span class="nf">block_compute_rhoR_from_input_samples</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">input_R_values</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">block_compute_rhoR_from_input_samples</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">input_R_values</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Compute and save rho(R) from input R values for testing data_set to train ML algorithm</span>
 <span class="sd">     for block_size # of sampled points in each loop</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1208,10 +1326,10 @@
         <span class="n">build_denominator</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">rho_of_R</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
 
     <span class="c1"># return and let the caller of the function save the results appropriately</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="block_compute_gR_from_raw_samples"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.block_compute_gR_from_raw_samples">[docs]</a><span class="k">def</span> <span class="nf">block_compute_gR_from_raw_samples</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">block_compute_gR_from_raw_samples</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Compute and save g(R) and R values for building data_set to train ML algorithm</span>
 <span class="sd">     for block_size # of sampled points in each loop</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1244,49 +1362,10 @@
 
     <span class="c1"># save results with their sampled co-ordinates</span>
     <span class="n">save_gR_with_samples</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">input_R_values</span><span class="p">)</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="draw_histogram"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.draw_histogram">[docs]</a><span class="k">def</span> <span class="nf">draw_histogram</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; debug shit &quot;&quot;&quot;</span>
-
-    <span class="c1"># labels for clarity</span>
-    <span class="n">rho</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rho</span>
-    <span class="n">vib</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">vib</span>
-
-    <span class="c1"># store results here</span>
-    <span class="n">y_rho</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scaled_rho</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
-    <span class="n">y_g</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scaled_g</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
-
-    <span class="c1"># store the combined scaling factor in here</span>
-    <span class="n">S12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;BP&#39;</span><span class="p">])</span>
-    <span class="n">all_of_them</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;XP&#39;</span><span class="p">])</span>
-
-    <span class="k">for</span> <span class="n">block_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">blocks</span><span class="p">):</span>
-        <span class="c1"># indicies</span>
-        <span class="n">start</span> <span class="o">=</span> <span class="n">block_index</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
-        <span class="n">end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
-        <span class="n">sample_view</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
-
-        <span class="c1"># generate sample points in collective co-ordinates</span>
-        <span class="n">data</span><span class="o">.</span><span class="n">draw_sample</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
-
-        <span class="c1"># process the sapmled points</span>
-        <span class="c1"># data.transform_sampled_coordinates(sample_view)</span>
-
-        <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;/work/ngraymon/pimc/testing/data_set_1/rho_0/parameters/histogram_samples.txt&quot;</span>
-        <span class="n">data</span><span class="o">.</span><span class="n">hacky_dmitri_sampling_function</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
-        <span class="n">all_of_them</span><span class="p">[</span><span class="n">sample_view</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">sample_sources</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="mi">10</span><span class="p">])</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">all_of_them</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="mi">10</span><span class="p">])</span>
-        <span class="c1"># print(data.qTensor.shape)</span>
-
-    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">all_of_them</span><span class="p">))</span>
-    <span class="k">return</span></div>
-
-
-<div class="viewcode-block" id="block_compute"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.block_compute">[docs]</a><span class="k">def</span> <span class="nf">block_compute</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+<div class="viewcode-block" id="block_compute"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.block_compute">[docs]</a><span class="k">def</span> <span class="nf">block_compute</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Compute the numerator and denominator for block_size # of sampled points in each loop&quot;&quot;&quot;</span>
 
     <span class="c1"># block_index_list = [1e1, 1e2, 1e3, 1e4]</span>
@@ -1333,7 +1412,7 @@
     <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="block_compute_pm"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.block_compute_pm">[docs]</a><span class="k">def</span> <span class="nf">block_compute_pm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+<div class="viewcode-block" id="block_compute_pm"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.block_compute_pm">[docs]</a><span class="k">def</span> <span class="nf">block_compute_pm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
 
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">BoxDataPM</span><span class="p">),</span> <span class="s2">&quot;incorrect object type&quot;</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">BoxResultPM</span><span class="p">),</span> <span class="s2">&quot;incorrect object type&quot;</span>
@@ -1407,7 +1486,7 @@
     <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="simple_wrapper"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.simple_wrapper">[docs]</a><span class="k">def</span> <span class="nf">simple_wrapper</span><span class="p">(</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">simple_wrapper</span><span class="p">(</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Just do simple expval(Z) calculation&quot;&quot;&quot;</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">232942</span><span class="p">)</span>  <span class="c1"># pick our seed</span>
     <span class="n">samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e2</span><span class="p">)</span>
@@ -1439,10 +1518,10 @@
     <span class="n">results</span><span class="o">.</span><span class="n">path_root</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">path_rho_results</span>
 
     <span class="n">block_compute</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
-<div class="viewcode-block" id="plus_minus_wrapper"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.minimal.plus_minus_wrapper">[docs]</a><span class="k">def</span> <span class="nf">plus_minus_wrapper</span><span class="p">(</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">plus_minus_wrapper</span><span class="p">(</span><span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculate all the possible temp +/- approaches&quot;&quot;&quot;</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">232942</span><span class="p">)</span>  <span class="c1"># pick our seed</span>
     <span class="n">samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e2</span><span class="p">)</span>
@@ -1477,7 +1556,7 @@
 
     <span class="c1"># block_compute(data, results)</span>
     <span class="n">block_compute_pm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
-    <span class="k">return</span></div>
+    <span class="k">return</span>
 
 
 <span class="k">if</span> <span class="p">(</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">):</span>

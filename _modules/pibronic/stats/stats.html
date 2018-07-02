@@ -1,0 +1,474 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.stats.stats &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.stats.stats</h1><div class="highlight"><pre>
+<span></span><span class="c1"># stats.py</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="c1"># import itertools as it</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+<span class="c1"># import collections</span>
+<span class="c1"># import subprocess</span>
+<span class="c1"># import socket</span>
+<span class="c1"># import glob</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="c1"># import os</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">jackknife</span> <span class="k">as</span> <span class="n">jk</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_structure</span> <span class="k">as</span> <span class="n">fs</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_name</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">postprocessing</span> <span class="k">as</span> <span class="n">pp</span>
+<span class="kn">from</span> <span class="nn">..pimc</span> <span class="k">import</span> <span class="n">BoxResultPM</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">boltzman</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+           <span class="s2">&quot;calculate_alpha_terms&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;add_harmonic_contribution&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;estimate_basic_properties&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;calculate_basic_property_terms&quot;</span><span class="p">,</span>
+           <span class="p">]</span>
+
+
+<span class="n">__number_of_processes</span> <span class="o">=</span> <span class="mi">12</span>
+
+
+<div class="viewcode-block" id="calculate_basic_property_terms"><a class="viewcode-back" href="../../../pibronic.stats.html#pibronic.stats.stats.calculate_basic_property_terms">[docs]</a><span class="k">def</span> <span class="nf">calculate_basic_property_terms</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;calculate g/rho, sym_d1, sym_d2 given the estimation of the exact property&quot;&quot;&quot;</span>
+    <span class="n">delta_beta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">g_plus</span><span class="p">,</span> <span class="n">g_minus</span> <span class="o">=</span> <span class="n">args</span>
+
+    <span class="c1"># # Precalculate the 3 terms we will use</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">g</span> <span class="o">/</span> <span class="n">rho</span>
+
+    <span class="n">first_symmetric_derivative</span> <span class="o">=</span> <span class="p">(</span><span class="n">g_plus</span> <span class="o">-</span> <span class="n">g_minus</span><span class="p">)</span> <span class="o">/</span> <span class="n">rho</span>
+    <span class="n">first_symmetric_derivative</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_beta</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">second_symmetric_derivative</span> <span class="o">=</span> <span class="p">(</span><span class="n">g_plus</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">g</span><span class="p">)</span> <span class="o">+</span> <span class="n">g_minus</span><span class="p">)</span> <span class="o">/</span> <span class="n">rho</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">/=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[</span><span class="n">ratio</span><span class="p">,</span>
+           <span class="n">first_symmetric_derivative</span><span class="p">,</span>
+           <span class="n">second_symmetric_derivative</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="calculate_alpha_terms"><a class="viewcode-back" href="../../../pibronic.stats.html#pibronic.stats.stats.calculate_alpha_terms">[docs]</a><span class="k">def</span> <span class="nf">calculate_alpha_terms</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;calculate g/r, sym_d1, sym_d2 given the estimation of the difference + alpha&quot;&quot;&quot;</span>
+    <span class="n">delta_beta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">g_plus</span><span class="p">,</span> <span class="n">g_minus</span><span class="p">,</span> <span class="n">alpha_plus</span><span class="p">,</span> <span class="n">alpha_minus</span> <span class="o">=</span> <span class="n">args</span>
+
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">g</span> <span class="o">/</span> <span class="n">rho</span>
+    <span class="n">ratio_plus</span> <span class="o">=</span> <span class="n">g_plus</span> <span class="o">/</span> <span class="n">rho</span>
+    <span class="n">ratio_minus</span> <span class="o">=</span> <span class="n">g_minus</span> <span class="o">/</span> <span class="n">rho</span>
+
+    <span class="n">first_symmetric_derivative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ratio_plus</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">alpha_plus</span><span class="p">)</span>
+    <span class="n">first_symmetric_derivative</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ratio_minus</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">alpha_minus</span><span class="p">)</span>
+    <span class="n">first_symmetric_derivative</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_beta</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">second_symmetric_derivative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ratio_plus</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">alpha_plus</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">-=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ratio_minus</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">alpha_minus</span><span class="p">)</span>
+    <span class="n">second_symmetric_derivative</span> <span class="o">/=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">delta_beta</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># constant factor</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[</span><span class="n">ratio</span><span class="p">,</span>
+           <span class="n">first_symmetric_derivative</span><span class="p">,</span>
+           <span class="n">second_symmetric_derivative</span><span class="p">,</span>
+           <span class="n">ratio_plus</span><span class="p">,</span> <span class="n">alpha_plus</span><span class="p">,</span> <span class="n">ratio_minus</span><span class="p">,</span> <span class="n">alpha_minus</span><span class="p">,</span>
+           <span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<span class="k">def</span> <span class="nf">basic_estimate_Z_monte_carlo</span><span class="p">(</span><span class="n">g_over_rho</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; estimates the normalization of the quasi-probability disribution g(R) and its standard deviation &quot;&quot;&quot;</span>
+    <span class="s2">&quot;&quot;</span>
+    <span class="n">Z_MC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">g_over_rho</span><span class="p">)</span>
+    <span class="n">Z_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">g_over_rho</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">Z_err</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">number_of_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Z_MC</span><span class="p">,</span> <span class="n">Z_err</span>
+
+
+<span class="k">def</span> <span class="nf">basic_estimate_internal_energy</span><span class="p">(</span><span class="n">first_symmetric_derivative</span><span class="p">,</span> <span class="n">Z_MC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; estimates the internal energy using finite difference , the error is always zero &quot;&quot;&quot;</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">first_symmetric_derivative</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Z_MC</span><span class="p">)</span>
+    <span class="n">E_err</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># can&#39;t be measured (in the basic case)</span>
+    <span class="k">return</span> <span class="n">E</span><span class="p">,</span> <span class="n">E_err</span>
+
+
+<span class="k">def</span> <span class="nf">basic_estimate_heat_capacity</span><span class="p">(</span><span class="n">second_symmetric_derivative</span><span class="p">,</span> <span class="n">Z_MC</span><span class="p">,</span> <span class="n">internal_energy</span><span class="p">,</span> <span class="n">temperature</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; calculates the heat capacity using finite difference , the error is always zero &quot;&quot;&quot;</span>
+    <span class="n">Cv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">second_symmetric_derivative</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Z_MC</span><span class="p">)</span>
+    <span class="n">Cv</span> <span class="o">-=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">internal_energy</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+    <span class="n">Cv</span> <span class="o">/=</span> <span class="n">boltzman</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>  <span class="c1"># 1 / kBT</span>
+    <span class="n">Cv_err</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># can&#39;t be measured</span>
+    <span class="k">return</span> <span class="n">Cv</span><span class="p">,</span> <span class="n">Cv_err</span>
+
+
+<div class="viewcode-block" id="estimate_basic_properties"><a class="viewcode-back" href="../../../pibronic.stats.html#pibronic.stats.stats.estimate_basic_properties">[docs]</a><span class="k">def</span> <span class="nf">estimate_basic_properties</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; calculates the Z_MC, E, Cv, and their respective errors and returns a dictionary with 6 corresponding entries &quot;&quot;&quot;</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">g_r</span><span class="p">,</span> <span class="n">sym1</span><span class="p">,</span> <span class="n">sym2</span> <span class="o">=</span> <span class="n">args</span>
+
+    <span class="n">Z_MC</span><span class="p">,</span> <span class="n">Z_err</span> <span class="o">=</span> <span class="n">basic_estimate_Z_monte_carlo</span><span class="p">(</span><span class="n">g_r</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+    <span class="n">E</span><span class="p">,</span> <span class="n">E_err</span> <span class="o">=</span> <span class="n">basic_estimate_internal_energy</span><span class="p">(</span><span class="n">sym1</span><span class="p">,</span> <span class="n">Z_MC</span><span class="p">)</span>
+    <span class="n">Cv</span><span class="p">,</span> <span class="n">Cv_err</span> <span class="o">=</span> <span class="n">basic_estimate_heat_capacity</span><span class="p">(</span><span class="n">sym2</span><span class="p">,</span> <span class="n">Z_MC</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+    <span class="c1"># easy to access storage</span>
+    <span class="c1"># TODO - should we rename the key to Z_MC?</span>
+    <span class="n">return_dictionary</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Z&quot;</span><span class="p">:</span> <span class="n">Z_MC</span><span class="p">,</span> <span class="s2">&quot;Z error&quot;</span><span class="p">:</span> <span class="n">Z_err</span><span class="p">,</span>
+                         <span class="s2">&quot;E&quot;</span><span class="p">:</span> <span class="n">E</span><span class="p">,</span>    <span class="s2">&quot;E error&quot;</span><span class="p">:</span> <span class="n">E_err</span><span class="p">,</span>
+                         <span class="s2">&quot;Cv&quot;</span><span class="p">:</span> <span class="n">Cv</span><span class="p">,</span>  <span class="s2">&quot;Cv error&quot;</span><span class="p">:</span> <span class="n">Cv_err</span><span class="p">,</span>
+                         <span class="p">}</span>
+    <span class="k">return</span> <span class="n">return_dictionary</span></div>
+
+
+<div class="viewcode-block" id="add_harmonic_contribution"><a class="viewcode-back" href="../../../pibronic.stats.html#pibronic.stats.stats.add_harmonic_contribution">[docs]</a><span class="k">def</span> <span class="nf">add_harmonic_contribution</span><span class="p">(</span><span class="n">input_dict</span><span class="p">,</span> <span class="n">E_sampling</span><span class="p">,</span> <span class="n">Cv_sampling</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; adds the constant harmonic contribution to the energy and the heat capacity &quot;&quot;&quot;</span>
+    <span class="n">input_dict</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">E_sampling</span>  <span class="c1"># add the harmonic contribution to the energy</span>
+    <span class="n">input_dict</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Cv_sampling</span>  <span class="c1"># add the harmonic contribution to the heat capacity</span>
+    <span class="k">return</span></div>
+
+
+<span class="k">def</span> <span class="nf">apply_parameter_restrictions</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this is just a placeholder function for a possible idea, it doens&#39;t do anything right now &quot;&quot;&quot;</span>
+    <span class="k">return</span>  <span class="c1"># don&#39;t do anything</span>
+
+    <span class="c1"># manually select specific values from those available</span>
+    <span class="n">pimc_restriction</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">101</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># at least 12 beads before we plot</span>
+    <span class="c1"># temperature is currently fixed at 300K</span>
+    <span class="n">temperature_restriction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">300.00</span><span class="p">])</span>
+
+    <span class="c1"># apply the restriction</span>
+    <span class="n">args</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">],</span> <span class="n">temperature_restriction</span><span class="p">)</span>
+    <span class="n">args</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">],</span> <span class="n">pimc_restriction</span><span class="p">)</span>
+    <span class="k">return</span>
+
+
+<span class="k">def</span> <span class="nf">starmap_wrapper</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">statistical_operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this function allows us to use the multiprocessing starmap in a convient way inside basic_statistical_analysis_of_pimc() and basic_jackknife_analysis_of_pimc()</span>
+<span class="sd">    input is a FileStructure object, a bead value, a temperature value, and a function which preforms the calculation</span>
+<span class="sd">    it loads all appropriate files</span>
+<span class="sd">    it then calls the statistical_operation() function with these parameters</span>
+<span class="sd">    finally it saves the returned dictionary to the appropriate *_thermo file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># create the empty data structs which we fill with data</span>
+    <span class="n">pimc_results</span> <span class="o">=</span> <span class="n">BoxResultPM</span><span class="p">()</span>
+    <span class="n">rhoData</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># load the data</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">load_pimc_data</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">pimc_results</span><span class="p">)</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">load_analytic_data</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">rhoData</span><span class="p">)</span>
+
+    <span class="c1"># preform the statistical analysis</span>
+    <span class="n">output_dict</span> <span class="o">=</span> <span class="n">statistical_operation</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">pimc_results</span><span class="p">,</span> <span class="n">rhoData</span><span class="p">)</span>
+
+    <span class="c1"># now we should add the hash identifiers to it</span>
+    <span class="n">output_dict</span><span class="p">[</span><span class="s2">&quot;hash_vib&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_vib</span>
+    <span class="n">output_dict</span><span class="p">[</span><span class="s2">&quot;hash_rho&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_rho</span>
+
+    <span class="c1"># save the data to disk</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_jackknife</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">pimc_results</span><span class="o">.</span><span class="n">samples</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">target_file</span><span class="p">:</span>
+        <span class="n">target_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">output_dict</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">basic_statistical_analysis</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="n">pimc_result</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a temperature, a BoxResult object type, and a dictionary of analytical data and calculates the basic statistical properties, Z, E, Cv and returns them in a dictionary&quot;&quot;&quot;</span>
+
+    <span class="c1"># these names need to be cross referenced with the naming scheme in pimc.py</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_rho</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>         <span class="c1"># rho</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_g</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>           <span class="c1"># g</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_gofr_plus</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>   <span class="c1"># g+</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_gofr_minus</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>  <span class="c1"># g-</span>
+            <span class="p">]</span>
+
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">calculate_basic_property_terms</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">basic_dict</span> <span class="o">=</span> <span class="n">estimate_basic_properties</span><span class="p">(</span><span class="n">pimc_result</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="o">*</span><span class="n">terms</span><span class="p">)</span>
+    <span class="n">add_harmonic_contribution</span><span class="p">(</span><span class="n">basic_dict</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">basic_dict</span>
+
+
+<span class="k">def</span> <span class="nf">alpha_statistical_analysis</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="n">pimc_result</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a temperature, a BoxResult object type, and a dictionary of analytical data and calculates the basic statistical properties, Z, E, Cv and returns them in a dictionary&quot;&quot;&quot;</span>
+
+    <span class="c1"># these names need to be cross referenced with the naming scheme in pimc.py</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_rho</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>         <span class="c1"># rho</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_g</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>           <span class="c1"># g</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_gofr_plus</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>   <span class="c1"># g+</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_gofr_minus</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>  <span class="c1"># g-</span>
+            <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">],</span>
+            <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">],</span>
+            <span class="p">]</span>
+
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">calculate_alpha_terms</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">terms</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># we don&#39;t need the last four things</span>
+    <span class="n">alpha_dict</span> <span class="o">=</span> <span class="n">estimate_basic_properties</span><span class="p">(</span><span class="n">pimc_result</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="o">*</span><span class="n">terms</span><span class="p">)</span>
+    <span class="n">add_harmonic_contribution</span><span class="p">(</span><span class="n">alpha_dict</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">alpha_dict</span>
+
+
+<span class="k">def</span> <span class="nf">statistical_analysis_of_pimc</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;basic&quot;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s2">&quot;local&quot;</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; preform calculation of Z, E, Cv for the given model, using either basic or alpha/difference terms &quot;&quot;&quot;</span>
+    <span class="n">FS</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">)</span>
+    <span class="n">FS</span><span class="o">.</span><span class="n">generate_model_hashes</span><span class="p">()</span>  <span class="c1"># build the hashes so that we can check against them</span>
+    <span class="n">list_pimc</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">retrive_pimc_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+
+    <span class="c1"># a dictionary of lists</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">args</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">extract_bead_paramater_list</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">)</span>
+    <span class="n">args</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">extract_temperature_paramater_list</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">)</span>
+
+    <span class="n">apply_parameter_restrictions</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>  <span class="c1"># for now this does nothing</span>
+
+    <span class="c1"># create a list of all the parameter combinations we need to analyze</span>
+    <span class="n">arg_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">P</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span>
+                <span class="p">]</span>
+
+    <span class="c1"># choose what statistical analysis we are going to preform</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="s2">&quot;basic&quot;</span><span class="p">:</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="n">basic_statistical_analysis</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="ow">is</span> <span class="s2">&quot;alpha&quot;</span><span class="p">:</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="n">alpha_statistical_analysis</span>
+
+    <span class="c1"># dispatch multiple processes to execute the analyze concurrently</span>
+    <span class="k">if</span> <span class="n">location</span> <span class="ow">is</span> <span class="s2">&quot;local&quot;</span><span class="p">:</span>
+        <span class="n">basic_wrapper</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">starmap_wrapper</span><span class="p">,</span> <span class="n">statistical_operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">__number_of_processes</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">basic_wrapper</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">location</span> <span class="ow">is</span> <span class="s2">&quot;server&quot;</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;Need to write this code&quot;</span>
+
+        <span class="c1"># TODO - add a simple command to check that slurm is installed</span>
+        <span class="c1"># os.system(&quot;sbatch --version&quot;)</span>
+        <span class="c1"># the output should be something like &quot;slurm*#.#.#&quot;&quot;</span>
+
+        <span class="c1"># TODO - write code that submits jobs to the server</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Invalid value for paramter location:(</span><span class="si">{location:s}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span>
+
+
+<span class="c1"># TODO - the current implementation will blindly overwrite each *_thermo file every time its run, which is problematic if we want both jackknife and normal results in the same output file, the simplest fix to this is to just write a function which does all the combined statistical actions</span>
+<span class="c1"># TODO - on a second pass, this seems to be fixed by the need for jackknife to calculate the basic properties along the way, although this might be a potential issue? - worth looking into later</span>
+
+
+<span class="k">def</span> <span class="nf">basic_jackknife_analysis</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="n">pimc_result</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a temperature, a BoxResult object type, and a dictionary of analytical data and calculates the basic statistical properties, Z, E, Cv and returns them in a dictionary&quot;&quot;&quot;</span>
+
+    <span class="c1"># these names need to be cross referenced with the naming scheme in pimc.py</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_rho</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>         <span class="c1"># rho</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_g</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>           <span class="c1"># g</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_gofr_plus</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>   <span class="c1"># g+</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_gofr_minus</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>  <span class="c1"># g-</span>
+            <span class="p">]</span>
+
+    <span class="n">T</span> <span class="o">=</span> <span class="n">temperature</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">pimc_result</span><span class="o">.</span><span class="n">samples</span>
+    <span class="n">dB</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span>
+
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">calculate_basic_property_terms</span><span class="p">(</span><span class="n">dB</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">jk_terms</span> <span class="o">=</span> <span class="n">jk</span><span class="o">.</span><span class="n">calculate_jackknife_terms</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">terms</span><span class="p">)</span>
+
+    <span class="n">basic_dict</span> <span class="o">=</span> <span class="n">estimate_basic_properties</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="o">*</span><span class="n">terms</span><span class="p">)</span>
+    <span class="n">jk_dict</span> <span class="o">=</span> <span class="n">jk</span><span class="o">.</span><span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dB</span><span class="p">,</span> <span class="n">basic_dict</span><span class="p">,</span> <span class="o">*</span><span class="n">jk_terms</span><span class="p">)</span>
+
+    <span class="n">add_harmonic_contribution</span><span class="p">(</span><span class="n">basic_dict</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">])</span>
+    <span class="n">add_harmonic_contribution</span><span class="p">(</span><span class="n">jk_dict</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">])</span>
+
+    <span class="c1"># create the output dictionary and rename the jackknife terms</span>
+    <span class="n">output_dict</span> <span class="o">=</span> <span class="n">basic_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># does this need to be a deep copy?</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">jk_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">output_dict</span><span class="p">[</span><span class="s2">&quot;jk_&quot;</span> <span class="o">+</span> <span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">jk_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">output_dict</span>
+
+
+<span class="k">def</span> <span class="nf">alpha_jackknife_analysis</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="n">pimc_result</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes a temperature, a BoxResult object type, and a dictionary of analytical data and calculates the basic statistical properties, Z, E, Cv and returns them in a dictionary&quot;&quot;&quot;</span>
+
+    <span class="c1"># these names need to be cross referenced with the naming scheme in pimc.py</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_rho</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>         <span class="c1"># rho</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_g</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>           <span class="c1"># g</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_gofr_plus</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>   <span class="c1"># g+</span>
+            <span class="n">pimc_result</span><span class="o">.</span><span class="n">scaled_gofr_minus</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span>  <span class="c1"># g-</span>
+            <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;alpha_plus&quot;</span><span class="p">],</span>
+            <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;alpha_minus&quot;</span><span class="p">],</span>
+            <span class="p">]</span>
+
+    <span class="n">T</span> <span class="o">=</span> <span class="n">temperature</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">pimc_result</span><span class="o">.</span><span class="n">samples</span>
+    <span class="n">dB</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span>
+
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">calculate_alpha_terms</span><span class="p">(</span><span class="n">dB</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+    <span class="c1"># we don&#39;t need the 1sym or 2sym for the jackknife terms</span>
+    <span class="n">jk_terms</span> <span class="o">=</span> <span class="n">jk</span><span class="o">.</span><span class="n">calculate_alpha_jackknife_terms</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dB</span><span class="p">,</span> <span class="n">terms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">*</span><span class="n">terms</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">7</span><span class="p">])</span>
+    <span class="n">terms</span> <span class="o">=</span> <span class="n">terms</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># we don&#39;t need the last four things</span>
+    <span class="n">alpha_dict</span> <span class="o">=</span> <span class="n">estimate_basic_properties</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="o">*</span><span class="n">terms</span><span class="p">)</span>
+    <span class="n">jk_dict</span> <span class="o">=</span> <span class="n">jk</span><span class="o">.</span><span class="n">estimate_jackknife</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dB</span><span class="p">,</span> <span class="n">alpha_dict</span><span class="p">,</span> <span class="o">*</span><span class="n">jk_terms</span><span class="p">)</span>
+
+    <span class="n">add_harmonic_contribution</span><span class="p">(</span><span class="n">alpha_dict</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">])</span>
+    <span class="n">add_harmonic_contribution</span><span class="p">(</span><span class="n">jk_dict</span><span class="p">,</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span> <span class="n">analytic_data</span><span class="p">[</span><span class="s2">&quot;Cv&quot;</span><span class="p">])</span>
+
+    <span class="c1"># create the output dictionary and rename the jackknife terms</span>
+    <span class="n">output_dict</span> <span class="o">=</span> <span class="n">alpha_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># does this need to be a deep copy?</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">jk_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">output_dict</span><span class="p">[</span><span class="s2">&quot;jk_&quot;</span> <span class="o">+</span> <span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">jk_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">output_dict</span>
+
+
+<span class="k">def</span> <span class="nf">jackknife_analysis_of_pimc</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;basic&quot;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s2">&quot;local&quot;</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; preform calculation of Z, E, Cv for the given model, using either basic or alpha/difference terms with the jackknife method&quot;&quot;&quot;</span>
+    <span class="n">FS</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">)</span>
+    <span class="n">FS</span><span class="o">.</span><span class="n">generate_model_hashes</span><span class="p">()</span>  <span class="c1"># build the hashes so that we can check against them</span>
+    <span class="n">list_pimc</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">retrive_pimc_file_list</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+
+    <span class="c1"># a dictionary of lists</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">args</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">extract_bead_paramater_list</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">)</span>
+    <span class="n">args</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">extract_temperature_paramater_list</span><span class="p">(</span><span class="n">list_pimc</span><span class="p">)</span>
+
+    <span class="n">apply_parameter_restrictions</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>  <span class="c1"># for now this does nothing</span>
+
+    <span class="c1"># create a list of all the parameter combinations we need to analyze</span>
+    <span class="n">arg_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">FS</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">P</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;pimc_beads&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;temperatures&quot;</span><span class="p">]</span>
+                <span class="p">]</span>
+    <span class="c1"># choose what statistical analysis we are going to preform</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="s2">&quot;basic&quot;</span><span class="p">:</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="n">basic_jackknife_analysis</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="ow">is</span> <span class="s2">&quot;alpha&quot;</span><span class="p">:</span>
+        <span class="n">operation</span> <span class="o">=</span> <span class="n">alpha_jackknife_analysis</span>
+
+    <span class="c1"># dispatch multiple processes to execute the analyze concurrently</span>
+    <span class="k">if</span> <span class="n">location</span> <span class="ow">is</span> <span class="s2">&quot;local&quot;</span><span class="p">:</span>
+        <span class="n">jackknife_wrapper</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">starmap_wrapper</span><span class="p">,</span> <span class="n">statistical_operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">__number_of_processes</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">jackknife_wrapper</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">location</span> <span class="ow">is</span> <span class="s2">&quot;server&quot;</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;Need to write this code&quot;</span>
+
+        <span class="c1"># TODO - add a simple command to check that slurm is installed</span>
+        <span class="c1"># os.system(&quot;sbatch --version&quot;)</span>
+        <span class="c1"># the output should be something like &quot;slurm*#.#.#&quot;&quot;</span>
+
+        <span class="c1"># TODO - write code that submits jobs to the server</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Invalid value for paramter location:(</span><span class="si">{location:s}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span>
+
+
+<span class="k">def</span> <span class="nf">testing_execution</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; temporary &quot;&quot;&quot;</span>
+    <span class="n">statistical_analysis_of_pimc</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;basic&quot;</span><span class="p">)</span>
+    <span class="n">statistical_analysis_of_pimc</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;alpha&quot;</span><span class="p">)</span>
+    <span class="n">jackknife_analysis_of_pimc</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;basic&quot;</span><span class="p">)</span>
+    <span class="n">jackknife_analysis_of_pimc</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;alpha&quot;</span><span class="p">)</span>
+    <span class="k">return</span>
+
+
+<span class="k">if</span> <span class="p">(</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this is only used for testing at the moment &quot;&quot;&quot;</span>
+    <span class="n">test_path</span> <span class="o">=</span> <span class="s2">&quot;/work/ngraymon/pimc/testing/&quot;</span>
+    <span class="n">id_data</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">id_rho</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">testing_execution</span><span class="p">(</span><span class="n">test_path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished&quot;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

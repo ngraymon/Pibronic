@@ -1,0 +1,480 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.vibronic.model_op &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.vibronic.model_op</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; module that handles parsing model.op files&quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+<span class="kn">import</span> <span class="nn">mmap</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">parse</span>
+
+<span class="c1"># local imports</span>
+<span class="c1"># from ..log_conf import log</span>
+<span class="c1"># from .. import constants</span>
+<span class="c1"># from ..data import file_structure</span>
+<span class="c1"># from ..data import file_name</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">helper</span>
+<span class="kn">from</span> <span class="nn">.vibronic_model_keys</span> <span class="k">import</span> <span class="n">VibronicModelKeys</span> <span class="k">as</span> <span class="n">VMK</span>
+
+
+<div class="viewcode-block" id="extract_energies"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_energies">[docs]</a><span class="k">def</span> <span class="nf">extract_energies</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="c1"># find the begining and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Electronic Hamitonian&#39;</span>
+    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Electronic transition moments&#39;</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+
+    <span class="c1"># go to the begining of that region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+
+    <span class="c1"># skip the header</span>
+    <span class="n">helper</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1"># read all the relevant data</span>
+    <span class="n">byteData</span> <span class="o">=</span> <span class="n">memmap</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">memmap</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">byteData</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stringData</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;#&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="c1"># TODO - should remove the use of globals</span>
+    <span class="c1"># set the parameters</span>
+    <span class="k">global</span> <span class="n">numStates</span><span class="p">,</span> <span class="n">States</span>
+    <span class="n">numStates</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+    <span class="n">States</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">numStates</span><span class="p">)</span>
+
+    <span class="c1"># save the reference hamiltonian into the energies array</span>
+    <span class="n">energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">numStates</span><span class="p">,</span> <span class="n">numStates</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">States</span><span class="p">:</span>
+        <span class="n">list_of_words</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">list_of_words</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">f</span><span class="s2">&quot;EH_s{a+1:02}_s{a+1:02}&quot;</span>  <span class="c1"># this is a formatted string literal (new in python3.6)</span>
+        <span class="k">assert</span> <span class="n">list_of_words</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ev&quot;</span>
+        <span class="n">energies</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">list_of_words</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">energies</span></div>
+
+
+<div class="viewcode-block" id="extract_normal_mode_frequencies"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_normal_mode_frequencies">[docs]</a><span class="k">def</span> <span class="nf">extract_normal_mode_frequencies</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;store output in frequency_array&quot;&quot;&quot;</span>
+    <span class="c1"># find the begining and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Frequencies&#39;</span>
+    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Zeropoint energy&#39;</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+
+    <span class="c1"># go to the begining of that region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+
+    <span class="c1"># skip headers</span>
+    <span class="n">helper</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># read all the relevant data</span>
+    <span class="n">byteData</span> <span class="o">=</span> <span class="n">memmap</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">memmap</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">byteData</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stringData</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;#&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="c1"># TODO - should remove the use of globals</span>
+    <span class="c1"># set the parameters</span>
+    <span class="k">global</span> <span class="n">numModes</span><span class="p">,</span> <span class="n">Modes</span>
+    <span class="n">numModes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+    <span class="n">Modes</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">numModes</span><span class="p">)</span>
+
+    <span class="c1"># extract the numbers and save them in the frequencies array</span>
+    <span class="n">frequencies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numModes</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">Modes</span><span class="p">:</span>
+        <span class="n">list_of_words</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">list_of_words</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">f</span><span class="s2">&quot;w{j+1:02}&quot;</span>  <span class="c1"># this is a formatted string literal (new in python3.6)</span>
+        <span class="k">assert</span> <span class="n">list_of_words</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ev&quot;</span>
+        <span class="n">frequencies</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">list_of_words</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">frequencies</span></div>
+
+
+<div class="viewcode-block" id="extract_linear_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_linear_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_linear_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="c1"># find the begining and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Linear Coupling Constants&#39;</span>
+    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Diagonal Quadratic Coupling Constants&#39;</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+
+    <span class="c1"># go to the begining of that region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+
+    <span class="c1"># skip headers</span>
+    <span class="n">helper</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># read all the relevant data</span>
+    <span class="n">byteData</span> <span class="o">=</span> <span class="n">memmap</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">memmap</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">byteData</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">stringData</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;, ev&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stringData</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;#&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;C1_s</span><span class="si">{a1:d}</span><span class="s2">_s</span><span class="si">{a2:d}</span><span class="s2">_v</span><span class="si">{j:d}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">index_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;j&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">coupling_terms</span><span class="p">[</span><span class="n">index_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="extract_quadratic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_quadratic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_quadratic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="c1"># find the begining and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Diagonal Quadratic Coupling Constants&#39;</span>
+    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Cubic Coupling Constants&#39;</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+
+    <span class="c1"># go to the begining of that region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+
+    <span class="c1"># skip headers</span>
+    <span class="n">helper</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># read all the relevant data</span>
+    <span class="n">byteData</span> <span class="o">=</span> <span class="n">memmap</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">memmap</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">byteData</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">stringData</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;, ev&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stringData</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;#&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;C2_s</span><span class="si">{a1:d}</span><span class="s2">s</span><span class="si">{a2:d}</span><span class="s2">_v</span><span class="si">{j1:d}</span><span class="s2">v</span><span class="si">{j2:d}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">index_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;j1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">coupling_terms</span><span class="p">[</span><span class="n">index_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="extract_cubic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_cubic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_cubic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="c1"># find the begining and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Cubic Coupling Constants&#39;</span>
+    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Quartic Coupling Constants&#39;</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+
+    <span class="c1"># go to the begining of that region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+
+    <span class="c1"># skip headers</span>
+    <span class="n">helper</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># read all the relevant data</span>
+    <span class="n">byteData</span> <span class="o">=</span> <span class="n">memmap</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">memmap</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">byteData</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">stringData</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;, ev&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stringData</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;#&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;C3_s</span><span class="si">{a1:d}</span><span class="s2">_s</span><span class="si">{a2:d}</span><span class="s2">_v</span><span class="si">{j:d}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">index_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;j&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">coupling_terms</span><span class="p">[</span><span class="n">index_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="extract_bicubic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_bicubic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_bicubic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="c1"># find the begining and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Cubic Constants&#39;</span>
+    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Quartic Constants&#39;</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+
+    <span class="c1"># go to the begining of that region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+
+    <span class="c1"># skip headers</span>
+    <span class="n">helper</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># read all the relevant data</span>
+    <span class="n">byteData</span> <span class="o">=</span> <span class="n">memmap</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">memmap</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">byteData</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">stringData</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;, ev&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stringData</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;#&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;B3_s</span><span class="si">{a1:d}</span><span class="s2">s</span><span class="si">{a2:d}</span><span class="s2">_v</span><span class="si">{j1:d}</span><span class="s2">v</span><span class="si">{j2:d}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c1"># need to confirm this?</span>
+        <span class="n">index_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;j1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">coupling_terms</span><span class="p">[</span><span class="n">index_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="extract_quartic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_quartic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_quartic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="c1"># find the begining and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Quartic Coupling Constants&#39;</span>
+    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Cubic Constants&#39;</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+
+    <span class="c1"># go to the begining of that region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+
+    <span class="c1"># skip headers</span>
+    <span class="n">helper</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># read all the relevant data</span>
+    <span class="n">byteData</span> <span class="o">=</span> <span class="n">memmap</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">memmap</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">byteData</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">stringData</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;, ev&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stringData</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;#&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;C4_s</span><span class="si">{a1:d}</span><span class="s2">_s</span><span class="si">{a2:d}</span><span class="s2">_v</span><span class="si">{j:d}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">index_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;j&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">coupling_terms</span><span class="p">[</span><span class="n">index_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="extract_biquartic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_biquartic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_biquartic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="c1"># find the begining and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Quartic Constants&#39;</span>
+    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;end-parameter-section&#39;</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+
+    <span class="c1"># go to the begining of that region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+
+    <span class="c1"># skip headers</span>
+    <span class="n">helper</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># read all the relevant data</span>
+    <span class="n">byteData</span> <span class="o">=</span> <span class="n">memmap</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">memmap</span><span class="o">.</span><span class="n">tell</span><span class="p">())</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">byteData</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">stringData</span> <span class="o">=</span> <span class="n">stringData</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;, ev&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stringData</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;#&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="n">list_B4</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;B4&quot;</span><span class="p">),</span> <span class="n">lines</span><span class="p">)</span>
+    <span class="n">pB4</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;B4_s</span><span class="si">{a1:d}</span><span class="s2">s</span><span class="si">{a2:d}</span><span class="s2">_v</span><span class="si">{j1:d}</span><span class="s2">v</span><span class="si">{j2:d}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">list_A4</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;A4&quot;</span><span class="p">),</span> <span class="n">lines</span><span class="p">)</span>
+    <span class="n">pA4</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;A4_s</span><span class="si">{a1:d}</span><span class="s2">s</span><span class="si">{a2:d}</span><span class="s2">_v</span><span class="si">{j1:d}</span><span class="s2">v</span><span class="si">{j2:d}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">list_B4</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">pB4</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">index_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;j1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">coupling_terms</span><span class="p">[</span><span class="n">index_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">list_A4</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">pA4</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">index_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;j1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;j2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;a2&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">coupling_terms</span><span class="p">[</span><span class="n">index_tuple</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="read_model_op_file"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.read_model_op_file">[docs]</a><span class="k">def</span> <span class="nf">read_model_op_file</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;reads/parses molecule_vibron.op file&quot;&quot;&quot;</span>
+
+    <span class="c1"># declare the arrays used to store the model&#39;s paramters</span>
+    <span class="c1"># all numbers have units of electron volts</span>
+    <span class="n">excitation_energies</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">frequencies</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">linear_couplings</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">quadratic_couplings</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">cubic_couplings</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">quartic_couplings</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># TODO - should remove the use of globals</span>
+    <span class="k">global</span> <span class="n">numStates</span><span class="p">,</span> <span class="n">numModes</span><span class="p">,</span> <span class="n">States</span><span class="p">,</span> <span class="n">Modes</span><span class="p">,</span> <span class="n">size</span>
+    <span class="c1"># we will overwrite these default values</span>
+    <span class="n">numStates</span> <span class="o">=</span> <span class="n">numModes</span> <span class="o">=</span> <span class="n">States</span> <span class="o">=</span> <span class="n">Modes</span> <span class="o">=</span> <span class="n">size</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">helper</span><span class="o">.</span><span class="n">verify_file_exists</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">)</span>
+
+    <span class="c1"># store the energy offsets, and all the coupling terms</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="s2">&quot;r+b&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">source_file</span><span class="p">:</span>
+
+        <span class="c1"># access the file using memory map for efficiency</span>
+        <span class="k">with</span> <span class="n">mmap</span><span class="o">.</span><span class="n">mmap</span><span class="p">(</span><span class="n">source_file</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">prot</span><span class="o">=</span><span class="n">mmap</span><span class="o">.</span><span class="n">PROT_READ</span><span class="p">)</span> <span class="k">as</span> <span class="n">mm</span><span class="p">:</span>
+
+            <span class="n">frequencies</span> <span class="o">=</span> <span class="n">extract_normal_mode_frequencies</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="n">mm</span><span class="p">)</span>
+            <span class="n">excitation_energies</span> <span class="o">=</span> <span class="n">extract_energies</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="n">mm</span><span class="p">)</span>
+
+            <span class="c1"># for readability and clarity we use these letters</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">numStates</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="n">numModes</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;N&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">),</span>
+                    <span class="s1">&#39;AA&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                    <span class="s1">&#39;NAA&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                    <span class="s1">&#39;NNAA&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                    <span class="s1">&#39;NNNAA&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                    <span class="s1">&#39;NNNNAA&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="p">),</span>
+                    <span class="p">}</span>
+
+            <span class="c1"># Assert/Initialize array sizes</span>
+            <span class="k">assert</span> <span class="n">frequencies</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">size</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">],</span> <span class="s2">&quot;Incorrect array dimensions&quot;</span>
+            <span class="k">assert</span> <span class="n">excitation_energies</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">size</span><span class="p">[</span><span class="s1">&#39;AA&#39;</span><span class="p">],</span> <span class="s2">&quot;Incorrect array dimensions&quot;</span>
+
+            <span class="c1"># predefine these arrays now that we know the values of N and A are</span>
+            <span class="n">linear_couplings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;NAA&#39;</span><span class="p">])</span>
+            <span class="n">quadratic_couplings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;NNAA&#39;</span><span class="p">])</span>
+            <span class="n">cubic_couplings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;NNNAA&#39;</span><span class="p">])</span>
+            <span class="n">quartic_couplings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;NNNNAA&#39;</span><span class="p">])</span>
+
+            <span class="c1"># read in the rest of the parameters</span>
+            <span class="n">extract_linear_couplings</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">linear_couplings</span><span class="p">)</span>
+            <span class="n">extract_quadratic_couplings</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="p">)</span>
+            <span class="n">extract_cubic_couplings</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">cubic_couplings</span><span class="p">)</span>
+            <span class="n">extract_quartic_couplings</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">quartic_couplings</span><span class="p">)</span>
+            <span class="n">extract_bicubic_couplings</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">cubic_couplings</span><span class="p">)</span>
+            <span class="n">extract_biquartic_couplings</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">quartic_couplings</span><span class="p">)</span>
+
+    <span class="c1"># duplicate the lower triangle values into the upper triangle</span>
+
+    <span class="c1"># TODO - do we not account for the symmetry in surfaces? this might be incorrect?</span>
+
+    <span class="n">linear_couplings</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">linear_couplings</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># the couplings are a symmetric matrix</span>
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">States</span><span class="p">,</span> <span class="n">States</span><span class="p">):</span>
+        <span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
+        <span class="c1"># are these two correct?</span>
+        <span class="n">cubic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">cubic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">cubic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">cubic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>  <span class="c1"># this is probably incorrect</span>
+        <span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
+
+    <span class="c1"># don&#39;t overcount the diagonals</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">States</span><span class="p">:</span>
+        <span class="n">linear_couplings</span><span class="p">[:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span> <span class="o">/=</span> <span class="mf">2.</span>
+        <span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">/=</span> <span class="mf">2.</span>
+        <span class="n">cubic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">/=</span> <span class="mf">2.</span>
+        <span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">/=</span> <span class="mf">2.</span>
+
+    <span class="c1"># check for symmetry in surfaces</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">excitation_energies</span><span class="p">,</span> <span class="n">excitation_energies</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">linear_couplings</span><span class="p">,</span> <span class="n">linear_couplings</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">quadratic_couplings</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">cubic_couplings</span><span class="p">,</span> <span class="n">cubic_couplings</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">quartic_couplings</span><span class="p">,</span> <span class="n">quartic_couplings</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+    <span class="c1"># check for symmetry in modes</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">quadratic_couplings</span><span class="p">,</span> <span class="n">quadratic_couplings</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="c1"># either (q^3) or (q, q^2)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">cubic_couplings</span><span class="p">,</span> <span class="n">cubic_couplings</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="c1"># either (q, q^3) or (q^2, q^2)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">quartic_couplings</span><span class="p">,</span> <span class="n">quartic_couplings</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+    <span class="c1"># and we are done</span>
+    <span class="n">maximal_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">VMK</span><span class="o">.</span><span class="n">N</span><span class="p">:</span> <span class="n">numModes</span><span class="p">,</span>
+                    <span class="n">VMK</span><span class="o">.</span><span class="n">A</span><span class="p">:</span> <span class="n">numStates</span><span class="p">,</span>
+                    <span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">:</span> <span class="n">excitation_energies</span><span class="p">,</span>
+                    <span class="n">VMK</span><span class="o">.</span><span class="n">w</span><span class="p">:</span> <span class="n">frequencies</span><span class="p">,</span>
+                    <span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">:</span> <span class="n">linear_couplings</span><span class="p">,</span>
+                    <span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">:</span> <span class="n">quadratic_couplings</span><span class="p">,</span>
+                    <span class="n">VMK</span><span class="o">.</span><span class="n">G3</span><span class="p">:</span> <span class="n">cubic_couplings</span><span class="p">,</span>
+                    <span class="n">VMK</span><span class="o">.</span><span class="n">G4</span><span class="p">:</span> <span class="n">quartic_couplings</span><span class="p">,</span>
+                    <span class="p">}</span>
+
+    <span class="c1"># if the arrays only have zeros then we might not need to store them?</span>
+    <span class="n">return_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">maximal_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">return_dict</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

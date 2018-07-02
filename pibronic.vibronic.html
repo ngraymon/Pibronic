@@ -1,0 +1,973 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.vibronic package &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="pibronic.stats package" href="pibronic.stats.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-pibronic.vibronic">
+<span id="pibronic-vibronic-package"></span><h1>pibronic.vibronic package<a class="headerlink" href="#module-pibronic.vibronic" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="scripts-that-handle-data">
+<h2>Scripts that handle data<a class="headerlink" href="#scripts-that-handle-data" title="Permalink to this headline">¶</a></h2>
+<dl class="attribute">
+<dt id="pibronic.vibronic.VMK">
+<code class="descclassname">pibronic.vibronic.</code><code class="descname">VMK</code><a class="headerlink" href="#pibronic.vibronic.VMK" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys" title="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.vibronic.vibronic_model_keys.VibronicModelKeys</span></code></a></p>
+</dd></dl>
+
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pibronic.vibronic.electronic_structure">
+<span id="pibronic-vibronic-electronic-structure-module"></span><h2>pibronic.vibronic.electronic_structure module<a class="headerlink" href="#module-pibronic.vibronic.electronic_structure" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pibronic.vibronic.electronic_structure.State">
+<em class="property">class </em><code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">State</code><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#State"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.State" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.State.FINISHED">
+<code class="descname">FINISHED</code><em class="property"> = 7</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.State.FINISHED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.State.IPEOMCC">
+<code class="descname">IPEOMCC</code><em class="property"> = 4</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.State.IPEOMCC" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.State.NIP">
+<code class="descname">NIP</code><em class="property"> = 2</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.State.NIP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.State.OPT">
+<code class="descname">OPT</code><em class="property"> = 1</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.State.OPT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.State.PREPVIB">
+<code class="descname">PREPVIB</code><em class="property"> = 5</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.State.PREPVIB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.State.VIB">
+<code class="descname">VIB</code><em class="property"> = 3</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.State.VIB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.State.VIBRON">
+<code class="descname">VIBRON</code><em class="property"> = 6</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.State.VIBRON" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass">
+<em class="property">class </em><code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">VibronExecutionClass</code><span class="sig-paren">(</span><em>name</em>, <em>root</em>, <em>state=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>handles all details related to the execution</p>
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.advance">
+<code class="descname">advance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.advance" title="Permalink to this definition">¶</a></dt>
+<dd><p>increase state counter and log it IF not already at the highest state</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.calculate_vibronic_model">
+<code class="descname">calculate_vibronic_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.calculate_vibronic_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.calculate_vibronic_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.file_in">
+<code class="descname">file_in</code><em class="property"> = {}</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.file_in" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.file_out">
+<code class="descname">file_out</code><em class="property"> = {}</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.file_out" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.geom">
+<code class="descname">geom</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.geom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.geom" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.hf">
+<code class="descname">hf</code><span class="sig-paren">(</span><em>matching_state</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.hf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.hf" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.ip_calc">
+<code class="descname">ip_calc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.ip_calc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.ip_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper method</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.name">
+<code class="descname">name</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.parameter_dictionary">
+<code class="descname">parameter_dictionary</code><em class="property"> = {'DROPMO': '', 'NIP': None, 'basis': None, 'calculation': None, 'ccConv': 10, 'estateTol': 10, 'gridVibron': 3, 'scfConv': 10, 'theory': None}</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.parameter_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.parse_input_parameters">
+<code class="descname">parse_input_parameters</code><span class="sig-paren">(</span><em>file_path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.parse_input_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.parse_input_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>loads data into the object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.path_root">
+<code class="descname">path_root</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.path_root" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.prepVibron">
+<code class="descname">prepVibron</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.prepVibron"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.prepVibron" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.record_state">
+<code class="descname">record_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.record_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.record_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.setup_zmat">
+<code class="descname">setup_zmat</code><span class="sig-paren">(</span><em>file_path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.setup_zmat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.setup_zmat" title="Permalink to this definition">¶</a></dt>
+<dd><p>assumes that you formatted the ZMAT file correctly</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.singles_cutoff">
+<code class="descname">singles_cutoff</code><em class="property"> = 85.0</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.singles_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.state">
+<code class="descname">state</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.triples_cutoff">
+<code class="descname">triples_cutoff</code><em class="property"> = 92.0</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.triples_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.vib">
+<code class="descname">vib</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.vib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.vib" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.vibron_calc">
+<code class="descname">vibron_calc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#VibronExecutionClass.vibron_calc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.vibron_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper method</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.VibronExecutionClass.zmat">
+<code class="descname">zmat</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.VibronExecutionClass.zmat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.vibronic.electronic_structure.ZmatClass">
+<em class="property">class </em><code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">ZmatClass</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#ZmatClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.ZmatClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>handles all details related to zmat file which represents the geometry of the molecule can hold internal or cartesian coordinates</p>
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.ZmatClass.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>opt_zmat=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#ZmatClass.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.ZmatClass.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a string which represents the coordinates</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.electronic_structure.ZmatClass.kind">
+<code class="descname">kind</code><em class="property"> = 'cartesian'</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.ZmatClass.kind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.vibronic.electronic_structure.ZmatClass.set">
+<code class="descname">set</code><span class="sig-paren">(</span><em>geometry_new</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#ZmatClass.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.ZmatClass.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>updates geometry data</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.calculate_vibronic_model_wrapper_one">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">calculate_vibronic_model_wrapper_one</code><span class="sig-paren">(</span><em>data_set_num</em>, <em>molecule_name='ch2o'</em>, <em>inital_job_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#calculate_vibronic_model_wrapper_one"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.calculate_vibronic_model_wrapper_one" title="Permalink to this definition">¶</a></dt>
+<dd><p>executes jobs using exists data_set_# file structure</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pibronic.vibronic.electronic_structure.calculations_list">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">calculations_list</code><em class="property"> = ['IP']</em><a class="headerlink" href="#pibronic.vibronic.electronic_structure.calculations_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the functions name</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.find_string_in_file">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">find_string_in_file</code><span class="sig-paren">(</span><em>memmap_file</em>, <em>file_path</em>, <em>target_string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#find_string_in_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.find_string_in_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper that raises error if no substr can be found finds the first occurance of a substring in memory mapped file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.geometry_optimization">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">geometry_optimization</code><span class="sig-paren">(</span><em>path_root</em>, <em>name</em>, <em>zmat</em>, <em>parameter_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#geometry_optimization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.geometry_optimization" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates and populates the input file and submission file for the job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.get_integer_from_user">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">get_integer_from_user</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#get_integer_from_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.get_integer_from_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the integer value of the users response to a input prompt</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.get_yes_no_from_user">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">get_yes_no_from_user</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#get_yes_no_from_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.get_yes_no_from_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the boolean value of the users response the a yes/no question</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.hartree_fock_calculation">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">hartree_fock_calculation</code><span class="sig-paren">(</span><em>path_root</em>, <em>name</em>, <em>zmat</em>, <em>parameter_dictionary</em>, <em>hf_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#hartree_fock_calculation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.hartree_fock_calculation" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates and populates the input file and submission file for the job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.ip_calculation">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">ip_calculation</code><span class="sig-paren">(</span><em>path_root</em>, <em>name</em>, <em>zmat</em>, <em>parameter_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#ip_calculation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.ip_calculation" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates and populates the input file and submission file for the job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.pairwise">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">pairwise</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#pairwise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.pairwise" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns an iterator over pairs of elements in the iterable</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.parse_hartree_fock_output">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">parse_hartree_fock_output</code><span class="sig-paren">(</span><em>vibron</em>, <em>execution_state</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#parse_hartree_fock_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.parse_hartree_fock_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>extracts relevant data from output of job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.parse_input_parameters">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">parse_input_parameters</code><span class="sig-paren">(</span><em>file_path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#parse_input_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.parse_input_parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.parse_ip_output">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">parse_ip_output</code><span class="sig-paren">(</span><em>vibron</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#parse_ip_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.parse_ip_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>extracts relevant data from output of job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.parse_opt_output">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">parse_opt_output</code><span class="sig-paren">(</span><em>vibron</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#parse_opt_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.parse_opt_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>extract substrings describing the optimized geometry from the output file generated by a geometry optimization calcultion</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.parse_prepVibron_output">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">parse_prepVibron_output</code><span class="sig-paren">(</span><em>vibron</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#parse_prepVibron_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.parse_prepVibron_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>extracts relevant data from output of job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.parse_vibron_output">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">parse_vibron_output</code><span class="sig-paren">(</span><em>vibron</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#parse_vibron_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.parse_vibron_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>extracts relevant data from output of job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.prepVibron_calculation">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">prepVibron_calculation</code><span class="sig-paren">(</span><em>path_root</em>, <em>name</em>, <em>zmat</em>, <em>parameter_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#prepVibron_calculation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.prepVibron_calculation" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates and populates the input file and submission file for the job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.pretty_print_job_status">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">pretty_print_job_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#pretty_print_job_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.pretty_print_job_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>quick hack for scripting</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.rfind_string_in_file">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">rfind_string_in_file</code><span class="sig-paren">(</span><em>memmap_file</em>, <em>file_path</em>, <em>target_string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#rfind_string_in_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.rfind_string_in_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper that raises error if no substr can be found finds the last occurance of a substring in memory mapped file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.skip_back_n_lines">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">skip_back_n_lines</code><span class="sig-paren">(</span><em>memmap_file</em>, <em>n</em>, <em>start_index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#skip_back_n_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.skip_back_n_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>gives the byte location n lines before the given byte location start_index</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.skip_forward_n_lines">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">skip_forward_n_lines</code><span class="sig-paren">(</span><em>memmap_file</em>, <em>n</em>, <em>start_index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#skip_forward_n_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.skip_forward_n_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>gives the byte location n lines after the given byte location start_index</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.submit_job">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">submit_job</code><span class="sig-paren">(</span><em>parameter_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#submit_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.submit_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for job_boss job submission</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.test_one">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">test_one</code><span class="sig-paren">(</span><em>molecule_name='ch2o'</em>, <em>inital_job_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#test_one"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.test_one" title="Permalink to this definition">¶</a></dt>
+<dd><p>runs the job in the current directory stores results in folder named by the molecule</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.verify_aces2_completed">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">verify_aces2_completed</code><span class="sig-paren">(</span><em>path_root</em>, <em>file_path</em>, <em>job_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#verify_aces2_completed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.verify_aces2_completed" title="Permalink to this definition">¶</a></dt>
+<dd><p>verifies that the aces2 output file has completed successfully</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.verify_file_exists">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">verify_file_exists</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#verify_file_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.verify_file_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>raises FileNotFoundError exception if input is not a file, or does not exist</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.verify_ip_states">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">verify_ip_states</code><span class="sig-paren">(</span><em>job</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#verify_ip_states"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.verify_ip_states" title="Permalink to this definition">¶</a></dt>
+<dd><p>run calculations to verify the range of states selected</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.vibrational_frequency">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">vibrational_frequency</code><span class="sig-paren">(</span><em>path_root</em>, <em>name</em>, <em>zmat</em>, <em>parameter_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#vibrational_frequency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.vibrational_frequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates and populates the input file and submission file for the job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.vibron_calculation">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">vibron_calculation</code><span class="sig-paren">(</span><em>path_root</em>, <em>name</em>, <em>zmat</em>, <em>parameter_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#vibron_calculation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.vibron_calculation" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates and populates the input file and submission file for the job</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.electronic_structure.wait_on_results">
+<code class="descclassname">pibronic.vibronic.electronic_structure.</code><code class="descname">wait_on_results</code><span class="sig-paren">(</span><em>job_id</em>, <em>job_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/electronic_structure.html#wait_on_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.electronic_structure.wait_on_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>sychronizes with the submitted job and verifies that the job’s output is successful</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.vibronic.model_auto">
+<span id="pibronic-vibronic-model-auto-module"></span><h2>pibronic.vibronic.model_auto module<a class="headerlink" href="#module-pibronic.vibronic.model_auto" title="Permalink to this headline">¶</a></h2>
+<p>module that handles parsing model.auto files</p>
+<dl class="function">
+<dt id="pibronic.vibronic.model_auto.confirm_symmetry_in_modes">
+<code class="descclassname">pibronic.vibronic.model_auto.</code><code class="descname">confirm_symmetry_in_modes</code><span class="sig-paren">(</span><em>mode_range</em>, <em>quadratic_couplings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_auto.html#confirm_symmetry_in_modes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_auto.confirm_symmetry_in_modes" title="Permalink to this definition">¶</a></dt>
+<dd><p>check for symmetry in modes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_auto.confirm_symmetry_in_surfaces">
+<code class="descclassname">pibronic.vibronic.model_auto.</code><code class="descname">confirm_symmetry_in_surfaces</code><span class="sig-paren">(</span><em>el_range</em>, <em>linear_couplings</em>, <em>quadratic_couplings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_auto.html#confirm_symmetry_in_surfaces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_auto.confirm_symmetry_in_surfaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>check for symmetry in surfaces</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_auto.fill_in_diagonal_quadratic_couplings">
+<code class="descclassname">pibronic.vibronic.model_auto.</code><code class="descname">fill_in_diagonal_quadratic_couplings</code><span class="sig-paren">(</span><em>f_iter</em>, <em>el_range</em>, <em>mode_range</em>, <em>quadratic_couplings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_auto.html#fill_in_diagonal_quadratic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_auto.fill_in_diagonal_quadratic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>does what it says</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_auto.fill_in_excitation_energies">
+<code class="descclassname">pibronic.vibronic.model_auto.</code><code class="descname">fill_in_excitation_energies</code><span class="sig-paren">(</span><em>f_iter</em>, <em>el_range</em>, <em>excitation_energies</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_auto.html#fill_in_excitation_energies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_auto.fill_in_excitation_energies" title="Permalink to this definition">¶</a></dt>
+<dd><p>does what it says</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_auto.fill_in_linear_couplings">
+<code class="descclassname">pibronic.vibronic.model_auto.</code><code class="descname">fill_in_linear_couplings</code><span class="sig-paren">(</span><em>f_iter</em>, <em>el_range</em>, <em>mode_range</em>, <em>linear_couplings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_auto.html#fill_in_linear_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_auto.fill_in_linear_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>does what it says</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_auto.fill_in_offdiagonal_quadratic_couplings">
+<code class="descclassname">pibronic.vibronic.model_auto.</code><code class="descname">fill_in_offdiagonal_quadratic_couplings</code><span class="sig-paren">(</span><em>f_iter</em>, <em>el_range</em>, <em>mode_range</em>, <em>quadratic_couplings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_auto.html#fill_in_offdiagonal_quadratic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_auto.fill_in_offdiagonal_quadratic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>does what it says</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_auto.read_header">
+<code class="descclassname">pibronic.vibronic.model_auto.</code><code class="descname">read_header</code><span class="sig-paren">(</span><em>f_iter</em>, <em>nel</em>, <em>nmode</em>, <em>frequencies</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_auto.html#read_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_auto.read_header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_auto.read_model_auto_file">
+<code class="descclassname">pibronic.vibronic.model_auto.</code><code class="descname">read_model_auto_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_auto.html#read_model_auto_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_auto.read_model_auto_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>if the shift to MCTDH file structure is permananent this function will no longer be needed</p>
+<p>Read Vibronic Model file (cp.auto) which
+contains all information on the approximate
+Born-Oppenheimer Ground State PES.</p>
+<p>Returns:
+number of electronic states
+number of normal modes</p>
+<p>Excitation energies: (nel, nel)
+frequencies (nmode)
+linear couplings: (nmode, nel, nel)
+quadratic couplings: (nmode, nmode, nel, nel)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.vibronic.model_h">
+<span id="pibronic-vibronic-model-h-module"></span><h2>pibronic.vibronic.model_h module<a class="headerlink" href="#module-pibronic.vibronic.model_h" title="Permalink to this headline">¶</a></h2>
+<p>module that handles parsing model.h files</p>
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.extract_cubic_couplings">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">extract_cubic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em>, <em>frequencies</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#extract_cubic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.extract_cubic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>not implemented at this time</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.extract_energies">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">extract_energies</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>energies</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#extract_energies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.extract_energies" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill the array energies with appropriate values from the memmap’ed file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.extract_linear_couplings">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">extract_linear_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em>, <em>frequencies</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#extract_linear_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.extract_linear_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill the array coupling_terms with appropriate values from the memmap’ed file
+the frequencies need to be provided in wavenumbers</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.extract_normal_mode_frequencies">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">extract_normal_mode_frequencies</code><span class="sig-paren">(</span><em>path</em>, <em>file</em>, <em>frequency_array</em>, <em>symmetric_modes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#extract_normal_mode_frequencies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.extract_normal_mode_frequencies" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill the array frequency_array with appropriate values from the memmap’ed file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.extract_offdiag_quadratic_couplings">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">extract_offdiag_quadratic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em>, <em>frequencies</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#extract_offdiag_quadratic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.extract_offdiag_quadratic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill the array coupling_terms with appropriate values from the memmap’ed file
+the frequencies need to be provided in wavenumbers</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.extract_quadratic_couplings">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">extract_quadratic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em>, <em>frequencies</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#extract_quadratic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.extract_quadratic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill the array coupling_terms with appropriate values from the memmap’ed file
+the frequencies need to be provided in wavenumbers</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.extract_quartic_couplings">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">extract_quartic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em>, <em>frequencies</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#extract_quartic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.extract_quartic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>not implemented at this time</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.get_number_of_electronic_states">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">get_number_of_electronic_states</code><span class="sig-paren">(</span><em>path</em>, <em>file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#get_number_of_electronic_states"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.get_number_of_electronic_states" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the number of electronic states (int) taken from file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.get_number_of_normal_modes">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">get_number_of_normal_modes</code><span class="sig-paren">(</span><em>path</em>, <em>file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#get_number_of_normal_modes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.get_number_of_normal_modes" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the total number of normal modes (int) and symmetric modes (int) taken from file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_h.read_model_h_file">
+<code class="descclassname">pibronic.vibronic.model_h.</code><code class="descname">read_model_h_file</code><span class="sig-paren">(</span><em>path_file_h</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_h.html#read_model_h_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_h.read_model_h_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads/parses molecule_vibron.h file</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.vibronic.model_op">
+<span id="pibronic-vibronic-model-op-module"></span><h2>pibronic.vibronic.model_op module<a class="headerlink" href="#module-pibronic.vibronic.model_op" title="Permalink to this headline">¶</a></h2>
+<p>module that handles parsing model.op files</p>
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.extract_bicubic_couplings">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">extract_bicubic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#extract_bicubic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.extract_bicubic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.extract_biquartic_couplings">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">extract_biquartic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#extract_biquartic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.extract_biquartic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.extract_cubic_couplings">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">extract_cubic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#extract_cubic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.extract_cubic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.extract_energies">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">extract_energies</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#extract_energies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.extract_energies" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.extract_linear_couplings">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">extract_linear_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#extract_linear_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.extract_linear_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.extract_normal_mode_frequencies">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">extract_normal_mode_frequencies</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#extract_normal_mode_frequencies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.extract_normal_mode_frequencies" title="Permalink to this definition">¶</a></dt>
+<dd><p>store output in frequency_array</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.extract_quadratic_couplings">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">extract_quadratic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#extract_quadratic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.extract_quadratic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.extract_quartic_couplings">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">extract_quartic_couplings</code><span class="sig-paren">(</span><em>path</em>, <em>memmap</em>, <em>coupling_terms</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#extract_quartic_couplings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.extract_quartic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.model_op.read_model_op_file">
+<code class="descclassname">pibronic.vibronic.model_op.</code><code class="descname">read_model_op_file</code><span class="sig-paren">(</span><em>path_file_op</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/model_op.html#read_model_op_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.model_op.read_model_op_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads/parses molecule_vibron.op file</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.vibronic.vibronic_model_io">
+<span id="pibronic-vibronic-vibronic-model-io-module"></span><h2>pibronic.vibronic.vibronic_model_io module<a class="headerlink" href="#module-pibronic.vibronic.vibronic_model_io" title="Permalink to this headline">¶</a></h2>
+<p>vibronic_model_io.py should handle the majority of file I/O</p>
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.Uniform">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">Uniform</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.Uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>uniform(low=0.0, high=1.0, size=None)</p>
+<p>Draw samples from a uniform distribution.</p>
+<p>Samples are uniformly distributed over the half-open interval
+<code class="docutils literal notranslate"><span class="pre">[low,</span> <span class="pre">high)</span></code> (includes low, but excludes high).  In other words,
+any value within the given interval is equally likely to be drawn
+by <cite>uniform</cite>.</p>
+<dl class="docutils">
+<dt>low <span class="classifier-delimiter">:</span> <span class="classifier">float or array_like of floats, optional</span></dt>
+<dd>Lower boundary of the output interval.  All values generated will be
+greater than or equal to low.  The default value is 0.</dd>
+<dt>high <span class="classifier-delimiter">:</span> <span class="classifier">float or array_like of floats</span></dt>
+<dd>Upper boundary of the output interval.  All values generated will be
+less than high.  The default value is 1.0.</dd>
+<dt>size <span class="classifier-delimiter">:</span> <span class="classifier">int or tuple of ints, optional</span></dt>
+<dd>Output shape.  If the given shape is, e.g., <code class="docutils literal notranslate"><span class="pre">(m,</span> <span class="pre">n,</span> <span class="pre">k)</span></code>, then
+<code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">*</span> <span class="pre">k</span></code> samples are drawn.  If size is <code class="docutils literal notranslate"><span class="pre">None</span></code> (default),
+a single value is returned if <code class="docutils literal notranslate"><span class="pre">low</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code> are both scalars.
+Otherwise, <code class="docutils literal notranslate"><span class="pre">np.broadcast(low,</span> <span class="pre">high).size</span></code> samples are drawn.</dd>
+</dl>
+<dl class="docutils">
+<dt>out <span class="classifier-delimiter">:</span> <span class="classifier">ndarray or scalar</span></dt>
+<dd>Drawn samples from the parameterized uniform distribution.</dd>
+</dl>
+<p>randint : Discrete uniform distribution, yielding integers.
+random_integers : Discrete uniform distribution over the closed</p>
+<blockquote>
+<div>interval <code class="docutils literal notranslate"><span class="pre">[low,</span> <span class="pre">high]</span></code>.</div></blockquote>
+<p>random_sample : Floats uniformly distributed over <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1)</span></code>.
+random : Alias for <cite>random_sample</cite>.
+rand : Convenience function that accepts dimensions as input, e.g.,</p>
+<blockquote>
+<div><code class="docutils literal notranslate"><span class="pre">rand(2,2)</span></code> would generate a 2-by-2 array of floats,
+uniformly distributed over <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1)</span></code>.</div></blockquote>
+<p>The probability density function of the uniform distribution is</p>
+<div class="math notranslate nohighlight">
+\[p(x) = \frac{1}{b - a}\]</div>
+<p>anywhere within the interval <code class="docutils literal notranslate"><span class="pre">[a,</span> <span class="pre">b)</span></code>, and zero elsewhere.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">high</span></code> == <code class="docutils literal notranslate"><span class="pre">low</span></code>, values of <code class="docutils literal notranslate"><span class="pre">low</span></code> will be returned.
+If <code class="docutils literal notranslate"><span class="pre">high</span></code> &lt; <code class="docutils literal notranslate"><span class="pre">low</span></code>, the results are officially undefined
+and may eventually raise an error, i.e. do not rely on this
+function to behave when passed arguments satisfying that
+inequality condition.</p>
+<p>Draw samples from the distribution:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>All values are within the given interval:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">s</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">s</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Display the histogram of the samples, along with the
+probability density function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">count</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">ignored</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">bins</span><span class="p">),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_basic_sampling_model">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_basic_sampling_model</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_basic_sampling_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_basic_sampling_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to make the simplest sampling model</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_coupling_from_h_file">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_coupling_from_h_file</code><span class="sig-paren">(</span><em>FS</em>, <em>path_file_h</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_coupling_from_h_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_coupling_from_h_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>assumes that the path_file_h is in electronic_structure</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_coupling_from_op_file">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_coupling_from_op_file</code><span class="sig-paren">(</span><em>FS</em>, <em>path_file_op</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_coupling_from_op_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_coupling_from_op_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>assumes that the path_file_op is in electronic_structure</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_coupling_from_op_hyperlink">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_coupling_from_op_hyperlink</code><span class="sig-paren">(</span><em>FS</em>, <em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_coupling_from_op_hyperlink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_coupling_from_op_hyperlink" title="Permalink to this definition">¶</a></dt>
+<dd><p>assumes that the path_file_op is in electronic_structure</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_fake_coupled_model">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_fake_coupled_model</code><span class="sig-paren">(</span><em>FS</em>, <em>tuning_parameter=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_fake_coupled_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_fake_coupled_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix
+for a tuning_parameter of 0 the transformation matrix (U) is identity
+the larger the value of tuning_parameter the “farther” away from identity U becomes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_harmonic_model">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_harmonic_model</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_harmonic_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_harmonic_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to refresh harmonic model</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_model_hash">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_model_hash</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_model_hash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_model_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>create a has of the coupled_model.json file’s contents
+this is used to confirm that result files were generated for the current model and not an older one
+uses a FileStructure or an absolute path to the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_orthonormal_matrix_lambda_close_to_identity">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_orthonormal_matrix_lambda_close_to_identity</code><span class="sig-paren">(</span><em>A</em>, <em>tuning_parameter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_orthonormal_matrix_lambda_close_to_identity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_orthonormal_matrix_lambda_close_to_identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a orthonormal matrix which is identity if lambda is 0
+the larger the value of lambda the ‘farther’ away the matrix is from identity
+takes: number of surfaces and lambda value</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_random_orthonormal_matrix">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_random_orthonormal_matrix</code><span class="sig-paren">(</span><em>A</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_random_orthonormal_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_random_orthonormal_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a orthonormal matrix, just a wrapper for scipy.stats.ortho_group.rvs()</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.create_sampling_hash">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">create_sampling_hash</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#create_sampling_hash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.create_sampling_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>create a has of the sampling_model.json file’s contents
+this is used to confirm that result files were generated for the current model and not an older one
+uses a FileStructure or an absolute path to the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.extract_dimensions_of_coupled_model">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">extract_dimensions_of_coupled_model</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#extract_dimensions_of_coupled_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.extract_dimensions_of_coupled_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.extract_dimensions_of_sampling_model">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">extract_dimensions_of_sampling_model</code><span class="sig-paren">(</span><em>FS=None</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#extract_dimensions_of_sampling_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.extract_dimensions_of_sampling_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.generate_default_root">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">generate_default_root</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#generate_default_root"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.generate_default_root" title="Permalink to this definition">¶</a></dt>
+<dd><p>backwards compatibility fix for functions that rely on having a predefined default_root</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.generate_vibronic_model_data">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">generate_vibronic_model_data</code><span class="sig-paren">(</span><em>paramDict=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#generate_vibronic_model_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.generate_vibronic_model_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>redo this one but otherwise its fine returns e,w,l,q filled with appropriate values</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.load_model_from_JSON">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">load_model_from_JSON</code><span class="sig-paren">(</span><em>path</em>, <em>dictionary=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#load_model_from_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.load_model_from_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path</p>
+<p>if kwargs is provided then all values are overwritten (in place) with the values stored in the .json file located at path</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.load_sample_from_JSON">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">load_sample_from_JSON</code><span class="sig-paren">(</span><em>path</em>, <em>dictionary=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#load_sample_from_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.load_sample_from_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path</p>
+<p>if kwargs is provided then all values are overwritten (in place) with the values stored in the .json file located at path</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.model_array_diagonal_in_surfaces">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">model_array_diagonal_in_surfaces</code><span class="sig-paren">(</span><em>array</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#model_array_diagonal_in_surfaces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.model_array_diagonal_in_surfaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>boolean function that returns true if the provided numpy array is diagonal or symmetric in the surface dimension
+where the surface dimensions (A) are by convention the last two dimensions
+this function assumes that the array is properly formatted</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.model_shape_dict">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">model_shape_dict</code><span class="sig-paren">(</span><em>A</em>, <em>N</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#model_shape_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.model_shape_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
+Takes A - number of surfaces and N - number of modes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.model_zeros_template_json_dict">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">model_zeros_template_json_dict</code><span class="sig-paren">(</span><em>A</em>, <em>N</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#model_zeros_template_json_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.model_zeros_template_json_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a dictionary that is a valid model, where all values (other than states and modes) are set to 0</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.pretty_print_model">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">pretty_print_model</code><span class="sig-paren">(</span><em>id_data</em>, <em>unitsOfeV=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#pretty_print_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.pretty_print_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>one method of printing the models in a human readable format - outdated and should probably be removed or modified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.read_model_auto_file">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">read_model_auto_file</code><span class="sig-paren">(</span><em>path_file_auto</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#read_model_auto_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.read_model_auto_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to maintain functionality - possible remove in the future</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.read_model_h_file">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">read_model_h_file</code><span class="sig-paren">(</span><em>path_file_h</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#read_model_h_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.read_model_h_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to maintain functionality - possible remove in the future</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.read_model_op_file">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">read_model_op_file</code><span class="sig-paren">(</span><em>path_file_op</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#read_model_op_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.read_model_op_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to maintain functionality - possible remove in the future</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.remove_coupling_from_model">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">remove_coupling_from_model</code><span class="sig-paren">(</span><em>path_source</em>, <em>path_destination</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#remove_coupling_from_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.remove_coupling_from_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads in a model from path_source whose values can have dimensionality (…, A, A)
+creates a new model whose values have dimensionality (…, A) from the diagonal of the A dimension of the input model
+saves the new model to the provided path_destination</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.sample_shape_dict">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">sample_shape_dict</code><span class="sig-paren">(</span><em>A</em>, <em>N</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#sample_shape_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.sample_shape_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
+Takes A - number of surfaces and N - number of modes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.save_model_to_JSON">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">save_model_to_JSON</code><span class="sig-paren">(</span><em>path</em>, <em>dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#save_model_to_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.save_model_to_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for _save_to_JSON
+calls verify_model_parameters() before calling _save_to_JSON()</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.save_sample_to_JSON">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">save_sample_to_JSON</code><span class="sig-paren">(</span><em>path</em>, <em>dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#save_sample_to_JSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.save_sample_to_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for _save_to_JSON
+calls verify_sample_parameters() before calling _save_to_JSON()</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.verify_model_parameters">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">verify_model_parameters</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#verify_model_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.verify_model_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>make sure the provided model parameters follow the file conventions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.vibronic_model_io.verify_sample_parameters">
+<code class="descclassname">pibronic.vibronic.vibronic_model_io.</code><code class="descname">verify_sample_parameters</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_io.html#verify_sample_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_io.verify_sample_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>make sure the provided sample parameters follow the file conventions</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.vibronic.vibronic_model_keys">
+<span id="pibronic-vibronic-vibronic-model-keys-module"></span><h2>pibronic.vibronic.vibronic_model_keys module<a class="headerlink" href="#module-pibronic.vibronic.vibronic_model_keys" title="Permalink to this headline">¶</a></h2>
+<p>contains the VibronicModelKeys</p>
+<dl class="class">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys">
+<em class="property">class </em><code class="descclassname">pibronic.vibronic.vibronic_model_keys.</code><code class="descname">VibronicModelKeys</code><a class="reference internal" href="_modules/pibronic/vibronic/vibronic_model_keys.html#VibronicModelKeys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>The VibronicModelKeys, which are the keys (strings) used in the .json files to identify the corresponding values</p>
+<dl class="attribute">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.cubic_couplings">
+<code class="descname">cubic_couplings</code><em class="property"> = 'cubic couplings'</em><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.cubic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.energies">
+<code class="descname">energies</code><em class="property"> = 'energies'</em><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.energies" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.frequencies">
+<code class="descname">frequencies</code><em class="property"> = 'frequencies'</em><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.frequencies" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.linear_couplings">
+<code class="descname">linear_couplings</code><em class="property"> = 'linear couplings'</em><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.linear_couplings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.number_of_modes">
+<code class="descname">number_of_modes</code><em class="property"> = 'number of modes'</em><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.number_of_modes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.number_of_surfaces">
+<code class="descname">number_of_surfaces</code><em class="property"> = 'number of surfaces'</em><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.number_of_surfaces" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.quadratic_couplings">
+<code class="descname">quadratic_couplings</code><em class="property"> = 'quadratic couplings'</em><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.quadratic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.quartic_couplings">
+<code class="descname">quartic_couplings</code><em class="property"> = 'quartic couplings'</em><a class="headerlink" href="#pibronic.vibronic.vibronic_model_keys.VibronicModelKeys.quartic_couplings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pibronic.vibronic package</a><ul>
+<li><a class="reference internal" href="#scripts-that-handle-data">Scripts that handle data</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pibronic.vibronic.electronic_structure">pibronic.vibronic.electronic_structure module</a></li>
+<li><a class="reference internal" href="#module-pibronic.vibronic.model_auto">pibronic.vibronic.model_auto module</a></li>
+<li><a class="reference internal" href="#module-pibronic.vibronic.model_h">pibronic.vibronic.model_h module</a></li>
+<li><a class="reference internal" href="#module-pibronic.vibronic.model_op">pibronic.vibronic.model_op module</a></li>
+<li><a class="reference internal" href="#module-pibronic.vibronic.vibronic_model_io">pibronic.vibronic.vibronic_model_io module</a></li>
+<li><a class="reference internal" href="#module-pibronic.vibronic.vibronic_model_keys">pibronic.vibronic.vibronic_model_keys module</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="pibronic.html">pibronic package</a><ul>
+      <li>Previous: <a href="pibronic.stats.html" title="previous chapter">pibronic.stats package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pibronic.vibronic.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+      |
+      <a href="_sources/pibronic.vibronic.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

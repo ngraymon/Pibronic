@@ -1,0 +1,245 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.server.pimc_job_dispatcher &#8212; Pibronic 0.1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.server.pimc_job_dispatcher</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; submission script to automate submitting pimc jobs on slurm server &quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">..vibronic</span> <span class="k">import</span> <span class="n">vIO</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_structure</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">delta_beta</span>
+
+
+<span class="n">pimc_cmd</span> <span class="o">=</span> <span class="s2">&quot;sbatch&quot;</span>
+<span class="n">pimc_cmd</span> <span class="o">+=</span> <span class="p">(</span>
+             <span class="s2">&quot; -m n&quot;</span>  <span class="c1"># this stops all mail from being sent</span>
+             <span class="s2">&quot; --priority 0&quot;</span>  <span class="c1"># this defines the priority of the job, default is 0</span>
+             <span class="s2">&quot; --mem=</span><span class="si">{memory:}</span><span class="s2">G&quot;</span>
+             <span class="s2">&quot; --partition=</span><span class="si">{partition:}</span><span class="s2">&quot;</span>
+             <span class="s2">&quot; --ntasks=1&quot;</span>
+             <span class="s2">&quot; --cpus-per-task=</span><span class="si">{n_cpus:d}</span><span class="s2">&quot;</span>
+             <span class="c1"># this should be factored out into file_structure</span>
+             <span class="s2">&quot; --workdir=</span><span class="si">{hostname:}</span><span class="s2">:</span><span class="si">{dir_rho:}</span><span class="s2">execution_output/&quot;</span>  <span class="c1"># defines output directions</span>
+             <span class="c1"># the job name here should be factored out into file_name in data</span>
+             <span class="s2">&quot; --job-name=</span><span class="se">\&quot;</span><span class="s2">F</span><span class="si">{id_data:}</span><span class="s2">_A</span><span class="si">{coupled_surfaces:d}</span><span class="s2">_N</span><span class="si">{coupled_modes:d}</span><span class="s2">_X</span><span class="si">{n_samples:d}</span><span class="s2">_P</span><span class="si">{n_beads:d}</span><span class="s2">_T</span><span class="si">{temp:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="c1"># this should be factored out into file_name and file_structure</span>
+             <span class="s2">&quot; --output=</span><span class="se">\&quot;</span><span class="si">{dir_rho:}</span><span class="s2">execution_output/</span><span class="se">\&quot;</span><span class="s2">F</span><span class="si">{id_data:}</span><span class="s2">_A</span><span class="si">{cA:d}</span><span class="s2">_N</span><span class="si">{cN:d}</span><span class="s2">_X</span><span class="si">{n_samples:d}</span><span class="s2">_P</span><span class="si">{n_beads:d}</span><span class="s2">_T</span><span class="si">{temp:d}</span><span class="se">\&quot;</span><span class="s2">.o%A</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot; </span><span class="si">{wait_param:s}</span><span class="s2">&quot;</span>  <span class="c1"># optional wait parameter</span>
+             <span class="s2">&quot; --export=&quot;</span>
+             <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">MODES=</span><span class="si">{coupled_modes:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">SURFACES=</span><span class="si">{coupled_surfaces:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">RHO_MODES=</span><span class="si">{uncoupled_modes:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">RHO_SURFACES=</span><span class="si">{uncoupled_surfaces:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">SAMPLES=</span><span class="si">{n_samples:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">BLOCKS=</span><span class="si">{block_size:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">BEADS=</span><span class="si">{n_beads:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">TEMP=</span><span class="si">{temp:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">DELTA_BETA=</span><span class="si">{delta_beta:f}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">ROOT_DIR=</span><span class="si">{dir_root:}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">RHO_DIR=</span><span class="si">{dir_rho:}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">NUMBER_OF_CORES=</span><span class="si">{n_cpus:d}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">MEMORY_RESERVED=</span><span class="si">{memory:}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">id_data=</span><span class="si">{id_data:}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">id_rho=</span><span class="si">{id_rho:}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="c1"># this might be worth eventually removing?</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">PYTHON3_PATH=/home/ngraymon/dev/privatemodules/openBLAS</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="s2">&quot;,</span><span class="se">\&quot;</span><span class="s2">Q_HOSTNAME=</span><span class="si">{hostname:}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+             <span class="c1"># this should be made more robust?</span>
+             <span class="c1"># use an absolute path?</span>
+             <span class="s2">&quot; ./server_scripts/pimc_job.sh&quot;</span>
+             <span class="p">)</span>
+
+
+<div class="viewcode-block" id="extract_job_id"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.pimc_job_dispatcher.extract_job_id">[docs]</a><span class="k">def</span> <span class="nf">extract_job_id</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;this might need to be more dynamic and change with type of server&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">()[</span><span class="mi">20</span><span class="p">:])</span></div>
+
+
+<div class="viewcode-block" id="submit_pimc_job_to_nlogn"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.pimc_job_dispatcher.submit_pimc_job_to_nlogn">[docs]</a><span class="k">def</span> <span class="nf">submit_pimc_job_to_nlogn</span><span class="p">(</span><span class="n">lst_T</span><span class="p">,</span> <span class="n">lst_P</span><span class="p">,</span> <span class="n">lst_mem</span><span class="p">,</span> <span class="n">param_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">bead_index</span><span class="p">,</span> <span class="n">bead_val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lst_P</span><span class="p">):</span>
+        <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;wait_param&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">pimc_cmd</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">memory</span><span class="o">=</span><span class="n">lst_mem</span><span class="p">[</span><span class="n">bead_index</span><span class="p">],</span>
+                                  <span class="n">n_beads</span><span class="o">=</span><span class="n">bead_val</span><span class="p">,</span>
+                                  <span class="n">temp</span><span class="o">=</span><span class="n">lst_T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                  <span class="o">**</span><span class="n">param_dict</span>
+                                  <span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+        <span class="n">previous_job_id</span> <span class="o">=</span> <span class="n">extract_job_id</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+
+        <span class="c1"># go backwards because higher temps are easier</span>
+        <span class="k">for</span> <span class="n">temp_val</span> <span class="ow">in</span> <span class="n">lst_T</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;wait_param&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;--dependency afterok:</span><span class="si">{previous_job_id:d}</span><span class="s2">&quot;</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="n">pimc_cmd</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">memory</span><span class="o">=</span><span class="n">lst_mem</span><span class="p">[</span><span class="n">bead_index</span><span class="p">],</span>
+                                      <span class="n">n_beads</span><span class="o">=</span><span class="n">bead_val</span><span class="p">,</span>
+                                      <span class="n">temp</span><span class="o">=</span><span class="n">temp_val</span><span class="p">,</span>
+                                      <span class="o">**</span><span class="n">param_dict</span>
+                                      <span class="p">)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">out</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+            <span class="n">previous_job_id</span> <span class="o">=</span> <span class="n">extract_job_id</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="submit_pimc_job_to_feynman"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.pimc_job_dispatcher.submit_pimc_job_to_feynman">[docs]</a><span class="k">def</span> <span class="nf">submit_pimc_job_to_feynman</span><span class="p">(</span><span class="n">lst_T</span><span class="p">,</span> <span class="n">lst_P</span><span class="p">,</span> <span class="n">lst_mem</span><span class="p">,</span> <span class="n">param_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">bead_index</span><span class="p">,</span> <span class="n">bead_val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lst_P</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">temp_val</span> <span class="ow">in</span> <span class="n">lst_T</span><span class="p">:</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="n">pimc_cmd</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">memory</span><span class="o">=</span><span class="n">lst_mem</span><span class="p">[</span><span class="n">bead_index</span><span class="p">],</span>
+                                      <span class="n">n_beads</span><span class="o">=</span><span class="n">bead_val</span><span class="p">,</span>
+                                      <span class="n">temp</span><span class="o">=</span><span class="n">temp_val</span><span class="p">,</span>
+                                      <span class="o">**</span><span class="n">param_dict</span>
+                                      <span class="p">)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">out</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="submit_pimc_job"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.pimc_job_dispatcher.submit_pimc_job">[docs]</a><span class="k">def</span> <span class="nf">submit_pimc_job</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">param_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">FS</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">path_root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">id_data</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span>
+        <span class="k">assert</span> <span class="n">id_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">id_data</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
+        <span class="k">assert</span> <span class="n">id_rho</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">id_rho</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>  <span class="c1"># maybe not necessary?</span>
+        <span class="n">FS</span> <span class="o">=</span> <span class="n">file_structure</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="o">=</span><span class="n">id_rho</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">param_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># or maybe we could look for a parameter dictionary in the current directory?</span>
+        <span class="n">param_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;basis_size&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+                      <span class="s2">&quot;wait_param&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                      <span class="s2">&quot;n_cpus&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                      <span class="s2">&quot;temperature_list&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">300</span><span class="p">,</span> <span class="p">],</span>
+                      <span class="s2">&quot;delta_beta&quot;</span><span class="p">:</span> <span class="n">delta_beta</span><span class="p">,</span>
+                      <span class="s2">&quot;n_samples&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e6</span><span class="p">),</span>
+                      <span class="s2">&quot;block_size&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e2</span><span class="p">),</span>
+                      <span class="s2">&quot;dir_root&quot;</span><span class="p">:</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span>
+                      <span class="s2">&quot;dir_data&quot;</span><span class="p">:</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_data</span><span class="p">,</span>
+                      <span class="s2">&quot;dir_rho&quot;</span><span class="p">:</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho</span><span class="p">,</span>
+                      <span class="s2">&quot;id_data&quot;</span><span class="p">:</span> <span class="n">FS</span><span class="o">.</span><span class="n">id_data</span><span class="p">,</span>
+                      <span class="s2">&quot;id_rho&quot;</span><span class="p">:</span> <span class="n">FS</span><span class="o">.</span><span class="n">id_rho</span><span class="p">,</span>
+                      <span class="s2">&quot;hostname&quot;</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">(),</span>
+                      <span class="s2">&quot;partition&quot;</span><span class="p">:</span> <span class="s2">&quot;serial&quot;</span><span class="p">,</span>  <span class="c1"># use &quot;highmem&quot; for large memory jobs</span>
+                      <span class="p">}</span>
+
+    <span class="c1"># read in the model parameters from the JSON files</span>
+    <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;coupled_modes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">N</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;coupled_surfaces&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span>
+    <span class="c1"># read in the model parameters from the JSON files</span>
+    <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;uncoupled_modes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">N</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;uncoupled_surfaces&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span>
+
+    <span class="c1"># coupled_modes, coupled_surfaces = vIO.extract_dimensions_of_coupled_model(id_data)</span>
+    <span class="c1"># rho_surfaces, rho_modes  = vIO.extract_dimensions_of_sampling_model(id_data, id_rho)</span>
+
+    <span class="n">temperature_list</span> <span class="o">=</span> <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;temperature_list&quot;</span><span class="p">]</span>
+    <span class="c1"># sample_list          = param_dict[&quot;sample_list&quot;] # we dont need this anymore?</span>
+    <span class="c1"># bead_list            = param_dict[&quot;bead_list&quot;]</span>
+    <span class="c1"># memory_list          = np.ones_like(bead_list, dtype=int) + (bead_list // 20)</span>
+    <span class="c1"># bead_list = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50, 75, 100])</span>
+    <span class="n">bead_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">12</span><span class="p">,</span> <span class="p">])</span>
+    <span class="n">memory_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">25</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">bead_list</span><span class="p">))</span>
+
+    <span class="k">if</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;nlogn&quot;</span><span class="p">):</span>
+        <span class="n">submit_pimc_job_to_nlogn</span><span class="p">(</span><span class="n">temperature_list</span><span class="p">,</span> <span class="n">bead_list</span><span class="p">,</span> <span class="n">memory_list</span><span class="p">,</span> <span class="n">param_dict</span><span class="p">)</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;feynman&quot;</span><span class="p">):</span>
+        <span class="n">submit_pimc_job_to_feynman</span><span class="p">(</span><span class="n">temperature_list</span><span class="p">,</span> <span class="n">bead_list</span><span class="p">,</span> <span class="n">memory_list</span><span class="p">,</span> <span class="n">param_dict</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;This server is currently not supported&quot;</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<span class="k">if</span> <span class="p">(</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">):</span>
+    <span class="c1"># set this up to run from the command line in the future?</span>
+
+    <span class="c1"># assert(len(sys.argv) == 3)</span>
+    <span class="c1"># assert(sys.argv[1].isnumeric() and int(sys.argv[1]) &gt;= 1)</span>
+    <span class="c1"># assert(sys.argv[2].isnumeric() and int(sys.argv[1]) &gt;= 0)</span>
+    <span class="k">pass</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
