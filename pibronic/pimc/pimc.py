@@ -988,23 +988,27 @@ class BoxResultPM(BoxResult):
 
         list_of_bad_paths = []
 
-        for path in list_of_paths:
-            # should verify path is correct?
-            with np.load(path, mmap_mode="r") as data:
-                """ TODO - design decision choice here
-                This implementation currently prints out a debug message and continues execution assuming it's job is to scan through and load as many files as possible.
-                For each path that doesn't have the data we expect it to have we will remove it from the list.
-                Another alternative would be to raise an AssertionError if the file it is trying to load does not have the appropriate keys, which is a good approach.
-                """
-                # self.__class__.verify_result_keys_are_present(path, data)
+        try:
+            for path in list_of_paths:
+                # should verify path is correct?
+                with np.load(path, mmap_mode="r") as data:
+                    """ TODO - design decision choice here
+                    This implementation currently prints out a debug message and continues execution assuming it's job is to scan through and load as many files as possible.
+                    For each path that doesn't have the data we expect it to have we will remove it from the list.
+                    Another alternative would be to raise an AssertionError if the file it is trying to load does not have the appropriate keys, which is a good approach.
+                    """
+                    # self.__class__.verify_result_keys_are_present(path, data)
 
-                # TODO - check hashes here? - or do we assume they've already been checked?
-                # BoxResult.verify_hashes_are_valid()
-                # should verify file is not empty?
-                if self.__class__.result_keys_are_present_in(data.keys()):
-                    number_of_samples += data["number_of_samples"]
-                else:
-                    list_of_bad_paths.append(path)
+                    # TODO - check hashes here? - or do we assume they've already been checked?
+                    # BoxResult.verify_hashes_are_valid()
+                    # should verify file is not empty?
+                    if self.__class__.result_keys_are_present_in(data.keys()):
+                        number_of_samples += data["number_of_samples"]
+                    else:
+                        list_of_bad_paths.append(path)
+        except Exception as err:
+            print("Did we get another mangled .npz file?\nIf numpy can't load the file because it is not a zip file then just delete the offending file and rerun the script")
+            raise(err)
 
         # first lets make sure that we had 1 or more good paths
         assert not set(list_of_paths) == set()

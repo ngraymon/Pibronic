@@ -11,17 +11,15 @@ PARAMETER-SECTION
 #        Frequencies
 # ------------------------
 
-w01                      =       0.01   , ev
-w02                      =       0.02   , ev
-
-#        Zeropoint energy     1.3144241232
+w01                      =       0.02   , ev
+w02                      =       0.04   , ev
 
 #   Electronic Hamitonian
 #   Vertical energies - Zeropoint
 # -------------------------------
 
 EH_s01_s01               =      0.09959721908298894    , ev
-EH_s02_s02               =      0.10959721908298894    , ev
+EH_s02_s02               =      0.19959721908298894    , ev
 
 #     Electronic transition moments
 # ----------------------------------
@@ -30,10 +28,10 @@ EH_s02_s02               =      0.10959721908298894    , ev
 #  Linear Coupling Constants
 # --------------------------
 
-C1_s01_s01_v01           =       0.071    , ev
-C1_s01_s01_v02           =       0.071    , ev
-C1_s02_s02_v01           =       0.072    , ev
-C1_s02_s02_v02           =       0.072    , ev
+C1_s01_s01_v01           =       0.072    , ev
+C1_s02_s02_v01           =      -0.072    , ev
+C1_s01_s02_v02           =       0.16     , ev
+C1_s02_s01_v02           =       0.16     , ev
 
 
 #  Diagonal Quadratic Coupling Constants

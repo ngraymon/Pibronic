@@ -57,8 +57,9 @@ class FileStructure:
         """constructor wrapper that takes a data object from minimal.py"""
         return cls(path_root, data.id_data, data.id_rho)
 
-    def __init__(self, path_root, id_data, id_rho=0):
-        """x"""
+    def __init__(self, path_root, id_data, id_rho=0, no_makedir=False):
+        """
+        If the flag no_makedir is true then no directories are created and the object is simply a container of strings that represent the various paths to files and folders"""
         # assert type(path_root) is str, "did not provide a path in str format"
 
         """
@@ -120,8 +121,10 @@ class FileStructure:
         self.path_analytic_rho = join(self.path_rho_params, file_name.analytic_results)
         self.path_analytic_vib = join(self.path_vib_params, file_name.analytic_results)
 
-        # if not self.directories_exist():
-        self.make_directories()
+        if not no_makedir:
+            # TODO - possibly check to see if directories exist instead of just blindly creating them? like so? if not self.directories_exist():
+            self.make_directories()
+
         return
 
     def directories_exist(self):
@@ -204,6 +207,8 @@ class FileStructure:
         return
 
     def generate_model_hashes(self):
+        """ create two new data attributes which store the hash values (hash_vib, hash_rho)
+        created by the functions vIO.create_model_hash() and vIO.create_sampling_hash()"""
         self.hash_vib = vIO.create_model_hash(FS=self)
         self.hash_rho = vIO.create_sampling_hash(FS=self)
         return

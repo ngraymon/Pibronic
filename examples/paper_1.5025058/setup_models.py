@@ -1,7 +1,6 @@
 # setup_models.py - creates all the directories and copies in the necessary files
 
 # system imports
-import socket
 import shutil
 import glob
 import os
@@ -11,15 +10,9 @@ from os.path import join
 
 # local imports
 import context
+import systems
 from pibronic.vibronic import vIO
 import pibronic.data.file_structure as fs
-
-# list of the names for each of the four system's
-from context import system_names
-
-# lists of the coupled model id's for each system
-# in a dictionary, with the system's name as the key
-from context import data_dict
 
 
 def parse_input_mctdh_files_into_directories(FS, system_name):
@@ -83,8 +76,7 @@ def copy_alternate_rhos_into_directories(FS, system_name):
 
 def prepare_model(system_name, id_data=0, root=None):
     """ wrapper function """
-
-    assert id_data in data_dict[system_name], f"invalid id_data ({id_data:d})"
+    systems.assert_id_data_is_valid(id_data)
 
     if root is None:
         root = context.choose_root_folder()
@@ -92,7 +84,7 @@ def prepare_model(system_name, id_data=0, root=None):
     # instantiate the FileStructure object which creates the directories
     FS = fs.FileStructure(root, id_data, 0)
 
-    # either way will work
+    # either way will work - we will just the simple way for the moment
     if True:
         copy_input_json_files_into_directories(FS, system_name)
     else:
@@ -109,14 +101,12 @@ def automate_prepare_model():
     loops over all the models we want to prepare
     """
 
-    for system in system_names:
-        for id_data in data_dict[system]:
-            prepare_model(system, id_data=id_data)
+    for name in systems.name_lst:
+        for id_data in systems.id_dict[name]:
+            prepare_model(name, id_data=id_data)
 
     return
 
 
 if (__name__ == "__main__"):
-
-    # prepare_model("superimposed", id_data=11)
     automate_prepare_model()

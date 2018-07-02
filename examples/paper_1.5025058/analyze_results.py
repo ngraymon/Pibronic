@@ -1,38 +1,15 @@
 # analyze_results.py - creates all the directories and copies in the necessary files
 
 # system imports
-import socket
-import shutil
-import glob
 import os
-from os.path import join
 
 # third party imports
 
 # local imports
 import context
-from context import pibronic
-from pibronic.vibronic import vIO
+import systems
 from pibronic.stats import stats
 import pibronic.data.file_structure as fs
-
-# list of the names for each of the four system's
-from context import system_names
-
-# lists of the coupled model id's for each system
-# in a dictionary, with the system's name as the key
-from context import data_dict
-
-
-def get_FS(root, id_data, id_rho):
-    system_name = context.get_system_name(id_data)
-    assert id_data in data_dict[system_name], f"invalid id_data ({id_data:d})"
-
-    if root is None:
-        root = context.choose_root_folder()
-
-    # instantiate the FileStructure object which creates the directories
-    return fs.FileStructure(root, id_data, id_rho)
 
 
 def simple_wrapper(FS):
@@ -45,21 +22,25 @@ def simple_wrapper(FS):
 
 
 def automate_wrapper(name):
-    dir_src = join(os.path.abspath(os.path.dirname(__file__)), "alternate_rhos")
-    template = join(dir_src, "{:s}_D{:d}_R{:d}.json")
+    """ loops over the data sets and different rhos """
+    systems.assert_system_name_is_valid(name)
 
-    for id_data in data_dict[name]:
-        for id_rho in range(0, 10):
-            FS = get_FS(None, id_data, id_rho)
+    root = context.choose_root_folder()
+
+    for id_data in systems.id_dict[name]:
+        for id_rho in systems.rho_dict[name][id_data]:
             # TODO - this is a perfect example where FS should have a method which returns a bool
             # which tells if all the directories or necessary - WITHOUT CREATING THE DIRECTORIES
+            # -- this alternative solution of passing in a bool flag might be a reasonable approach
+            FS = fs.FileStructure(root, id_data, id_rho, no_makedir=True)
             if os.path.isfile(FS.path_rho_model):
                 simple_wrapper(FS)
     return
 
 
 if (__name__ == "__main__"):
-    # automate_wrapper("superimposed")
-    # automate_wrapper("displaced")
-    # automate_wrapper("elevated")
+    # Sequential, comment out lines if you only need to run for individual models
+    automate_wrapper("superimposed")
+    automate_wrapper("displaced")
+    automate_wrapper("elevated")
     automate_wrapper("jahnteller")
