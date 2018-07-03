@@ -37,7 +37,14 @@ GB_per_byte = 1e9
 maximum_memory_per_node = 128  # in giga-bytes
 
 
+# TODO - the naming of these two functions could probably be improved
 def beta(temperature):
     """returns a value of beta for a given temperature in Kelvin"""
     val = 1. / (temperature * boltzman)
+    return val
+
+
+def extract_T_from_beta(beta):
+    """returns a temperature (in Kelvin) for a given value of beta"""
+    val = 1. / (beta * boltzman)
     return val

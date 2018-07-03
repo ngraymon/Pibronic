@@ -155,6 +155,10 @@ this commonly stores properties of the sampling model at different temperatures
 """
 analytic_results = "analytic_results.json"
 
+""" contains the orthonormal matrix which was used to preform the unitary transformation on the original_coupled_model.json to get the coupled_model.json
+"""
+orthogonal_matrix = "orthogonal_matrix.npy"
+
 # TODO - maybe include the directories and so forth inside file_name? or maybe in file_structure?
 # list_sub_dirs = [
 #     "parameters/",

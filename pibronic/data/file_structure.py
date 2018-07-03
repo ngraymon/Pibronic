@@ -121,6 +121,10 @@ class FileStructure:
         self.path_analytic_rho = join(self.path_rho_params, file_name.analytic_results)
         self.path_analytic_vib = join(self.path_vib_params, file_name.analytic_results)
 
+        # only used for artifical systems
+        self.path_orig_model = join(self.path_vib_params, file_name.original_model)
+        self.path_ortho_mat = join(self.path_vib_params, file_name.orthogonal_matrix)
+
         if not no_makedir:
             # TODO - possibly check to see if directories exist instead of just blindly creating them? like so? if not self.directories_exist():
             self.make_directories()

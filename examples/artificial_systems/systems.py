@@ -1,4 +1,4 @@
-""" fixed data for each of the four systems """
+""" fixed data for each of the artifical systems """
 
 # system imports
 import itertools as it
@@ -10,18 +10,15 @@ import itertools as it
 
 # each system has a name
 # the names are used to identify the input files in the directories
-# input_mctdh_files, input_json, alternate_rhos
-name_lst = ["superimposed", "displaced", "elevated", "jahnteller"]
+# as well as provide an easy way to distinguish them
+name_lst = ["2x2", "4x6", "7x12"]
 
-# each system is examined for 6 different values of a specific parameter
-# thus each system is associated with 6 models
 # this dictionary is for conviently accesing iterators of the coupled model id's for each system
 # where the system's name is the key
 id_dict = {
-    "superimposed": list(range(11, 17)),
-    "displaced":    list(range(21, 27)),
-    "elevated":     list(range(31, 37)),
-    "jahnteller":   list(range(41, 47)),
+    "2x2":   [0],
+    "4x6":   [1],
+    "7x12":  [2],
     }
 
 all_model_ids = [id_dict[key] for key in id_dict.keys()]
@@ -31,34 +28,9 @@ id_dict["valid"] = list(it.chain(*all_model_ids))
 # this would need to be modified if more rhos/sampling distributions where chosen
 # it has no knowledge of the *actual* files in the directory
 rho_dict = {
-    "superimposed": {11: list(range(3)),
-                     12: list(range(3)),
-                     13: list(range(3)),
-                     14: list(range(3)),
-                     15: list(range(4)),
-                     16: list(range(4)),
-                     },
-    "displaced":    {21: list(range(4)),
-                     22: list(range(3)),
-                     23: list(range(3)),
-                     24: list(range(3)),
-                     25: list(range(4)),
-                     26: list(range(4)),
-                     },
-    "elevated":     {31: list(range(2)),
-                     32: list(range(2)),
-                     33: list(range(2)),
-                     34: list(range(2)),
-                     35: list(range(3)),
-                     36: list(range(3)),
-                     },
-    "jahnteller":   {41: list(range(3)),
-                     42: list(range(3)),
-                     43: list(range(3)),
-                     44: list(range(3)),
-                     45: list(range(4)),
-                     46: list(range(4)),
-                     },
+    "2x2":   {0: [*range(2)]},
+    "4x6":   {1: [*range(2)]},
+    "7x12":  {2: [*range(2)]},
 }
 
 

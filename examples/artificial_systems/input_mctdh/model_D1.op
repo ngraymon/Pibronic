@@ -1,0 +1,88 @@
+OP_DEFINE-SECTION
+title
+IP
+end-title
+end-op_define-section
+
+
+# harmonic parts of ammonia
+
+PARAMETER-SECTION
+
+
+#        Frequencies
+# ------------------------
+
+w01                      =       0.136676    , ev
+w02                      =       0.438180    , ev
+w03                      =       0.213508    , ev
+w04                      =       0.213508    , ev
+w05                      =       0.453178    , ev
+w06                      =       0.453178    , ev
+
+#        Zeropoint energy     0.954114
+
+#   Electronic Hamitonian
+#   Vertical energies - Zeropoint
+# -------------------------------
+
+EH_s01_s01               =      15.526843    , ev
+EH_s02_s02               =       9.746612    , ev
+EH_s03_s03               =      15.526843    , ev
+EH_s04_s04               =      -0.954114    , ev
+
+#     Electronic transition moments
+# ----------------------------------
+
+# tmom in direction Ex
+Ex_s00_s01               =       0.100000    , ev
+Ex_s00_s02               =       0.100000    , ev
+Ex_s00_s03               =       0.100000    , ev
+
+#     Magnetic transition moments
+# ----------------------------------
+
+# tmom in direction Mx
+Mx_s00_s01               =       0.100000    , ev
+Mx_s00_s02               =       0.100000    , ev
+Mx_s00_s03               =       0.100000    , ev
+
+#  Linear Coupling Constants
+# --------------------------
+
+C1_s01_s01_v01           =       0.330653    , ev
+C1_s01_s01_v02           =       0.573074    , ev
+C1_s01_s01_v03           =       0.588249    , ev
+C1_s01_s01_v05           =       0.332074    , ev
+C1_s02_s02_v01           =      -0.501301    , ev
+C1_s02_s02_v02           =       0.154145    , ev
+C1_s02_s02_v03           =       0.000001    , ev
+C1_s02_s02_v05           =      -0.000004    , ev
+C1_s03_s03_v01           =       0.330653    , ev
+C1_s03_s03_v02           =       0.573074    , ev
+C1_s03_s03_v03           =      -0.588248    , ev
+C1_s03_s03_v05           =      -0.332083    , ev
+
+
+#  Diagonal Quadratic Coupling Constants
+# --------------------------------------
+
+# Off_diagonal Quadratic Coupling Constants
+# -----------------------------------------
+
+#  Cubic Coupling Constants
+# --------------------------
+
+#  Quartic Coupling Constants
+# --------------------------
+
+#  Bi-Cubic Constants
+# --------------------------
+
+#  Bi-Quartic Constants
+# --------------------------
+
+
+end-parameter-section
+
+

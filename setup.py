@@ -35,7 +35,6 @@ def julia_is_installed():
 
 # verify that the right version of julia is installed
 def install_VibronicToolkit():
-    file_path = path.expanduser('~/.temp.jl')
 
     url = "https://github.com/ngraymon/VibronicToolkit.jl.git"
     package_name = "VibronicToolkit-Integrated"
@@ -45,14 +44,10 @@ def install_VibronicToolkit():
     # Pkg.installed("VibronicToolkit-Integrated")
 
     # This approach is functional but there is probably a better/cleaner way to do this
-    contents = f'Pkg.clone("{url:s}", "{package_name:s}")\n'
-    contents += f'Pkg.checkout("{package_name:s}", {branch_name:s})\n'
+    cmd = f'try Pkg.clone("{url:s}", "{package_name:s}") end;'
+    cmd += f'Pkg.checkout("{package_name:s}", "{branch_name:s}");'
 
-    with open(file_path, 'w') as file:
-        file.write(contents)
-
-    subprocess.run(['julia', file_path])
-    subprocess.run(['rm', file_path])
+    subprocess.run(['julia', '-e', cmd])
     # we trust that the install was successful
     # although it would be nice to have a clean way to confirm the install was successful
     return
@@ -196,4 +191,5 @@ def setup_package():
 
 
 if __name__ == '__main__':
-    setup_package()
+    install_VibronicToolkit()
+    # setup_package()

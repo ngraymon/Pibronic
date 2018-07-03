@@ -349,14 +349,12 @@ def generate_vibronic_model_data(paramDict=None):
 
 def read_model_h_file(path_file_h):
     """ wrapper function to maintain functionality - possible remove in the future"""
-    model_h.read_model_h_file(path_file_h)
-    return
+    return model_h.read_model_h_file(path_file_h)
 
 
 def read_model_op_file(path_file_op):
     """ wrapper function to maintain functionality - possible remove in the future"""
-    model_op.read_model_op_file(path_file_op)
-    return
+    return model_op.read_model_op_file(path_file_op)
 
 
 def create_coupling_from_h_file(FS, path_file_h):
@@ -400,8 +398,7 @@ def create_coupling_from_op_hyperlink(FS, url):
 
 def read_model_auto_file(path_file_auto):
     """ wrapper function to maintain functionality - possible remove in the future"""
-    model_auto.read_model_auto_file(path_file_auto)
-    return
+    return model_auto.read_model_auto_file(path_file_auto)
 
 
 def _extract_dimensions_from_dictionary(dictionary):
@@ -594,8 +591,8 @@ def remove_coupling_from_model(path_source, path_destination):
 
 def create_harmonic_model(FS):
     """wrapper function to refresh harmonic model"""
-    source = FS.path_vib_params + file_name.coupled_model
-    dest = FS.path_vib_params + file_name.harmonic_model
+    source = FS.path_vib_model
+    dest = FS.path_har_model
     remove_coupling_from_model(source, dest)
     s = "Created harmonic model {:s} by removing coupling from {:s}"
     log.debug(s.format(dest, source))
@@ -605,7 +602,7 @@ def create_harmonic_model(FS):
 def create_basic_sampling_model(FS):
     """wrapper function to make the simplest sampling model"""
     source = create_harmonic_model(FS)
-    dest = FS.path_rho_params + file_name.sampling_model
+    dest = FS.path_rho_model
 
     if os.path.isfile(dest):
         s = "Sampling model {:s} already exists!"
@@ -646,16 +643,35 @@ def create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter):
     return ortho_matrix
 
 
-def create_fake_coupled_model(FS, tuning_parameter=0.01):
+def create_fake_coupled_model(FS, tuning_parameter=0.01, transformation_matrix=None):
     """ take the diagonal coupled model and preform a unitary transformation on it to get a dense matrix
+
     for a tuning_parameter of 0 the transformation matrix (U) is identity
     the larger the value of tuning_parameter the "farther" away from identity U becomes
+
+    if a numpy array of dim AxA is provided in the transformation_matrix then we won't create a new matrix and instead use the provided one
+    note: if transformation_matrix is provided then the tuning_parameter is ignored
     """
     assert os.path.isfile(FS.path_vib_model), "coupled_model file doesn't exist!"
 
     model_dict = load_model_from_JSON(FS.path_vib_model)
     A, N = _extract_dimensions_from_dictionary(model_dict)
-    U = create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter)
+
+    # we will store the matrix in U
+    U = transformation_matrix
+
+    # we now need to obtain a matrix through some means
+    if U is None:
+        # if no parameter is provided we create a new orthonormal matrix
+        U = create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter)
+    elif U is "re-use":
+        # if this special flag is provided then we will load a previous orthonormal matrix
+        U = np.load(FS.path_ortho_mat)
+    elif isinstance(U, np.ndarray):
+        # and finally we might be given the orthonormal matrix
+        assert np.allclose(U.dot(U.T), np.eye(A)), "matrix is not orthonormal"
+    else:
+        raise Exception("This shouldn't happen")
 
     for key in filter(model_dict.__contains__, VMK.key_list()):
 
@@ -689,16 +705,14 @@ def create_fake_coupled_model(FS, tuning_parameter=0.01):
         # overwrite the previous array with the new values
         array[:] = new_values
 
-    # now we need to backup the old model and save the new one
-    source = FS.path_vib_model
-    dest = FS.path_vib_params + file_name.original_model
-    # backup the old model
-    shutil.copyfile(source, dest)
-    # save the new one
-    save_model_to_JSON(source, model_dict)
+    # backup the old model, i.e. the "original" model
+    shutil.copyfile(FS.path_vib_model,  FS.path_orig_model)
+
+    # overwrite the old model with the new model
+    save_model_to_JSON(FS.path_vib_model, model_dict)
 
     # save the orthogonal matrix in case we need to use it later
-    np.save(join(FS.path_vib_params, "orthogonal_matrix"), U)
+    np.save(FS.path_ortho_mat, U)
     return
 
 

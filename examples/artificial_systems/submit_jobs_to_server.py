@@ -69,24 +69,33 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     # instantiate the FileStructure object which creates the directories
     FS = fs.FileStructure(root, id_data, id_rho)
 
-    lst_P = [12, ]
-    # lst_P2 = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, ]
-    # lst_P = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
-    #          100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 250, 300]
-    # lst_P = list(set(lst_P) - set(lst_P2))
-    # lst_P.sort()
+    # possible bead values to choose from
+    lst_P1 = [12, ]  # single testing case
+
+    # two larger ranges
+    lst_P2 = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, ]
+    lst_P3 = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
+              100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 250, 300]
+
+    # don't resubmit the same jobs if not needed
+    lst_P3 = list(set(lst_P3) - set(lst_P2))
+
+    lst_P3.sort()
+
     lst_T = [300.00, ]
     # lst_T = [250., 275., 300., 325., 350., ]
 
+    # TODO - need to add a check that only generates analytical results if the
+    # file doesn't eists OR the hash values don't match up!
     generate_analytical_results(FS.path_root, id_data, id_rho, lst_T)
     A, N = vIO.extract_dimensions_of_coupled_model(FS=FS)
 
     # this is the minimum amount of data needed to run an execution
     parameter_dictionary = {
-        "number_of_samples": int(1e6),
+        "number_of_samples": int(1e5),
         "number_of_states": A,
         "number_of_modes": N,
-        "bead_list": lst_P,
+        "bead_list": lst_P2,
         "temperature_list": lst_T,
         "delta_beta": constants.delta_beta,
         "id_data": id_data,
@@ -112,7 +121,11 @@ def automate_wrapper(name):
 
 
 if (__name__ == "__main__"):
-    automate_wrapper("superimposed")
-    automate_wrapper("displaced")
-    automate_wrapper("elevated")
-    automate_wrapper("jahnteller")
+
+    # eventual code
+    # map(automate_wrapper, systems.name_lst)
+
+    # during testing
+    automate_wrapper(systems.name_lst[0])
+    automate_wrapper(systems.name_lst[1])
+    automate_wrapper(systems.name_lst[2])

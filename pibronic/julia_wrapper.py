@@ -14,7 +14,7 @@ from pibronic import constants
 from pibronic.log_conf import log
 
 
-def compute(command, old_dict):
+def compute(command, old_dict, input_beta):
     """x"""
     log.flow("Computing")
     log.flow(command)
@@ -49,7 +49,9 @@ def compute(command, old_dict):
         if oldKey in output_dict:
             temp_dict[newKey] = float(output_dict[oldKey])
 
-    new_dict = {str(temperature): temp_dict}
+    key_T = "{:.2f}".format(constants.extract_T_from_beta(input_beta))
+
+    new_dict = {key_T: temp_dict}
 
     old_dict.update(new_dict)
     return
@@ -72,11 +74,16 @@ def validate_old_data(old_dict, FS):
     old_dict["hash_rho"] = FS.hash_rho
     return
 
+# TODO - it looks like we can refactor analytic_of_sampling_model()
+# and analytic_of_original_coupled_model()
 
-def analytic_of_sampling_model(FS, command, beta):
+
+def analytic_of_sampling_model(FS, beta):
     """x"""
     path_analytic = FS.path_analytic_rho
-    path_original = FS.path_rho_model
+    path_src = FS.path_rho_model
+
+    command = construct_command_dictionary()["analytical_sampling"]
 
     old_dict = {}
 
@@ -87,18 +94,21 @@ def analytic_of_sampling_model(FS, command, beta):
                 old_dict = json.loads(data)
 
     validate_old_data(old_dict, FS)
-    command = command.format(F=path_original, T=beta)
-    compute(command, old_dict)
+    command = command.format(F=path_src, T=beta)
+    compute(command, old_dict, beta)
 
     with open(path_analytic, 'w') as file:
         json.dump(old_dict, file)
+
     return
 
 
-def analytic_of_original_coupled_model(FS, command, beta):
+def analytic_of_original_coupled_model(FS, beta):
     """x"""
     path_analytic = FS.path_vib_params + "original_analytic_results.txt"
-    path_original = FS.path_vib_params + "original_coupled_model.json"
+    path_src = FS.path_orig_model
+
+    command = construct_command_dictionary()["analytical_coupled"]
 
     old_dict = {}
 
@@ -109,8 +119,8 @@ def analytic_of_original_coupled_model(FS, command, beta):
                 old_dict = json.loads(data)
 
     validate_old_data(old_dict, FS)
-    command = command.format(F=path_original, T=beta)
-    compute(command, old_dict)
+    command = command.format(F=path_src, T=beta)
+    compute(command, old_dict, beta)
 
     with open(path_analytic, 'w') as file:
         json.dump(old_dict, file)
@@ -118,12 +128,14 @@ def analytic_of_original_coupled_model(FS, command, beta):
     return
 
 
-def sos_of_coupled_model(FS, command, beta):
+def sos_of_coupled_model(FS, beta):
     """x"""
     old_dict = {}
     basis_size = 80
 
     path_sos = FS.template_sos_vib.format(B=basis_size)
+
+    command = construct_command_dictionary()["sos"]
 
     # is this a mistake? why check for vib then open rho ??
     if os.path.isfile(path_sos):
@@ -133,7 +145,7 @@ def sos_of_coupled_model(FS, command, beta):
                 old_dict = json.loads(data)
 
     command = command.format(F=FS.path_vib_model, T=beta, B=basis_size)
-    compute(command, old_dict)
+    compute(command, old_dict, beta)
 
     validate_old_data(old_dict, FS)
     with open(path_sos, 'w') as file:
@@ -154,12 +166,20 @@ def prepare_julia():
 def construct_command_dictionary():
     """x"""
     julia = "julia ~/.julia/v0.6/VibronicToolkit-Integrated/bin/"
+
     a_c = julia + "analytical_coupled.jl --conf {F:} --beta {T:}"
     a_s = julia + "analytical_sampling.jl --conf {F:} --beta {T:}"
     s = julia + "sos.jl --conf {F:} --beta {T:} --basis-size {B:}"
     t = julia + "trotter.jl --conf {F:} --beta {T:} --basis-size {B:} --num-links {P:}"
     x = julia + "sampling.jl --conf {F:} --beta {T:} --num-links {P:} --num-samples {X:}"
-    return {"analytical_coupled": a_c, "analytical_sampling": a_s, "sos": s, "trotter": t, "sampling": x}
+
+    d = {"analytical_coupled": a_c,
+         "analytical_sampling": a_s,
+         "sos": s,
+         "trotter": t,
+         "sampling": x
+         }
+    return d
 
 
 if (__name__ == "__main__"):
@@ -182,6 +202,6 @@ if (__name__ == "__main__"):
     FS = fs.FileStructure(path_root, id_data, id_rho)
     FS.generate_model_hashes()
 
-    # analytic_of_original_coupled_model(FS, cmd_dict["analytical_coupled"], beta)
-    analytic_of_sampling_model(FS, cmd_dict["analytical_sampling"], beta)
-    # sos_of_coupled_model(FS, cmd_dict["sos"], beta)
+    # analytic_of_original_coupled_model(FS, beta)
+    analytic_of_sampling_model(FS, beta)
+    # sos_of_coupled_model(FS, beta)

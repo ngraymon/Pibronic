@@ -1172,7 +1172,7 @@ def build_numerator(data, vib, outputArray, idx):
     # build the M matrix
     np.einsum('abcd, abd, abed->abce',
               data.coupling_eigvects,
-              np.exp(-data.tau*data.coupling_eigvals),
+              np.exp(-data.tau*data.coupling_eigvals),  # replace this part to salis
               data.coupling_eigvects,
               out=data.M_matrix,
               optimize='optimal'
