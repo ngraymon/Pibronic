@@ -153,7 +153,7 @@ def prepare_julia():
 
 def construct_command_dictionary():
     """x"""
-    julia = "julia /home/ngraymon/julia_confirm/VibronicToolkit.jl/bin/"
+    julia = "julia ~/.julia/v0.6/VibronicToolkit-Integrated/bin/"
     a_c = julia + "analytical_coupled.jl --conf {F:} --beta {T:}"
     a_s = julia + "analytical_sampling.jl --conf {F:} --beta {T:}"
     s = julia + "sos.jl --conf {F:} --beta {T:} --basis-size {B:}"
