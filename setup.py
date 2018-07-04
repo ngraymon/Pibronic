@@ -37,7 +37,7 @@ def julia_is_installed():
 def install_VibronicToolkit():
 
     url = "https://github.com/ngraymon/VibronicToolkit.jl.git"
-    package_name = "VibronicToolkit-Integrated"
+    package_name = "VibronicToolkit"
     branch_name = "integrated"
 
     # should add a try catch so that julia doesn't error out if the package is already installed?
