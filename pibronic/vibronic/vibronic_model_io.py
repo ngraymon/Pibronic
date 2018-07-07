@@ -22,6 +22,7 @@ from .vibronic_model_keys import VibronicModelKeys as VMK
 from . import model_auto
 from . import model_op
 from . import model_h
+from . import orthonormal
 
 np.set_printoptions(precision=8, suppress=True)  # Print Precision!
 
@@ -621,26 +622,10 @@ def create_random_orthonormal_matrix(A):
     return ortho_group.rvs(A)
 
 
-def create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter):
-    """returns a orthonormal matrix which is identity if lambda is 0
-    the larger the value of lambda the 'farther' away the matrix is from identity
-    takes: number of surfaces and lambda value
-    """
-    from scipy.linalg import expm
-
-    # TODO - this function should probably be in another module that provides general math
-    # functions for all modules
-
-    # scale the tuning parameter by the size of the matrix
-    tuning_parameter /= A
-    # create a random matrix
-    rand_matrix = np.random.rand(A, A)
-    # generate a skew symmetric matrix
-    skew_matrix = rand_matrix - rand_matrix.T
-    # generate an orthonormal matrix, which depends on the tuning parameter
-    ortho_matrix = expm(tuning_parameter * skew_matrix)
-    assert np.allclose(ortho_matrix.dot(ortho_matrix.T), np.eye(A)), "matrix is not orthonormal"
-    return ortho_matrix
+def create_orthonormal_matrix_lambda_close_to_identity(order, tuning_parameter):
+    """ a wrapper for the function defined in pibronic.vibronic.orthonormal """
+    U = orthonormal.create.create_orthonormal_matrix_lambda_close_to_identity(order, tuning_parameter)
+    return U
 
 
 def create_fake_coupled_model(FS, tuning_parameter=0.01, transformation_matrix=None):
@@ -664,7 +649,7 @@ def create_fake_coupled_model(FS, tuning_parameter=0.01, transformation_matrix=N
     if U is None:
         # if no parameter is provided we create a new orthonormal matrix
         U = create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter)
-    elif U is "re-use":
+    elif U == "re-use":
         # if this special flag is provided then we will load a previous orthonormal matrix
         U = np.load(FS.path_ortho_mat)
     elif isinstance(U, np.ndarray):

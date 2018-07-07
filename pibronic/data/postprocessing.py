@@ -324,7 +324,7 @@ def load_analytic_data(FS, T, analytic):
             assert in_dict["hash_vib"] == FS.hash_vib, "wrong vib hash"
             assert in_dict["hash_rho"] == FS.hash_rho, "wrong rho hash"
             # TODO - should make a class function in a new module that handles analytic stuff ??
-            temperature = str(T)
+            temperature = f"{T:.2f}"
             assert temperature in in_dict.keys(), "no analytical results for temperature {:s} in file {:s}".format(temperature, path)
 
             analytic["Z"] = in_dict[temperature]["Z_sampling"]

@@ -134,7 +134,7 @@ this is the full model
 """
 coupled_model = "coupled_model.json"
 
-""" contains the original parameters (diagonal) which describe the systems Hamiltonian
+""" contains the original parameters (diagonal) which describe the system's Hamiltonian
 before we did a unitary transformation
 """
 original_model = "original_coupled_model.json"
@@ -154,6 +154,12 @@ sampling_model = "sampling_model.json"
 this commonly stores properties of the sampling model at different temperatures
 """
 analytic_results = "analytic_results.json"
+
+""" contains any parameters which can be obtained through analytical methods
+which describe the system's Hamiltonian before we did a unitary transformation
+"""
+original_analytic_results = "original_analytic_results.json"
+
 
 """ contains the orthonormal matrix which was used to preform the unitary transformation on the original_coupled_model.json to get the coupled_model.json
 """

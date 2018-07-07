@@ -69,8 +69,8 @@ class FileStructure:
 
         self.id_rho = id_rho
         self.id_data = id_data
-        assert os.path.exists(path_root), "the path_root does not exist"
-        assert os.path.isdir(path_root), "the path_root is not a directory"
+        assert os.path.exists(path_root), f"the path_root ({path_root:}) does not exist"
+        assert os.path.isdir(path_root), f"the path_root ({path_root:}) is not a directory"
         self.path_root = os.path.abspath(path_root)
         # main directories
         self.path_data = join(self.path_root, self.template_vib.format(id_data))
@@ -120,6 +120,7 @@ class FileStructure:
         # TODO - maybe these should begin with file_*  instead of path_* ?
         self.path_analytic_rho = join(self.path_rho_params, file_name.analytic_results)
         self.path_analytic_vib = join(self.path_vib_params, file_name.analytic_results)
+        self.path_analytic_orig = join(self.path_vib_params, file_name.original_analytic_results)
 
         # only used for artifical systems
         self.path_orig_model = join(self.path_vib_params, file_name.original_model)

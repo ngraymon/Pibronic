@@ -57,7 +57,7 @@ def compute(command, old_dict, input_beta):
     return
 
 
-def validate_old_data(old_dict, FS):
+def validate_old_rho_data(old_dict, FS):
     """ check if the old hashes match the new ones,
     otherwise we have to throw away all the old data
     """
@@ -72,6 +72,23 @@ def validate_old_data(old_dict, FS):
     # add the new hashes
     old_dict["hash_vib"] = FS.hash_vib
     old_dict["hash_rho"] = FS.hash_rho
+    return
+
+
+def validate_old_model_data(old_dict, FS):
+    """ check if the old hashes match the new ones,
+    otherwise we have to throw away all the old data
+    """
+    if "hash_vib" not in old_dict:
+        # throw away all the old data
+        old_dict.clear()
+
+    elif old_dict["hash_vib"] != FS.hash_vib:
+        # throw away all the old data
+        old_dict.clear()
+
+    # add the new hashes
+    old_dict["hash_vib"] = FS.hash_vib
     return
 
 # TODO - it looks like we can refactor analytic_of_sampling_model()
@@ -93,7 +110,7 @@ def analytic_of_sampling_model(FS, beta):
             if len(data) > 1:
                 old_dict = json.loads(data)
 
-    validate_old_data(old_dict, FS)
+    validate_old_rho_data(old_dict, FS)
     command = command.format(F=path_src, T=beta)
     compute(command, old_dict, beta)
 
@@ -105,7 +122,7 @@ def analytic_of_sampling_model(FS, beta):
 
 def analytic_of_original_coupled_model(FS, beta):
     """x"""
-    path_analytic = FS.path_vib_params + "original_analytic_results.txt"
+    path_analytic = FS.path_analytic_orig
     path_src = FS.path_orig_model
 
     command = construct_command_dictionary()["analytical_coupled"]
@@ -118,7 +135,7 @@ def analytic_of_original_coupled_model(FS, beta):
             if len(data) > 1:
                 old_dict = json.loads(data)
 
-    validate_old_data(old_dict, FS)
+    validate_old_model_data(old_dict, FS)
     command = command.format(F=path_src, T=beta)
     compute(command, old_dict, beta)
 
@@ -147,7 +164,7 @@ def sos_of_coupled_model(FS, beta):
     command = command.format(F=FS.path_vib_model, T=beta, B=basis_size)
     compute(command, old_dict, beta)
 
-    validate_old_data(old_dict, FS)
+    validate_old_model_data(old_dict, FS)
     with open(path_sos, 'w') as file:
         json.dump(old_dict, file)
 
@@ -165,7 +182,7 @@ def prepare_julia():
 
 def construct_command_dictionary():
     """x"""
-    julia = "julia ~/.julia/v0.6/VibronicToolkit-Integrated/bin/"
+    julia = "julia ~/.julia/v0.6/VibronicToolkit/bin/"
 
     a_c = julia + "analytical_coupled.jl --conf {F:} --beta {T:}"
     a_s = julia + "analytical_sampling.jl --conf {F:} --beta {T:}"
