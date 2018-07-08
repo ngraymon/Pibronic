@@ -436,29 +436,9 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
     def prepare_data(self):
         # we need to modify Z using the analytical rho (Z_rho)
 
-        # if self.FS_lst[0].id_data == 14:
-        #     # do hacky stuff
-        #     blue = 0
-        #     orange = 1
-        #     print(self.analytical_rho_list[blue]["300.00"]["Z_sampling"])
-        #     print(self.analytical_orig_list[blue]["300.00"]["Z_coupled"])
-        #     print(self.lst_X)
-        #     print(self.arr[blue][:, 0, 0]["Z"])
-        #     print(self.arr[blue][:, 0, 0]["Z error"])
-        #     print("\n"*5)
-
-        #     print(self.analytical_rho_list[orange]["300.00"]["Z_sampling"])
-        #     print(self.analytical_orig_list[orange]["300.00"]["Z_coupled"])
-        #     print(self.arr[orange][:, 0, 0]["Z"])
-        #     print(self.arr[orange][:, 0, 0]["Z error"])
-
         for idx_FS, FS in enumerate(self.FS_lst):
             for T in self.lst_T[idx_FS]:
                 Z_rho = self.analytical_rho_list[idx_FS][f"{T:.2f}"]["Z_sampling"]
-                # print("z rho ", Z_rho)
-                # print("z coupled ", self.analytical_orig_list[idx_FS][f"{T:.2f}"]["Z_coupled"])
-                # print("fs index ", idx_FS)
-                # print("data ", FS.id_data, FS.id_rho)
                 idx_T = self.lst_T[idx_FS].index(T)
                 self.arr[idx_FS][:, idx_T, :]["Z"] *= Z_rho
                 self.arr[idx_FS][:, idx_T, :]["Z error"] *= Z_rho
@@ -476,25 +456,12 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
                 view = self.arr[idx_FS][:, idx_T, 0].view()
                 lytical = self.analytical_orig_list[idx_FS][f"{T:.2f}"]["Z_coupled"]
 
-                # if FS.id_data == 14:
-                if True:
-                    # print("rho", FS.id_rho)
-                    # print(self.analytical_orig_list[idx_FS][f"{T:.2f}"])
-                    # print("View 1", view["Z"])
-                    # print(lytical)
-                    view["Z"] -= lytical
-                    # print("View 2", view["Z"])
-                    view["Z"] *= 100.0
-                    # print("View 3", view["Z"])
-                    view["Z"] /= lytical
-                    # print("View 4", view["Z"])
+                view["Z"] -= lytical
+                view["Z"] *= 100.0
+                view["Z"] /= lytical
 
-                    # print("View 1", view["Z error"])
-                    view["Z error"] *= 100.0
-                    # print("View 2", view["Z error"])
-                    view["Z error"] /= lytical
-                    # print("View 3", view["Z error"])
-
+                view["Z error"] *= 100.0
+                view["Z error"] /= lytical
         return
 
     def load_data(self):
@@ -531,17 +498,12 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
                 # for X in self.lst_X[idx_FS]:  # don't plot more than the lowest # of samples
                 X = self.lst_X[idx_FS][0]
                 idx_X = self.lst_X[idx_FS].index(X)
-                # print("Plotting ", idx_FS, FS.id_data, FS.id_rho, idx_T, T, idx_X, X)
 
                 x = tau_values.view()
                 y = self.arr[idx_FS][:, idx_T, idx_X]["Z"].view()
                 yerr = self.arr[idx_FS][:, idx_T, idx_X]["Z error"].view()
                 label = labels[idx_FS].format(FS.id_rho, X)
 
-                # print(idx_FS, FS.id_data, FS.id_rho, label)
-                # print("idx_FS ", idx_FS)
-                # print("y ", y)
-                # print("yerr ", yerr)
                 ax[idx_T].errorbar(x, y, xerr=None, yerr=yerr,
                                    marker='o' if idx_FS == 0 else 'x',
                                    markerfacecolor="None",
@@ -643,7 +605,7 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
             y_label = r"\% Difference    $Z_H$"
 
         ax[0].set_ylabel(y_label)
-        ax[0].set_yscale('log')
+        # ax[0].set_yscale('log')
 
         # plot title
         A, N = vIO.extract_dimensions_of_coupled_model(self.FS_lst[0])

@@ -20,12 +20,12 @@ def automate_simple_z_plots(name):
 
     # Currently we implement very simple plotting, only plotting the Z_MC
     for id_data in systems.id_dict[name]:
-        for id_rho in systems.rho_dict[name][id_data]:
-            FS = fs.FileStructure(root, id_data, id_rho)
-            plotObj = pl.plot_Z_test(FS)
-            plotObj.load_data()
-            plotObj.plot()
-            print(f"Finished plotting D{id_data:d} R{id_rho:d}")
+        FS1 = fs.FileStructure(root, id_data, id_rho=0)
+        FS2 = fs.FileStructure(root, id_data, id_rho=1)
+        plotObj = pl.plot_original_Z_vs_diagonal_test([FS1, FS2])
+        plotObj.load_data()
+        plotObj.plot()
+        print(f"Finished plotting D{id_data:d}")
     return
 
 
@@ -38,7 +38,7 @@ if (__name__ == "__main__"):
     if multiprocessing_flag:
         lst_p = [0]*len(systems.name_lst)
 
-        for idx in range(4):
+        for idx in range(len(systems.name_lst)):
             lst_p[idx] = Process(target=automate_simple_z_plots, args=(systems.name_lst[idx],))
 
         for p in lst_p:
@@ -49,9 +49,8 @@ if (__name__ == "__main__"):
 
     else:
         # Sequential, comment out lines if you only need to run for individual models
-        automate_simple_z_plots("superimposed")
-        automate_simple_z_plots("displaced")
-        automate_simple_z_plots("elevated")
-        automate_simple_z_plots("jahnteller")
+        automate_simple_z_plots(systems.name_lst[0])
+        automate_simple_z_plots(systems.name_lst[1])
+        automate_simple_z_plots(systems.name_lst[2])
 
     print("Done plotting")

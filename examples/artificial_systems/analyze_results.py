@@ -39,8 +39,11 @@ def automate_wrapper(name):
 
 
 if (__name__ == "__main__"):
+    # eventual code
+    # map(automate_wrapper, systems.name_lst)
+
+    # during testing
     # Sequential, comment out lines if you only need to run for individual models
-    automate_wrapper("superimposed")
-    automate_wrapper("displaced")
-    automate_wrapper("elevated")
-    automate_wrapper("jahnteller")
+    automate_wrapper(systems.name_lst[0])
+    automate_wrapper(systems.name_lst[1])
+    automate_wrapper(systems.name_lst[2])

@@ -2,7 +2,6 @@
 
 # system imports
 import shutil
-import glob
 import os
 from os.path import join
 
@@ -15,40 +14,45 @@ from pibronic.vibronic import vIO
 import pibronic.data.file_structure as fs
 
 
-def create_sampling_distribution(FS, use_original_model=False):
+def create_sampling_distributions(FS, name):
     """ copys the original_coupled_model.json file into the /rho_#/sampling_model.json
     if use_original_model is True
     otherwise it simply uses the diagonal of coupled_model.json as the sampling model"""
     vIO.create_harmonic_model(FS)
 
-    if use_original_model:
-        # use the original_coupled_model as our ampling model
-        source = FS.path_orig_model
-        dest = FS.path_rho_model
-        vIO.remove_coupling_from_model(source, dest)
-        # I believe we need to use remove_coupling_from_model() to change the dimensions of
-        # the orig_model, even though it is already diagonal, rho_model's have only
-        # one surface dimension not 2
+    # for the first sampling model we want to use the basic sampling model
+    #  which is simply the diagonal of the hamiltonian (not the original)
+    id_rho = 0
+    FS.change_rho(id_rho)
+    vIO.create_basic_sampling_model(FS)
 
-        # TODO - write function for vIO that just converts the array's between sizes
-        # and throws an error if the input is not diagonal
-    else:
-        # this basic sampling model is simply the diagonal of the hamiltonian (not the original)
-        vIO.create_basic_sampling_model(FS)
+    # for the second sampling model we want to use the original_coupled_model as our sampling model
+    #  which is simply the diagonal of the hamiltonian (not the original)
+    id_rho = 1
+    FS.change_rho(id_rho)
+    source = FS.path_orig_model
+    dest = FS.path_rho_model
+    vIO.remove_coupling_from_model(source, dest)
+    # I believe we need to use remove_coupling_from_model() to change the dimensions of
+    # the orig_model, even though it is already diagonal, rho_model's have only
+    # one surface dimension not 2
 
+    # TODO - write function for vIO that just converts the array's between sizes
+    # and throws an error if the input is not diagonal
     return
 
 
-def unitary_transformation(FS):
+def unitary_transformation(FS, force_new=False):
     """ backup the old coupled_model.json
     and create a new one through a unitary transformation
     """
-    if os.path.isfile(FS.path_ortho_mat):
+    if not force_new and os.path.isfile(FS.path_ortho_mat):
         # if we already have a orthonormal matrix then use that one
         vIO.create_fake_coupled_model(FS, transformation_matrix="re-use")
     else:
         # otherwise create a new one
-        vIO.create_fake_coupled_model(FS, tuning_parameter=0.1)
+        param = systems.get_tuning_parameter(FS.id_data)
+        vIO.create_fake_coupled_model(FS, tuning_parameter=param)
     return
 
 
@@ -59,8 +63,8 @@ def parse_input_mctdh_files_into_directories(FS, system_name):
 
     # where the MCTDH input files for each model are stored
     dir_src = join(os.path.abspath(os.path.dirname(__file__)), "input_mctdh")
+    path_src = join(dir_src, f"model_{system_name:s}.op")
 
-    path_src = join(dir_src, f"model_D{FS.id_data:d}.op")
     path_dst = shutil.copy(path_src, FS.path_es)
 
     # create the coupled_model.json file from the system_[1-6].op file
@@ -74,32 +78,10 @@ def copy_input_json_files_into_directories(FS, system_name):
 
     # where the .json input files for each model are stored
     dir_src = join(os.path.abspath(os.path.dirname(__file__)), "input_json")
-    path_src = join(dir_src, f"model_D{FS.id_data:d}.json")
+    path_src = join(dir_src, f"model_{system_name:s}.json")
 
     # copy the .json file into the appropriate directory
     shutil.copy(path_src, FS.path_vib_model)
-    return
-
-
-def copy_alternate_rhos_into_directories(FS, system_name):
-    """ scan files in root/alternate_rhos/ directory
-    make directories for and copy in all relevant files """
-
-    # where the .json input files for each sampling distribution are stored
-    dir_src = join(os.path.abspath(os.path.dirname(__file__)), "alternate_rhos")
-
-    # collect all possible alternative rho's
-    globPath = join(dir_src, f"model_D{FS.id_data:d}_R*.json")
-    lst_files = [file for file in glob.glob(globPath)]
-
-    for file in lst_files:
-        # extract the id
-        id_rho = int(file.split("_R")[1].split(".json")[0])
-        # create the directories
-        FS.change_rho(id_rho)
-        # copy the file over
-        shutil.copy(file, FS.path_rho_model)
-
     return
 
 
@@ -114,17 +96,17 @@ def prepare_model(system_name, id_data=0, root=None):
     FS = fs.FileStructure(root, id_data, 0)
 
     # either way will work
-    if False:
+    if True:
         copy_input_json_files_into_directories(FS, system_name)
     else:
         parse_input_mctdh_files_into_directories(FS, system_name)
 
-    unitary_transformation(FS)
+    unitary_transformation(FS, force_new=True)
 
-    create_sampling_distribution(FS, use_original_model=True)
-
-    # create all possible rho's
-    copy_alternate_rhos_into_directories(FS, system_name)
+    # create the simple rho's
+    # which are the diagonal of the transformed Hamiltonian (id_rho = 0)
+    # and the original_coupled_model (id_rho = 1)
+    create_sampling_distributions(FS, system_name)
 
     return
 

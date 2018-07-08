@@ -16,15 +16,8 @@ from pibronic.server import job_boss
 import pibronic.data.file_structure as fs
 
 
-def generate_analytical_results(root, id_data, id_rho, temperature_list):
-    """generate analytical results using julia"""
-    systems.assert_id_data_is_valid(id_data)
-
-    # TODO - should have a check to see if the analytical results already exists
-    # and also should check that the hash values match
-
-    # path_script = os.path.abspath(julia_wrapper.__file__)
-
+def _generate_original_analytic_results(root, id_data, id_rho, temperature_list):
+    """ wrapper for convience """
     func_call = (
                 'import pibronic;'
                 'from pibronic.data import file_structure as fs;'
@@ -38,11 +31,10 @@ def generate_analytical_results(root, id_data, id_rho, temperature_list):
                 )
 
     for T in temperature_list:
-        # this should also be generalized
         log.flow("About to generate analytical parameters at Temperature {:.2f}".format(T))
 
         cmd = ("srun"
-               f" --job-name=analytc_D{id_data:d}_R{id_rho:d}_T{T:.2f}"
+               f" --job-name=analytic_D{id_data:d}_T{T:.2f}"
                " python3"
                " -c '{:s}'".format(func_call.format(temperature=T))
                )
@@ -59,6 +51,51 @@ def generate_analytical_results(root, id_data, id_rho, temperature_list):
     return
 
 
+def _generate_sampling_analytic_results(root, id_data, id_rho, temperature_list):
+    """ wrapper for convience """
+    func_call = (
+                'import pibronic;'
+                'from pibronic.data import file_structure as fs;'
+                'from pibronic import julia_wrapper as jw;'
+                'from pibronic.constants import beta;'
+                'b = beta({temperature:.2f});'
+                f'FS = fs.FileStructure("{root:s}", {id_data:d}, {id_rho:d});'
+                'FS.generate_model_hashes();'
+                'jw.prepare_julia();'
+                'pibronic.julia_wrapper.analytic_of_sampling_model(FS, b);'
+                )
+
+    for T in temperature_list:
+        log.flow("About to generate analytical parameters at Temperature {:.2f}".format(T))
+
+        cmd = ("srun"
+               f" --job-name=analytic_D{id_data:d}_R{id_rho:d}_T{T:.2f}"
+               " python3"
+               " -c '{:s}'".format(func_call.format(temperature=T))
+               )
+
+        p = subprocess.Popen(cmd,
+                             universal_newlines=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             shell=True,
+                             )
+        # (out, error) = p.communicate()
+        # print(out)
+        # print(error)
+    return
+
+
+def generate_analytical_results(root, id_data, id_rho, temperature_list):
+    """generate analytical results using julia"""
+    systems.assert_id_data_is_valid(id_data)
+
+    # TODO - should have a check to see if the analytical results already exists
+    # and also should check that the hash values match
+    _generate_original_analytic_results(root, id_data, id_rho, temperature_list)
+    _generate_sampling_analytic_results(root, id_data, id_rho, temperature_list)
+
+
 def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     """ submits PIMC job to the server """
     systems.assert_id_data_is_valid(id_data)
@@ -72,13 +109,14 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     # possible bead values to choose from
     lst_P1 = [12, ]  # single testing case
 
+    # use logspace to generate bead values to get even spacing on plot
     # two larger ranges
     lst_P2 = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, ]
     lst_P3 = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
               100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 250, 300]
 
     # don't resubmit the same jobs if not needed
-    lst_P3 = list(set(lst_P3) - set(lst_P2))
+    # lst_P3 = list(set(lst_P3) - set(lst_P2))
 
     lst_P3.sort()
 
@@ -95,7 +133,7 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
         "number_of_samples": int(1e5),
         "number_of_states": A,
         "number_of_modes": N,
-        "bead_list": lst_P2,
+        "bead_list": lst_P3,
         "temperature_list": lst_T,
         "delta_beta": constants.delta_beta,
         "id_data": id_data,
@@ -126,6 +164,8 @@ if (__name__ == "__main__"):
     # map(automate_wrapper, systems.name_lst)
 
     # during testing
+    # Sequential, comment out lines if you only need to run for individual models
     automate_wrapper(systems.name_lst[0])
     automate_wrapper(systems.name_lst[1])
     automate_wrapper(systems.name_lst[2])
+    pass
