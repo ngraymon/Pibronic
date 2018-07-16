@@ -96,7 +96,7 @@ def prepare_model(system_name, id_data=0, root=None):
     FS = fs.FileStructure(root, id_data, 0)
 
     # either way will work
-    if True:
+    if False:
         copy_input_json_files_into_directories(FS, system_name)
     else:
         parse_input_mctdh_files_into_directories(FS, system_name)

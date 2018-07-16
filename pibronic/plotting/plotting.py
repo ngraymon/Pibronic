@@ -259,6 +259,8 @@ class plot_original_Z_test(plotVirtual):
             T = pp.extract_temperature_value_from_thermo_file_path(path)
             X = pp.extract_sample_value_from_thermo_file_path(path)
 
+            if P not in self.lst_P[0] or T not in self.lst_T[0] or X not in self.lst_X[0]:
+                continue
             idx_P = self.lst_P[0].index(P)
             idx_T = self.lst_T[0].index(T)
             idx_X = self.lst_X[0].index(X)
@@ -303,14 +305,21 @@ class plot_original_Z_test(plotVirtual):
 
         # we might also want to modify it to print the percent error
         self.percent_error = True
-        if self.percent_error:
-            for T in self.lst_T[0]:
-                idx_T = self.lst_T[0].index(T)
-                self.arr[:, idx_T, :]["Z"] -= self.analytical_orig_dict[f"{T:.2f}"]["Z_coupled"]
-                self.arr[:, idx_T, :]["Z"] *= 100.0
-                self.arr[:, idx_T, :]["Z"] /= self.analytical_orig_dict[f"{T:.2f}"]["Z_coupled"]
-                self.arr[:, idx_T, :]["Z error"] *= 100.0
-                self.arr[:, idx_T, :]["Z error"] /= self.analytical_orig_dict[f"{T:.2f}"]["Z_coupled"]
+
+        if not self.percent_error:
+            return
+
+        for T in self.lst_T[0]:
+            idx_T = self.lst_T[0].index(T)
+
+            view = self.arr[:, idx_T, :].view()
+            lytical = self.analytical_orig_dict[f"{T:.2f}"]["Z_coupled"]
+
+            view["Z"] -= lytical
+            view["Z"] *= 100.0
+            view["Z"] /= lytical
+            view["Z error"] *= 100.0
+            view["Z error"] /= lytical
         return
 
     def load_data(self):
@@ -332,10 +341,10 @@ class plot_original_Z_test(plotVirtual):
     def plot_Z(self):
         fig, ax = plt.subplots(1, 1)
 
-        # HACKY - this won't work anymore with the nested lists
-        if len(self.lst_T[0]) is 1:
+        if not isinstance(ax, list):
             ax = [ax, ]
 
+        labels = ["Z (id\_rho={:d}) (X={:.1E}) diagonal of transformed matrix", ]
         # print Z values
         for T in self.lst_T[0]:
             idx_T = self.lst_T[0].index(T)
@@ -346,7 +355,7 @@ class plot_original_Z_test(plotVirtual):
                 x = tau_values.view()
                 y = self.arr[:, idx_T, idx_X]["Z"].view()
                 yerr = self.arr[:, idx_T, idx_X]["Z error"].view()
-                label = "Z (T={:.2f}K) (X={:.1E})".format(T, X)
+                label = labels[0].format(self.FS_lst[0].id_rho, X)
 
                 ax[idx_T].errorbar(x, y, xerr=None, yerr=yerr, marker='o', label=label)
                 ax[idx_T].legend()
@@ -358,6 +367,58 @@ class plot_original_Z_test(plotVirtual):
             ax[idx_T].axhline(y=true_answer, linewidth=2, color='r',
                               label='Analytically derived Z from original model'
                               )
+
+        # Add an inset to the plot!
+        if self.FS_lst[0].id_data >= 20:
+            from matplotlib.ticker import LogFormatterSciNotation
+            from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+            from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
+
+            # Build and manually place the inset (for the rho_1 case )
+
+            # ax[0].xaxis.set_minor_formatter(LogFormatterSciNotation(minor_thresholds=(11, 10)))
+
+            ax_ins = fig.add_axes([0, 0, 1, 1], label='inset 1')
+            ip = InsetPosition(ax[0], [0.1, 0.3, 0.5, 0.6])  # [%left, %up, %width, %height]
+            ax_ins.set_axes_locator(ip)
+            # Connect the inset to its respective region
+            mark_inset(ax[0], ax_ins, loc1=3, loc2=4, fc="none", ec="0.5")
+
+            # window dressing?
+            # ax_ins.set_xscale('log')
+            ax_ins.get_xaxis().set_visible(False)
+            ax_ins.tick_params(which='both', direction='in', pad=4)
+            # ax_ins.spines['top'].set_visible(False)
+
+            # HACK CONSTANTS
+            # F_index = -1
+            idx_T = 0
+            idx_X = 0
+            T = 300.00
+            # dataView = self.arr[F_index, R_index, T_index, 0, :].view()
+            slice_insert = np.s_[-1:-2:-1]
+            # if np.any(np.isnan(dataView)):
+            #     first_Finite = np.where(np.isfinite(self.arr[F_index, R_index, T_index, 0, :]))[0][-1]
+            #     slice_insert = np.s_[first_Finite:first_Finite-10:-1]
+            # --------------------------------------------------------------------------------
+            # Plot
+            idx_FS = 0
+            tau_values = self.generate_tau_values(T)
+            x = tau_values[slice_insert].view()
+            y = self.arr[slice_insert, idx_T, idx_X]["Z"].view()
+            yerr = self.arr[slice_insert, idx_T, idx_X]["Z error"].view()
+            label = labels[0].format(self.FS_lst[idx_FS].id_rho, self.lst_X[idx_FS][0])
+            ax_ins.errorbar(x, y, xerr=None, yerr=yerr,  marker='o', label=label)
+            # --------------------------------------------------------------------------------
+            # REFERENCE / EXACT ANSWER
+            true_answer = self.analytical_orig_dict[f"{T:.2f}"]["Z_coupled"]
+            if self.percent_error:
+                true_answer = 0.0
+
+            ax_ins.axhline(y=true_answer, linewidth=2, color='r',
+                           label='Analytically derived Z from original model'
+                           )
+            # --------------------------------------------------------------------------------
 
         #
         x_label = r'$\tau\,(\text{eV}^{-1})$'
@@ -372,9 +433,9 @@ class plot_original_Z_test(plotVirtual):
         ax[0].spines["top"].set_visible(False)
         ax[0].spines["right"].set_visible(False)
 
-        y_label = r"$\frac{Z_g}{Z_\varrho}$"
+        y_label = r"$Z_H$"
         if self.percent_error:
-            y_label = r"\% Difference    $\frac{Z_g}{Z_\varrho}$"
+            y_label = r"\% Difference    $Z_H$"
 
         ax[0].set_ylabel(y_label)
 

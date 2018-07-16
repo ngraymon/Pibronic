@@ -82,11 +82,11 @@ def get_tuning_parameter(id_data):
     ones = id_data % 10
 
     # these are the transformation matrix tuning parameter values associated with the models
-    param_dict = {1: 0.1,
-                  2: 0.5,
-                  3: 1.0,
-                  4: 2.0,
-                  5: 3.0,
+    param_dict = {1: 0.05,
+                  2: 0.25,
+                  3: 0.50,
+                  4: 0.75,
+                  5: 1.0,
                   }
 
     return param_dict[ones]

@@ -1,4 +1,4 @@
-""" this module handles sequences of (y, x) pairs which are used in the creation of orthonormal matricies,
+""" this module handles sequences of (y, x) pairs which are used in the creation of orthonormal matrices,
 
 The orthonormal matricies are used to create 'artificial' vibronic models (S):
  - To begin you choose any real square matrix (E), which we can consider the 'eigenvalues' of the desired output matrix (S).
@@ -54,7 +54,9 @@ Thus the code for creating an orthonormal matrix which is used to create an 'art
 """
 
 # system imports
+from functools import partial
 import pickle
+
 # import sys
 import os
 
@@ -67,6 +69,8 @@ from scipy.linalg import expm
 
 sequence_filename = "sequence_{:d}.data"
 minimum_length_of_sequence = 50  # this is a guess at the moment
+n_bins = 1e4
+linspace_dims = (0, 1e2, n_bins)
 
 
 def load_sequence(order):
@@ -79,7 +83,7 @@ def load_sequence(order):
 
     path = os.path.join(dir_root, sequence_filename.format(order))
 
-    assert os.path.isfile(path), f"File {path:s} not found! "
+    assert os.path.isfile(path), f"Sequence {path:s} does not exist! "
 
     sequence = np.loadtxt(path, delimiter=', ')
 
@@ -107,9 +111,15 @@ def select_pair(sequence, tuning_parameter):
     """ holds the logic for selecting a (y, x) pair from the sequence
     that matches the tuning parameter"""
 
-    # TODO - how to preform this mapping needs to be determined
+    assert 0.0 <= tuning_parameter <= 1.0, "The tuning parameter is restricted to [0.0, 1.0]"
 
-    return (0.0, 0.0)
+    interval = np.linspace(0.0, 1.0, num=n_bins)
+
+    index = np.searchsorted(interval, tuning_parameter)
+
+    pair = sequence[index]
+
+    return pair
 
 
 def find_first_turn_around_point(SKSM, identity):
@@ -118,13 +128,11 @@ def find_first_turn_around_point(SKSM, identity):
     old_distance = None
     old_x = None
 
-    period = 5e2
-
-    for x in np.linspace(0, period, 1e6):
+    for x in np.linspace(*linspace_dims):
         distance = norm(expm(x * SKSM) - identity)
         if old_distance is not None and old_distance > distance:
-            print("we found the turn around point at from values\n"
-                  "({old_distance:},{old_x})\nto\n({distance},{x})")
+            print("we found the turn around point from values\n"
+                  f"({old_distance:},{old_x})\nto\n({distance},{x})")
             break
         old_distance = distance
         old_x = x
@@ -135,8 +143,35 @@ def find_first_turn_around_point(SKSM, identity):
     return (old_distance, old_x)
 
 
-def generate_sequence(order):
-    """ x """
+def generate_monotonic_sequence(order):
+    """ generates a sequence of the frobenius norm to the first turn around point
+    which will be used when generating new matrices"""
+
+    # we always start with an upper unitriangular matrix
+    upper_tri = np.tri(order, k=0).T
+
+    # which we use to generate the skew_symmetric_matrix
+    skew_symmetric_matrix = upper_tri - upper_tri.T
+
+    identity = np.eye(order)
+
+    max_distance, max_x = find_first_turn_around_point(skew_symmetric_matrix, identity)
+    # the first turn around point is when the matrix wraps back around to -Identity so we want half that distance
+
+    end_point = max_x / 2.0
+
+    frobenius_norm = partial(norm, ord='fro')
+
+    sequence = [(frobenius_norm(expm(x * skew_symmetric_matrix) - identity), x) for x in np.linspace(0, end_point, n_bins)]
+
+    save_sequence(order, sequence)
+
+    return
+
+
+def generate_sequences_for_plotting(order):
+    """ this generates sequences of the 1,2 and infinity norm's of the difference between identity and the skew symmetric matrix
+    this provides data that can be plotted to analyze the periodic behaviour of the norm's for different size of matrices"""
 
     # we always start with an upper unitriangular matrix
     upper_tri = np.tri(order, k=0).T
@@ -149,8 +184,17 @@ def generate_sequence(order):
 
     identity = np.eye(order)
 
+    # the three types of norms that we calculate
+    one_norm = partial(norm, ord=1)
+    infinity_norm = partial(norm, ord=np.inf)
+    frobenius_norm = partial(norm, ord='fro')
+
     # TODO - this will probably be refined in the future
-    sequence = [(norm(expm(x * skew_symmetric_matrix) - identity), x) for x in np.linspace(0, 1e2, 1e4)]
+    sequence = [(one_norm(expm(x * skew_symmetric_matrix) - identity),
+                frobenius_norm(expm(x * skew_symmetric_matrix) - identity),
+                infinity_norm(expm(x * skew_symmetric_matrix) - identity),
+                x,
+                 ) for x in np.linspace(*linspace_dims)]
 
     save_sequence(order, sequence)
 
@@ -158,5 +202,5 @@ def generate_sequence(order):
 
 
 if (__name__ == "__main__"):
-    for order in range(10):
-        generate_sequence(order)
+    for order in range(2, 11, 1):
+        generate_monotonic_sequence(order)

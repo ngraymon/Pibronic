@@ -24,8 +24,8 @@ def create_orthonormal_matrix_lambda_close_to_identity(order, tuning_parameter):
     """
 
     # Once we finish the code to generate sequences we can re-enable this
-    if False:
-        assert 0.0 <= tuning_parameter <= 1.0, "The tuning parameter is restricted to [0.0, 1.0]"
+    if True:
+        assert 0.0 <= tuning_parameter <= 1.0, f"The tuning parameter ({tuning_parameter:}) is restricted to [0.0, 1.0]"
 
     if tuning_parameter == 0.0:
         return np.eye(order)
@@ -35,10 +35,10 @@ def create_orthonormal_matrix_lambda_close_to_identity(order, tuning_parameter):
     skew_symmetric_matrix = upper_tri - upper_tri.T
 
     # Once we finish the code to generate sequences we can re-enable this
-    if False:
+    if True:
         sequence = load_sequence(order)
-        pair = select_pair(sequence, order)
-        tuning_parameter = pair[0]
+        pair = select_pair(sequence, tuning_parameter)
+        tuning_parameter = pair[1]
 
     # generate an orthonormal matrix, which depends on the tuning parameter
     mat = expm(tuning_parameter * skew_symmetric_matrix)

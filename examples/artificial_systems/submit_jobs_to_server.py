@@ -17,7 +17,7 @@ import pibronic.data.file_structure as fs
 
 
 def _generate_original_analytic_results(root, id_data, id_rho, temperature_list):
-    """ wrapper for convience """
+    """ wrapper for convenience """
     func_call = (
                 'import pibronic;'
                 'from pibronic.data import file_structure as fs;'
@@ -52,7 +52,7 @@ def _generate_original_analytic_results(root, id_data, id_rho, temperature_list)
 
 
 def _generate_sampling_analytic_results(root, id_data, id_rho, temperature_list):
-    """ wrapper for convience """
+    """ wrapper for convenience """
     func_call = (
                 'import pibronic;'
                 'from pibronic.data import file_structure as fs;'
@@ -87,7 +87,7 @@ def _generate_sampling_analytic_results(root, id_data, id_rho, temperature_list)
 
 
 def generate_analytical_results(root, id_data, id_rho, temperature_list):
-    """generate analytical results using julia"""
+    """generate analytical results using Julia"""
     systems.assert_id_data_is_valid(id_data)
 
     # TODO - should have a check to see if the analytical results already exists
@@ -124,7 +124,7 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     # lst_T = [250., 275., 300., 325., 350., ]
 
     # TODO - need to add a check that only generates analytical results if the
-    # file doesn't eists OR the hash values don't match up!
+    # file doesn't exists OR the hash values don't match up!
     generate_analytical_results(FS.path_root, id_data, id_rho, lst_T)
     A, N = vIO.extract_dimensions_of_coupled_model(FS=FS)
 
@@ -149,7 +149,7 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
 
 
 def automate_wrapper(name):
-    """ loops over the data sets and different rhos submiting PIMC jobs for each one  """
+    """ loops over the data sets and different rhos submitting PIMC jobs for each one  """
     systems.assert_system_name_is_valid(name)
 
     for id_data in systems.id_dict[name]:

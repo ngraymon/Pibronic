@@ -23,6 +23,7 @@ def automate_simple_z_plots(name):
         FS1 = fs.FileStructure(root, id_data, id_rho=0)
         FS2 = fs.FileStructure(root, id_data, id_rho=1)
         plotObj = pl.plot_original_Z_vs_diagonal_test([FS1, FS2])
+        plotObj = pl.plot_original_Z_test(FS1)
         plotObj.load_data()
         plotObj.plot()
         print(f"Finished plotting D{id_data:d}")
