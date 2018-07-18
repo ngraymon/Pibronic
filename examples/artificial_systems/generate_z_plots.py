@@ -1,4 +1,4 @@
-# generate_plots.py - creates all the directories and copies in the necessary files
+# generate_z_plots.py
 
 # system imports
 from multiprocessing import Process
@@ -13,7 +13,7 @@ from pibronic.data import file_structure as fs
 
 
 def automate_simple_z_plots(name):
-    """ loops over the data sets and different rhos submiting PIMC jobs for each one  """
+    """ loops over the data sets and different rhos plotting the data for each one """
     systems.assert_system_name_is_valid(name)
 
     root = context.choose_root_folder()
@@ -23,7 +23,6 @@ def automate_simple_z_plots(name):
         FS1 = fs.FileStructure(root, id_data, id_rho=0)
         FS2 = fs.FileStructure(root, id_data, id_rho=1)
         plotObj = pl.plot_original_Z_vs_diagonal_test([FS1, FS2])
-        plotObj = pl.plot_original_Z_test(FS1)
         plotObj.load_data()
         plotObj.plot()
         print(f"Finished plotting D{id_data:d}")
