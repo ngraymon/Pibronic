@@ -9,23 +9,33 @@ import os
 # third party imports
 
 # local imports
-from pibronic.data import file_structure as fs
 from pibronic import constants
 from pibronic.log_conf import log
+from pibronic.vibronic import vIO
+from pibronic.data import file_structure as fs
 
 
 def compute(command, old_dict, input_beta):
     """x"""
     log.flow("Computing")
     log.flow(command)
+
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     (out, error) = p.communicate()
-    # out = ""
-    print(out.decode())
-    print(error.decode())
+
+    # check to make sure the job wasn't killed
+    if "Killed" in error.decode():
+        print(f"We ran into an error: {error.decode():s}")
+        return False
+
     rawOutput = ''.join(list(out.decode()))
     lineList = [string for string in rawOutput.split("\n") if string is not '']
     output_dict = dict(line.split(":") for line in lineList)
+
+    # check to make sure that we didn't get 0 results
+    if not bool(output_dict):
+        print("The dictionary of value is empty, therefore the calculation did not complete successfully")
+        return False
 
     temp_dict = {}
     keyDict = {
@@ -54,7 +64,7 @@ def compute(command, old_dict, input_beta):
     new_dict = {key_T: temp_dict}
 
     old_dict.update(new_dict)
-    return
+    return True
 
 
 def validate_old_rho_data(old_dict, FS):
@@ -96,7 +106,11 @@ def validate_old_model_data(old_dict, FS):
 
 
 def analytic_of_sampling_model(FS, beta):
-    """x"""
+    """ attempts to analytically calculate Z from the sampling model (rho_#)
+    checks for previous results data, reads it in, and then tosses the data if the hashes are not valid
+    attempts to execute the analytical julia script, and if successful saves the output
+    writes the combined old data and new data to the appropriate file
+    """
     path_analytic = FS.path_analytic_rho
     path_src = FS.path_rho_model
 
@@ -112,16 +126,21 @@ def analytic_of_sampling_model(FS, beta):
 
     validate_old_rho_data(old_dict, FS)
     command = command.format(F=path_src, T=beta)
-    compute(command, old_dict, beta)
 
-    with open(path_analytic, 'w') as file:
-        json.dump(old_dict, file)
+    if compute(command, old_dict, beta):
+        validate_old_model_data(old_dict, FS)
+        with open(path_analytic, 'w') as file:
+            json.dump(old_dict, file)
 
     return
 
 
 def analytic_of_original_coupled_model(FS, beta):
-    """x"""
+    """ attempts to analytically calculate Z from the original model
+    checks for previous results data, reads it in, and then tosses the data if the hashes are not valid
+    attempts to execute the analytical julia script, and if successful saves the output
+    writes the combined old data and new data to the appropriate file
+    """
     path_analytic = FS.path_analytic_orig
     path_src = FS.path_orig_model
 
@@ -137,37 +156,93 @@ def analytic_of_original_coupled_model(FS, beta):
 
     validate_old_model_data(old_dict, FS)
     command = command.format(F=path_src, T=beta)
-    compute(command, old_dict, beta)
 
-    with open(path_analytic, 'w') as file:
-        json.dump(old_dict, file)
+    if compute(command, old_dict, beta):
+        validate_old_model_data(old_dict, FS)
+        with open(path_analytic, 'w') as file:
+            json.dump(old_dict, file)
 
     return
 
 
-def sos_of_coupled_model(FS, beta):
-    """x"""
+def sos_of_coupled_model(FS, basis_size, beta):
+    """ attempts to calculate Z using sos
+    checks for previous results data, reads it in, and then tosses the data if the hashes are not valid
+    attempts to execute the sos julia script, and if successful saves the output
+    writes the combined old data and new data to the appropriate file
+    """
     old_dict = {}
-    basis_size = 80
 
     path_sos = FS.template_sos_vib.format(B=basis_size)
 
     command = construct_command_dictionary()["sos"]
 
-    # is this a mistake? why check for vib then open rho ??
     if os.path.isfile(path_sos):
         with open(path_sos, 'r') as file:
             data = file.read()
             if len(data) > 1:
                 old_dict = json.loads(data)
 
+    validate_old_model_data(old_dict, FS)
     command = command.format(F=FS.path_vib_model, T=beta, B=basis_size)
-    compute(command, old_dict, beta)
+
+    if compute(command, old_dict, beta):
+        validate_old_model_data(old_dict, FS)
+        with open(path_sos, 'w') as file:
+            json.dump(old_dict, file)
+
+    return
+
+
+def trotter_of_coupled_model(FS, nbeads, basis_size, beta):
+    """ attempts to calculate Z using sos , including the trotter error
+    checks for previous results data, reads it in, and then tosses the data if the hashes are not valid
+    attempts to execute the trotter julia script, and if successful saves the output
+    writes the combined old data and new data to the appropriate file
+    """
+    old_dict = {}
+
+    path_trotter = FS.template_trotter_vib.format(P=nbeads, B=basis_size)
+
+    command = construct_command_dictionary()["trotter"]
+
+    if os.path.isfile(path_trotter):
+        with open(path_trotter, 'r') as file:
+            data = file.read()
+            if len(data) > 1:
+                old_dict = json.loads(data)
 
     validate_old_model_data(old_dict, FS)
-    with open(path_sos, 'w') as file:
-        json.dump(old_dict, file)
+    command = command.format(F=FS.path_vib_model, T=beta, B=basis_size, P=nbeads)
 
+    if compute(command, old_dict, beta):
+        validate_old_model_data(old_dict, FS)
+        with open(path_trotter, 'w') as file:
+            json.dump(old_dict, file)
+
+    return
+
+
+def iterate_method(FS, n_iterations=50):
+    """ this is just a wrapper for the iterate method at the moment
+    it doesn't check for old data - it just regenerates the output every time
+    """
+    path_iterate = os.path.join(FS.path_vib_params, "iterative_model.json")
+    print(path_iterate)
+
+    command = construct_command_dictionary()["iterate"]
+    command = command.format(F=FS.path_vib_model, P=path_iterate, N=n_iterations)
+
+    print("command", command)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    (out, error) = p.communicate()
+    print(out.decode())
+    print(error.decode())
+    # we assume there were no issues!
+    # TODO - this should be fixed after the iterative method has been finalized
+
+    # we need to modify the json file to get it into a sampling system format
+    vIO.remove_coupling_from_model(path_iterate, path_iterate)
     return
 
 
@@ -189,12 +264,14 @@ def construct_command_dictionary():
     s = julia + "sos.jl --conf {F:} --beta {T:} --basis-size {B:}"
     t = julia + "trotter.jl --conf {F:} --beta {T:} --basis-size {B:} --num-links {P:}"
     x = julia + "sampling.jl --conf {F:} --beta {T:} --num-links {P:} --num-samples {X:}"
+    i = julia + "iterate.jl --conf {F:} --path {P:} --num-iter {N:}"
 
     d = {"analytical_coupled": a_c,
          "analytical_sampling": a_s,
          "sos": s,
          "trotter": t,
-         "sampling": x
+         "sampling": x,
+         "iterate": i,
          }
     return d
 

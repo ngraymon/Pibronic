@@ -96,7 +96,7 @@ def confirm_symmetry_in_modes(mode_range, quadratic_couplings):
 
 def read_model_auto_file(filename):
     """
-    if the shift to MCTDH file structure is permananent this function will no longer be needed
+    if the shift to MCTDH file structure is permanent this function will no longer be needed
 
     Read Vibronic Model file (cp.auto) which
     contains all information on the approximate
@@ -162,7 +162,7 @@ def read_model_auto_file(filename):
             temp_str = next(f_iter)
             frequencies[i] = float(temp_str.partition("cm-1")[2].partition("eV")[0])
     except ValueError as err_obj:
-        print("Having issues parsing the Hessian parent energy, why are the frequences not digits?", temp_str, temp_str.partition("cm-1")[2], temp_str.partition("cm-1")[2].partition("eV")[0])
+        print("Having issues parsing the Hessian parent energy, why are the frequencies not digits?", temp_str, temp_str.partition("cm-1")[2], temp_str.partition("cm-1")[2].partition("eV")[0])
         raise err_obj
 
     # ========================

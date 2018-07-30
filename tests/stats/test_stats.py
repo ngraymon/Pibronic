@@ -2,8 +2,8 @@
 
 # system imports
 import inspect
-import math
 import os
+from os.path import dirname, join
 
 
 # local imports
@@ -79,7 +79,7 @@ def test_estimate_basic_properties():
 
 def test_add_harmonic_contribution():
     nums = np.random.randint(0, 1000, size=4)
-    test_dict = {"E": nums[0],"Cv": nums[1]}
+    test_dict = {"E": nums[0], "Cv": nums[1]}
 
     E_harmonic = nums[2]
     Cv_harmonic = nums[3]
@@ -93,7 +93,7 @@ def test_add_harmonic_contribution():
 @pytest.fixture()
 def path():
     # does this work when deployed?
-    return os.path.join(os.path.dirname(os.path.dirname(inspect.getfile(pibronic))), "tests/test_models/")
+    return join(dirname(dirname(inspect.getfile(pibronic))), "tests/test_models/")
 
 
 @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])

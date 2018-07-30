@@ -2,8 +2,9 @@
 """
 
 # system imports
-import os
 import inspect
+import os
+from os.path import dirname, join
 
 
 # local imports
@@ -20,7 +21,7 @@ from numpy import float64 as F64
 @pytest.fixture()
 def path():
     # does this work when deployed?
-    return os.path.join(os.path.dirname(os.path.dirname(inspect.getfile(pibronic))), "tests/test_models/")
+    return join(dirname(dirname(inspect.getfile(pibronic))), "tests/test_models/")
 
 
 @pytest.fixture()
@@ -114,8 +115,8 @@ def dataPM(request):
 def FS_pm(path, dataPM):
     return fs.FileStructure.from_boxdata(path, dataPM)
 
-# this creates 10 different output files for this test case
-@pytest.fixture(params=range(0, 10))
+
+@pytest.fixture(params=range(0, 10))  # this creates 10 different output files for this test case
 def job_id(request):
     return request.param
 

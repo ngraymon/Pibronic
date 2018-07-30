@@ -27,7 +27,7 @@ class plotGrids():
 
     def __init__(self, input_FS):
         """ x """
-        assert isinstance(input_FS, fs.FileStructure), " this class only takes 1 FS"
+        assert isinstance(input_FS, fs.FileStructure), "this class only takes 1 FS"
         self.FS = input_FS
         return
 

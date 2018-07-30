@@ -2,12 +2,10 @@
 
 # system imports
 import os
-from os.path import join
-from os.path import normpath
-from os.path import samefile
+from os.path import join, normpath, samefile
 
 # local imports
-from ..context import pibronic
+from .. import context  # provides pibronic
 import pibronic.data.file_structure as fs
 
 # third party imports

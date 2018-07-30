@@ -8,9 +8,7 @@ from os.path import join
 # third party imports
 import numpy as np
 from numpy import float64 as F64
-# import matplotlib as mpl
 import matplotlib.pyplot as plt
-# import matplotlib.cm as cmap
 
 # local imports
 from .server import prepare_mpl_rc_file, load_latex_module_on_server
@@ -183,7 +181,7 @@ class plot_original_Z_test(plotVirtual):
             idx_T = self.lst_T[0].index(T)
             idx_X = self.lst_X[0].index(X)
 
-            # bit of a naieve way to load the data?
+            # bit of a naive way to load the data?
             # should possibly do some validation?
             with open(path, 'r') as file:
                 data = json.loads(file.read())
@@ -287,7 +285,7 @@ class plot_original_Z_test(plotVirtual):
         # points BOTH ticks inward
         ax[0].tick_params(which='both', direction='in', pad=2)
 
-        # Remove the plot frame lines. They are unnecessary chartjunk.
+        # Remove the plot frame lines. They are unnecessary chart junk.
         ax[0].spines["top"].set_visible(False)
         ax[0].spines["right"].set_visible(False)
 
@@ -404,9 +402,11 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
         if not isinstance(ax, list):
             ax = [ax, ]
 
-        labels = ["Z (id\_rho={:d}) (X={:.1E}) diagonal of transformed matrix ",
-                  "Z (id\_rho={:d}) (X={:.1E}) original coupled model "
-                  ]
+        labels = {0: "Z (id\_rho={:d}) (X={:.1E}) diagonal of transformed matrix ",
+                  1: "Z (id\_rho={:d}) (X={:.1E}) original coupled model ",
+                  2: "Z (id\_rho={:d}) (X={:.1E}) iterative model ",
+                  3: "Z (id\_rho={:d}) (X={:.1E}) weight corrected iterative model"
+                  }
 
         # print Z values
         for idx_FS, FS in enumerate(self.FS_lst):
@@ -420,7 +420,7 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
                 x = tau_values.view()
                 y = self.arr[idx_FS][:, idx_T, idx_X]["Z"].view()
                 yerr = self.arr[idx_FS][:, idx_T, idx_X]["Z error"].view()
-                label = labels[idx_FS].format(FS.id_rho, X)
+                label = labels[FS.id_rho].format(FS.id_rho, X)
 
                 ax[idx_T].errorbar(x, y, xerr=None, yerr=yerr,
                                    marker='o' if idx_FS == 0 else 'x',
@@ -437,8 +437,7 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
                                   )
 
         # Add an inset to the plot!
-        if self.FS_lst[0].id_data >= 20:
-            from matplotlib.ticker import LogFormatterSciNotation
+        if self.FS_lst[0].id_data >= 10:
             from mpl_toolkits.axes_grid1.inset_locator import mark_inset
             from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
 
@@ -512,7 +511,7 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
         # points BOTH ticks inward
         ax[0].tick_params(which='both', direction='in', pad=2)
 
-        # Remove the plot frame lines. They are unnecessary chartjunk.
+        # Remove the plot frame lines. They are unnecessary chart junk.
         ax[0].spines["top"].set_visible(False)
         ax[0].spines["right"].set_visible(False)
 
@@ -615,7 +614,7 @@ class plot_Z_test(plotVirtual):
             idx_T = self.lst_T[0].index(T)
             idx_X = self.lst_X[0].index(X)
 
-            # bit of a naieve way to load the data?
+            # bit of a naive way to load the data?
             # should possibly do some validation?
             with open(path, 'r') as file:
                 data = json.loads(file.read())

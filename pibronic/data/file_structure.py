@@ -96,6 +96,7 @@ class FileStructure:
         self.template_jackknife = self.path_rho_results + file_name.jackknife()
         self.template_sos_rho = self.path_rho_params + file_name.sos()
         self.template_sos_vib = self.path_vib_params + file_name.sos()
+        self.template_trotter_vib = self.path_vib_params + file_name.trotter()
 
         # TODO - should we factor this out into the file_name module?
         # self.template_pimc = file_name.pimc

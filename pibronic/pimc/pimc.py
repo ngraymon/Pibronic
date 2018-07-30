@@ -59,7 +59,7 @@ np.random.seed()  # random
 
 
 class TemperatureDependentClass:
-    """store temperture dependent constants here"""
+    """store temperature dependent constants here"""
     def __init__(self, model, tau):
         # construct the coth and csch tensors
         omega = np.broadcast_to(model.omega, model.size['AN'])
@@ -159,7 +159,7 @@ class ModelVibronic(ModelClass):
         self.beta = data.beta
         self.tau = data.tau
 
-        # model paramters
+        # model parameters
         self.omega = np.zeros(self.size['N'], dtype=F64)
         self.energy = np.zeros(self.size['AA'], dtype=F64)
         self.linear = np.zeros(self.size['NAA'], dtype=F64)
@@ -293,7 +293,7 @@ class ModelSampling(ModelClass):
         for key in self.size_list:
             self.size[key] = tuple([self.param_dict[letter] for letter in key])
 
-        # model paramters
+        # model parameters
         self.omega = np.zeros(self.size['N'], dtype=F64)
         self.energy = np.zeros(self.size['A'], dtype=F64)
         self.linear = np.zeros(self.size['NA'], dtype=F64)
@@ -341,7 +341,6 @@ class ModelSampling(ModelClass):
         return
 
     def compute_weight_for_each_state(self):
-        print(self.beta, self.energy, self.omega, sep='\n')
         """these are the weights for the oscillators associated with each state"""
         self.state_weight = np.exp(-self.beta * (self.energy + self.delta_weight))
         # self.state_weight /= 2. * np.prod(np.sinh((self.beta * self.omega) / 2.))
@@ -351,7 +350,6 @@ class ModelSampling(ModelClass):
 
         # normalize the weights
         self.state_weight /= self.state_weight.sum()
-        print("weights", self.state_weight)
         return
 
     def optimize_energy(self):
@@ -380,6 +378,8 @@ class ModelSampling(ModelClass):
             self.state_shift[a, :] = -self.linear[:, a] / self.omega
             # then we remove it from the calculation
             self.linear[:, a] = 0.0
+            # this value should not be used after this point
+            self.energy[:] = np.nan
         return
 
     def compute_sampling_constants(self, data):
@@ -392,33 +392,12 @@ class ModelSampling(ModelClass):
 
         # the ordered offsets for multiple surfaces
         self.sample_shift = self.state_shift[self.sample_sources, :]
-        # calculate the means of each gaussian
+        # calculate the means of each Gaussian
 
         # inverse_covariance_matrix = 2. * coth_tensor[:, :, NEW] - sch_tensor[:, :, NEW] * O_eigvals[NEW, NEW, :]
         # inverse_covariance_matrix = 2. * self.const.coth[..., NEW] - self.const.csch[..., NEW] * data.circulant_eigvals[NEW, NEW, ...]
-
         self.inverse_covariance = (2. * self.const.cothANP
                                    - self.const.cschANP * data.circulant_eigvals)
-        # print(data.circulant_eigvects.T)
-        # print(  "Mode 1 ",
-        #         self.inverse_covariance[0,0,-1],
-        #         np.sqrt(self.inverse_covariance[0,0,-1]),
-        #         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])),
-        #         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0]),
-        #         6*(np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0])),
-        #         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size['P'][0]/ 20),
-        #         sep="\n",
-        #     )
-        # print(  "Mode 2 ",
-        #         self.inverse_covariance[0,1,-1],
-        #         np.sqrt(self.inverse_covariance[0,1,-1]),
-        #         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])),
-        #         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0]),
-        #         6*(np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0])),
-        #         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size['P'][0] / 20),
-        #         sep="\n",
-        #     )
-        # self.self.inverse_covariance -= self.const.cschANP * data.circulant_eigvals
         self.standard_deviation = np.sqrt(1. / self.inverse_covariance[self.sample_sources, ...])
         self.sample_means = np.zeros(self.size['BNP'], dtype=F64)
         return
@@ -443,7 +422,7 @@ class ModelSampling(ModelClass):
 
 
 class BoxData:
-    """use this to pass execution paramters back and forth between methods"""
+    """use this to pass execution parameters back and forth between methods"""
     block_size = 0
     samples = 0
     blocks = 0
@@ -474,7 +453,7 @@ class BoxData:
 
     # it would probably be better to shuffle this json passing black magic into job boss
     # perhaps job boss modifies the load_json function before calling it?
-    # or maybe one of the optional paramters to load_json is the replacement symbol which by default is a colon?
+    # or maybe one of the optional parameters to load_json is the replacement symbol which by default is a colon?
 
     # we need to use SOME symbol(semicolon for example)
     # to allow the string to be treated as a SINGLE environment variable
@@ -482,7 +461,7 @@ class BoxData:
     _COMMA_REPLACEMENT = ";"
     _SEPARATORS = (_COMMA_REPLACEMENT, ':')
 
-    # the hash values for the vibronic model and the gaussian mixture distribution
+    # the hash values for the vibronic model and the Gaussian mixture distribution
     hash_vib = None
     hash_rho = None
 
@@ -640,8 +619,10 @@ class BoxData:
 
         # remove sample dependent normal mode displacement (from sampling model)
         self.qTensor += self.rho.sample_shift[sample_view, NEW, :, NEW]
+
         # add surface dependent normal mode displacement (from vibronic model)
-        self.qTensor -= self.vib.state_shift[NEW, :, :, NEW]
+        # self.qTensor -= self.vib.state_shift[NEW, :, :, NEW]
+
         return
 
     def initialize_models(self):
@@ -676,7 +657,7 @@ class BoxData:
             self.size[key] = tuple([self.param_dict[letter] for letter in key])
 
         # compute constants
-        self.beta = 1.0 / (constants.boltzman * self.temperature)
+        self.beta = constants.beta(self.temperature)
         self.tau = self.beta / self.beads
 
         # where we store the transformed samples
@@ -1056,7 +1037,7 @@ def pos_sym_assert(tensor):
         s = "The Covariance matrix is not symmetric positive-semidefinite"
         raise AssertionError(s)
 
-    # alternatively we can try to compute choleskys decomposition
+    # alternatively we can try to compute the Cholesky decomposition
     try:
         np.linalg.choleskys(tensor)
     except np.linalg.LinAlgError as e:
@@ -1066,15 +1047,15 @@ def pos_sym_assert(tensor):
     return
 
 
-def scale_o_matricies(scalingFactor, model_one, model_two):
-    """divides the O matricies of the models by the scalingFactor"""
+def scale_o_matrices(scalingFactor, model_one, model_two):
+    """divides the O matrices of the models by the scalingFactor"""
     model_one.omatrix /= scalingFactor[..., NEW, NEW]
     model_two.omatrix /= scalingFactor[..., NEW, NEW]
     return
 
 
-def un_scale_o_matricies(scalingFactor, model_one, model_two):
-    """multiples the O matricies of the models by the scalingFactor"""
+def un_scale_o_matrices(scalingFactor, model_one, model_two):
+    """multiples the O matrices of the models by the scalingFactor"""
     model_one.omatrix *= scalingFactor[..., NEW, NEW]
     model_two.omatrix *= scalingFactor[..., NEW, NEW]
     return
@@ -1091,8 +1072,11 @@ def build_scaling_factors(S12, model_one, model_two):
     return
 
 
-def build_o_matrix(data, model):
+def build_o_matrix(data, model, state_shift):
     """Calculates the O matrix of a model, storing the result inside the model object"""
+
+    # add surface dependent normal mode displacement (from model)
+    data.qTensor -= state_shift[NEW, :, :, NEW]
 
     # name and select the views
     q1 = data.qTensor.view()
@@ -1118,11 +1102,14 @@ def build_o_matrix(data, model):
 
     # this only works because omatrix is filled with zeros already
     model.omatrix *= model.omatrix_prefactor[..., NEW]
+
+    # remove surface dependent normal mode displacement (from model)
+    data.qTensor += state_shift[NEW, :, :, NEW]
     return
 
 
 def build_denominator(rho_model, outputArray, idx):
-    """Calculates the state trace over the bead product of the o matricies of the rho model"""
+    """Calculates the state trace over the bead product of the o matrices of the rho model"""
     # outputArray[idx] = rho_model.omatrix.prod(axis=1).sum(axis=1)
     outputArray[idx] = rho_model.omatrix.prod(axis=1).trace(axis1=1, axis2=2)
     return
@@ -1132,7 +1119,7 @@ def diagonalize_coupling_matrix(data):
 
     # ------------------------------------------------------------------------
     # shift to surface independent co-ordinates
-    data.qTensor += data.vib.state_shift[NEW, :, :, NEW]
+    # data.qTensor += data.vib.state_shift[NEW, :, :, NEW]
 
     # build the coupling matrix
     # quadratic terms
@@ -1148,13 +1135,13 @@ def diagonalize_coupling_matrix(data):
                                       data.qTensor,
                                       # optimize='optimal',  # not clear if this is faster
                                       )
-    # reference hamiltonian (energy shifts)
+    # reference Hamiltonian (energy shifts)
     data.coupling_matrix += data.vib.energy[NEW, NEW, :, :]
 
     # print("V\n", data.coupling_matrix[0, 0, :, :])
 
     # shift back to surface dependent co-ordinates
-    data.qTensor -= data.vib.state_shift[NEW, :, :, NEW]
+    # data.qTensor -= data.vib.state_shift[NEW, :, :, NEW]
     # ------------------------------------------------------------------------
 
     # check that the coupling matrix is symmetric in surfaces
@@ -1217,7 +1204,7 @@ def block_compute_gR(data, result):
 
     for block_index in range(0, data.blocks):
 
-        # indicies
+        # indices
         start = block_index * data.block_size
         end = (block_index + 1) * data.block_size
         sample_view = slice(start, end)
@@ -1225,11 +1212,11 @@ def block_compute_gR(data, result):
         # generate sample points in collective co-ordinates
         data.draw_sample(sample_view)
 
-        # process the sapmled points
+        # process the sampled points
         data.transform_sampled_coordinates(sample_view)
 
-        # build O matricies for system distribution
-        build_o_matrix(data, vib.const)
+        # build O matrices for system distribution
+        build_o_matrix(data, vib.const, vib.state_shift)
 
         # compute parts with normal scaling factor
         diagonalize_coupling_matrix(data)
@@ -1276,7 +1263,7 @@ def block_compute_rhoR_from_input_samples(data, result, input_R_values):
 
     for block_index in range(0, data.blocks):
 
-        # indicies
+        # indices
         start = block_index * data.block_size
         end = (block_index + 1) * data.block_size
         sample_view = slice(start, end)
@@ -1286,8 +1273,8 @@ def block_compute_rhoR_from_input_samples(data, result, input_R_values):
         # we transform the dimensionless co-ordinates to surface dependent co-ordinates q = R - d
         data.qTensor -= data.vib.state_shift[NEW, :, :, NEW]
 
-        # build O matricies for system distribution
-        build_o_matrix(data, rho.const)
+        # build O matrices for system distribution
+        build_o_matrix(data, rho.const, rho.state_shift)
         build_denominator(rho.const, rho_of_R, sample_view)
 
     # return and let the caller of the function save the results appropriately
@@ -1309,7 +1296,7 @@ def block_compute_gR_from_raw_samples(data, result):
 
     for block_index in range(0, data.blocks):
 
-        # indicies
+        # indices
         start = block_index * data.block_size
         end = (block_index + 1) * data.block_size
         sample_view = slice(start, end)
@@ -1318,8 +1305,8 @@ def block_compute_gR_from_raw_samples(data, result):
         # but which were not sampled from
         data.generate_random_R_values(result, input_view, sample_view)
 
-        # build O matricies for system distribution
-        build_o_matrix(data, vib.const)
+        # build O matrices for system distribution
+        build_o_matrix(data, vib.const, vib.state_shift)
 
         # compute parts with normal scaling factor
         diagonalize_coupling_matrix(data)
@@ -1348,7 +1335,7 @@ def block_compute(data, result):
     S12 = np.zeros(data.size['BP'])
 
     for block_index in range(0, data.blocks):
-        # indicies
+        # indices
         start = block_index * data.block_size
         end = (block_index + 1) * data.block_size
         sample_view = slice(start, end)
@@ -1356,17 +1343,17 @@ def block_compute(data, result):
         # generate sample points in collective co-ordinates
         data.draw_sample(sample_view)
 
-        # process the sapmled points
+        # process the sampled points
         data.transform_sampled_coordinates(sample_view)
 
-        # build O matricies for sampling distribution
-        build_o_matrix(data, rho.const)
-        # build O matricies for system distribution
-        build_o_matrix(data, vib.const)
+        # build O matrices for sampling distribution
+        build_o_matrix(data, rho.const, rho.state_shift)
+        # build O matrices for system distribution
+        build_o_matrix(data, vib.const, vib.state_shift)
 
         # compute parts with normal scaling factor
         build_scaling_factors(S12, rho.const, vib.const)
-        scale_o_matricies(S12, rho.const, vib.const)
+        scale_o_matrices(S12, rho.const, vib.const)
 
         build_denominator(rho.const, y_rho, sample_view)
         diagonalize_coupling_matrix(data)
@@ -1404,7 +1391,7 @@ def block_compute_pm(data, result):
     # log.info("Start: {:f}".format(startTime))
     for block_index in range(0, data.blocks):
 
-        # indicies
+        # indices
         start = block_index * data.block_size
         end = (block_index + 1) * data.block_size
         sample_view = slice(start, end)
@@ -1412,28 +1399,28 @@ def block_compute_pm(data, result):
         # generate sample points in collective co-ordinates
         data.draw_sample(sample_view)
 
-        # process the sapmled points
+        # process the sampled points
         data.transform_sampled_coordinates(sample_view)
 
-        # build O matricies for sampling distribution
-        build_o_matrix(data, rho.const)
-        # build O matricies for system distribution
-        build_o_matrix(data, vib.const)
+        # build O matrices for sampling distribution
+        build_o_matrix(data, rho.const, rho.state_shift)
+        # build O matrices for system distribution
+        build_o_matrix(data, vib.const, vib.state_shift)
 
         # compute parts with normal scaling factor
         build_scaling_factors(S12, rho.const, vib.const)
-        scale_o_matricies(S12, rho.const, vib.const)
+        scale_o_matrices(S12, rho.const, vib.const)
         build_denominator(rho.const, y_rho, sample_view)
         diagonalize_coupling_matrix(data)
         build_numerator(data, vib.const, y_g, sample_view)
 
         # Plus
-        build_o_matrix(data, vib.const_plus)
+        build_o_matrix(data, vib.const_plus, vib.state_shift)
         vib.const_plus.omatrix /= S12[..., NEW, NEW]
         build_numerator(data, vib.const_plus, y_gp, sample_view)
 
         # Minus
-        build_o_matrix(data, vib.const_minus)
+        build_o_matrix(data, vib.const_minus, vib.state_shift)
         vib.const_minus.omatrix /= S12[..., NEW, NEW]
         build_numerator(data, vib.const_minus, y_gm, sample_view)
 

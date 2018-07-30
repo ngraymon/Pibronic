@@ -2,6 +2,7 @@
 
 # system imports
 import os
+from os.path import dirname, join, abspath
 
 # local imports
 from .context import pibronic
@@ -18,7 +19,7 @@ import numpy as np
 
 class TestProcessingVibronicModel():
 
-    test_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "test_models/")
+    test_path = join(abspath(dirname(__file__)), "test_models/")
 
     # check both the data set 0 and data set 1
     @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])
@@ -87,7 +88,7 @@ class TestPimcNatively():
     block_size = int(1e1)
     np.random.seed(242351)  # pick our seed
 
-    test_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "test_models/")
+    test_path = join(abspath(dirname(__file__)), "test_models/")
 
     def test_create_BoxData_inline(self):
         data = pimc.BoxData()

@@ -319,7 +319,7 @@ def load_analytic_data(FS, T, analytic):
         assert os.path.isfile(path), f"This file doesn't exist:\n{path:s}"
         with open(path, "r") as file:
             in_dict = json.loads(file.read())
-
+            print(path, in_dict)
             # make sure the analytic data is up to date!!
             assert in_dict["hash_vib"] == FS.hash_vib, "wrong vib hash"
             assert in_dict["hash_rho"] == FS.hash_rho, "wrong rho hash"

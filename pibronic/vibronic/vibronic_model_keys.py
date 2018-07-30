@@ -44,6 +44,6 @@ class VibronicModelKeys(Enum):
 
     @classmethod
     def key_list(cls):
-        """ returns a list of all enum members that are ommited from the .json file if all of their array's values are 0
+        """ returns a list of all enum members that are omitted from the .json file if all of their array's values are 0
         """
         return [cls.E, cls.G1, cls.G2, cls.G3, cls.G4]

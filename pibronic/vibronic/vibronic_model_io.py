@@ -31,7 +31,7 @@ np.set_printoptions(precision=8, suppress=True)  # Print Precision!
 
 
 def model_shape_dict(A, N):
-    """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
+    """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensionality of the associated value in the .json file
     Takes A - number of surfaces and N - number of modes
 
     """
@@ -48,7 +48,7 @@ def model_shape_dict(A, N):
 
 
 def sample_shape_dict(A, N):
-    """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensonality of the associated value in the .json file
+    """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensionality of the associated value in the .json file
     Takes A - number of surfaces and N - number of modes
 
     """
@@ -65,7 +65,7 @@ def sample_shape_dict(A, N):
 
 
 def model_array_diagonal_in_surfaces(array):
-    """ boolean function that returns true if the provided numpy array is diagonal or symmetric in the surface dimension
+    """ Boolean function that returns true if the provided numpy array is diagonal or symmetric in the surface dimension
     where the surface dimensions (A) are by convention the last two dimensions
     this function assumes that the array is properly formatted
 
@@ -132,9 +132,9 @@ def verify_sample_parameters(kwargs):
 
 
 def _hash(string):
-    """creates a sha512 hash of the input string and returns the byte representation"""
+    """creates a SHA512 hash of the input string and returns the byte representation"""
     m = hashlib.sha512()
-    m.update(string.encode('utf-8'))
+    m.update(string.encode('UTF-8'))
     return m.hexdigest()
 
 
@@ -147,7 +147,7 @@ def create_model_hash(FS=None, path=None):
     else:
         path = FS.path_vib_model
 
-    with open(path, mode='r', encoding='utf8') as file:
+    with open(path, mode='r', encoding='UTF8') as file:
         string = file.read()
 
     return _hash(string)
@@ -162,7 +162,7 @@ def create_sampling_hash(FS=None, path=None):
     else:
         path = FS.path_rho_model
 
-    with open(path, mode='r', encoding='utf8') as file:
+    with open(path, mode='r', encoding='UTF8') as file:
         string = file.read()
 
     return _hash(string)
@@ -201,7 +201,7 @@ def pretty_print_model(id_data, unitsOfeV=False):
     linear = kwargs[VMK.G1].view()
     quadratic = kwargs[VMK.G2].view()
 
-    # by default convert the output to wavenumbers
+    # by default convert the output to wave numbers
     conversionFactor = 1 if unitsOfeV else constants.wavenumber_per_eV
 
     # stringify the lists
@@ -238,7 +238,7 @@ def pretty_print_model(id_data, unitsOfeV=False):
                      coords=[i_labels, j_labels, a_labels, b_labels],
                      dims=['mode i', 'mode j ', 'surface a', 'surface b'],)
 
-    # print the data, relying on panda's DataArrays to printin a human legible manner
+    # print the data, relying on panda's DataArrays to print in a human legible manner
     print(omegaArray.to_dataframe(),
           energyArray.to_dataframe(),
           linArray.to_dataframe(),
@@ -251,16 +251,17 @@ def pretty_print_model(id_data, unitsOfeV=False):
 
 def _generate_linear_terms(linear_terms, shape, displacement):
     """ generate linear terms that are 'reasonable' """
-    for i in range(shape[VMK.w]):
+    for i in range(shape[VMK.w][0]):
         upTri = Uniform(-displacement[i], displacement[i], shape[VMK.E])
         # force the linear terms to be symmetric
         linear_terms[:] = np.tril(upTri) + np.tril(upTri, k=-1).T
     return
 
 
-def _generate_quadratic_terms(quadratic_terms, shape, displacement, N):
+def _generate_quadratic_terms(quadratic_terms, shape, displacement, Modes):
     """ generate quadratic terms that are 'reasonable' """
-    for i, j in it.combinations_with_replacement(range(N), 2):
+    for i, j in it.combinations_with_replacement(Modes, 2):
+        # does the combinations_with_replacement work???
         upTri = Uniform(-displacement[i, j], displacement[i, j], shape[VMK.E])
         # force the quadratic terms to be symmetric
         quadratic_terms[i, j, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
@@ -296,18 +297,17 @@ def generate_vibronic_model_data(paramDict=None):
 
     # ranges for convenience
     numModes = paramDict['numModes']
-    # numStates = paramDict['numStates']
+    numStates = paramDict['numStates']
     Modes = range(numModes)
-    # States = range(numStates)
 
     # generate the array dimensions
-    shape = model_shape_dict(paramDict['numStates'], numModes)
+    shape = model_shape_dict(numStates, numModes)
 
     # initialize arrays
     frequencies = np.zeros(shape[VMK.w])
     energy = np.zeros(shape[VMK.E])
-    linear_terms = np.zeros(shape[VMK.G1])
-    quadratic_terms = np.zeros(shape[VMK.G2])
+    l_terms = np.zeros(shape[VMK.G1])
+    q_terms = np.zeros(shape[VMK.G2])
 
     # generate frequencies
     frequencies[:] = np.linspace(minFreq, maxFreq, num=numModes, endpoint=True, dtype=F64)
@@ -318,34 +318,32 @@ def generate_vibronic_model_data(paramDict=None):
     energy[:] = np.tril(energy) + np.tril(energy, k=-1).T
 
     # calculate the linear displacement
-    l_shift = frequencies / paramDict['linear_scaling']
-    _generate_linear_terms(linear_terms, shape, l_shift)
+    l_shift = paramDict['linear_scaling'] / frequencies
+    _generate_linear_terms(l_terms, shape, l_shift)
 
+    # TODO - no quadratic terms for the moment - turn back on after further testing
     # calculate the quadratic displacement
-    q_shift = np.sqrt(np.outer(frequencies, frequencies)) / paramDict['quadratic_scaling']
-    _generate_quadratic_terms(quadratic_terms, shape, q_shift, Modes)
+    # q_shift = np.sqrt(np.outer(frequencies, frequencies)) / paramDict['quadratic_scaling']
+    # _generate_quadratic_terms(q_terms, shape, q_shift, Modes)
 
     # if we are building a harmonic model then zero out all off-diagonal entries
     if not paramDict['nonadiabatic']:
-        _remove_coupling_from_generated_model(Modes, energy, linear_terms, quadratic_terms)
+        _remove_coupling_from_generated_model(Modes, energy, l_terms, q_terms)
 
     assert model_array_diagonal_in_surfaces(energy), "energy not symmetric in surfaces"
-    assert model_array_diagonal_in_surfaces(linear_terms), "linear_terms not symmetric in surfaces"
-    assert model_array_diagonal_in_surfaces(quadratic_terms), "quadratic_terms not symmetric in surfaces"
-    assert np.allclose(quadratic_terms, quadratic_terms.transpose(1, 0, 2, 3)), "quadratic_terms not symmetric in surfaces"
+    assert model_array_diagonal_in_surfaces(l_terms), "linear terms not symmetric in surfaces"
+    assert model_array_diagonal_in_surfaces(q_terms), "quadratic terms not symmetric in surfaces"
+    assert np.allclose(q_terms, q_terms.transpose(1, 0, 2, 3)), "quadratic terms not symmetric in modes"
 
-    # TODO - which of these returns is the correct one to use?
-    # # and we are done
-    # return_dict = {VMK.N: numModes,
-    #                VMK.A: numStates,
-    #                VMK.E: energy,
-    #                VMK.w: frequencies,
-    #                VMK.G1: linear_terms,
-    #                VMK.G2: quadratic_terms,
-    #                }
-    # return return_dict
+    d = {VMK.N: numModes,
+         VMK.A: numStates,
+         VMK.E: energy,
+         VMK.w: frequencies,
+         VMK.G1: l_terms,
+         VMK.G2: q_terms,
+         }
 
-    return energy, frequencies, linear_terms, quadratic_terms
+    return d
 
 
 def read_model_h_file(path_file_h):
@@ -393,7 +391,7 @@ def create_coupling_from_op_hyperlink(FS, url):
         log.debug("Created \n{:s}\nfrom\n{:s}\n".format(FS.path_vib_model, url))
         return FS.path_vib_model
     except Exception as err:
-        # The url wasn't valid
+        # The URL wasn't valid
         raise Exception("Incorrect https link {:s}".format(url))
 
 
@@ -530,7 +528,7 @@ def load_model_from_JSON(path, dictionary=None):
     """
     log.debug(f"Loading model from {path:s}")
 
-    # no arrays were provided so return newly created arrays after filling them with the approriate values
+    # no arrays were provided so return newly created arrays after filling them with the appropriate values
     if not bool(dictionary):
         new_model_dict = _load_from_JSON(path)
 
@@ -557,7 +555,7 @@ def load_sample_from_JSON(path, dictionary=None):
     """
     log.debug(f"Loading rho model (sampling model) from {path:s}")
 
-    # no arrays were provided so return newly created arrays after filling them with the approriate values
+    # no arrays were provided so return newly created arrays after filling them with the appropriate values
     if not bool(dictionary):
         new_model_dict = _load_from_JSON(path)
 

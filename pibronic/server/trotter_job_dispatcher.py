@@ -135,7 +135,7 @@ if (__name__ == "__main__"):
     cores_requested = 16
     # 8 bytes for a double, times the number of doubles in the largest matrix
     chosen_memory_size = 8 * pow((number_of_surfaces * pow(chosen_size_of_basis, number_of_modes)), 2)
-    # multiply by a factor of 10 for saftey ( we assume at least 4-5 matricies in use at once)
+    # multiply by a factor of 10 for safety ( we assume at least 4-5 matrices in use at once)
     chosen_memory_size *= 15
     # express the result in a number of GB
     chosen_memory_size /= SIZE_OF_GB_IN_BYTES

@@ -8,11 +8,11 @@ import itertools as it
 import os
 
 # -----------------------------------------------------------
-# User convience functions
+# User convenience functions
 # -----------------------------------------------------------
 
 # Should add helper functions that can read the .npz files directly
-# possibly translate them to text or csv for quick analzying
+# possibly translate them to text or csv for quick analyzing
 
 
 # -----------------------------------------------------------
@@ -20,14 +20,14 @@ import os
 # -----------------------------------------------------------
 
 def readlines(mmFile, number_of_lines):
-    """if we need to skip mulitple lines"""
+    """if we need to skip multiple lines"""
     for x in range(0, number_of_lines):
         mmFile.readline()
 
 
 def find_string_in_file(mmFile, filePath, targetString):
     """wrapper that raises error if no substr can be found
-    finds the last occurance of a substring in memory mapped file
+    finds the last occurrence of a substring in memory mapped file
     """
     location = mmFile.find(targetString.encode(encoding="utf-8"))
 
@@ -41,7 +41,7 @@ def find_string_in_file(mmFile, filePath, targetString):
 
 def rfind_string_in_file(mmFile, filePath, targetString):
     """wrapper that raises error if no substr can be found
-    finds the last occurance of a substring in memory mapped file"""
+    finds the last occurrence of a substring in memory mapped file"""
     location = mmFile.rfind(targetString.encode(encoding="utf-8"))
 
     if location == -1:

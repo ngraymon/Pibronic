@@ -108,7 +108,7 @@ def estimate_memory_usuage(A, N, B):
     # the memory is heavily dependent on the BASIS SIZE
     # 8 bytes for a double, times the number of doubles in the largest matrix
     chosen_memory_size = 8 * pow((A * pow(B, N)), 2)
-    # multiply by a factor of 10 for saftey ( we assume at least 4-5 matricies in use at once )
+    # multiply by a factor of 10 for safety ( we assume at least 4-5 matrices in use at once )
     chosen_memory_size *= 10
     # express the result in a number of GB
     chosen_memory_size /= GB_per_byte
@@ -122,7 +122,7 @@ def estimate_memory_usuage(A, N, B):
 
 
 def submit_rho_job(FS=None, path_root=None, id_data=None, id_rho=None, recalculate_sos_file=False, param_dict=None):
-    """ recalculate_sos_file is a boolean flag which forces all sos files to be replaced when true, should only use this if the model has changed or debugging"""
+    """ recalculate_sos_file is a Boolean flag which forces all sos files to be replaced when true, should only use this if the model has changed or debugging"""
 
     if FS is None:
         assert path_root is not None and type(id_data) is str
@@ -147,7 +147,7 @@ def submit_rho_job(FS=None, path_root=None, id_data=None, id_rho=None, recalcula
     param_dict["uncoupled_modes"] = N
     param_dict["uncoupled_surfaces"] = A
 
-    # should be able to process more than 2 mode, however this will stay here until a specific multi-mode test case is constructed for saftey
+    # should be able to process more than 2 mode, however this will stay here until a specific multi-mode test case is constructed for safety
     assert(N == 1 or N == 2)
 
     # we read in the appropriate parameters from somewhere?
@@ -167,7 +167,7 @@ def submit_rho_job(FS=None, path_root=None, id_data=None, id_rho=None, recalcula
         # need to pass param_dict byRef so that wait_arg can be modified if need be
         submit_sos_job(FS, param_dict)
 
-    # otherwise we can just procced to create our rho file
+    # otherwise we can just proceed to create our rho file
     command = rho_cmd.format(**param_dict)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     out, error = p.communicate()

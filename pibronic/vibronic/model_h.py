@@ -87,14 +87,14 @@ def extract_normal_mode_frequencies(path, file, frequency_array, symmetric_modes
 
 def extract_energies(path, memmap, energies):
     """fill the array energies with appropriate values from the memmap'ed file"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Reference Hamiltonian'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Gradients of heff along normal modes'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip the header
@@ -105,7 +105,7 @@ def extract_energies(path, memmap, energies):
     stringData = byteData.decode(encoding="utf-8")
     lines = stringData.strip().splitlines()
 
-    # save the reference hamiltonian into the energies array
+    # save the reference Hamiltonian into the energies array
     for d1 in States:
         energies[d1] = lines[d1].split()
     return
@@ -114,14 +114,14 @@ def extract_energies(path, memmap, energies):
 def extract_linear_couplings(path, memmap, coupling_terms, frequencies):
     """fill the array coupling_terms with appropriate values from the memmap'ed file
     the frequencies need to be provided in wavenumbers"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Gradients of heff along normal modes'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Diagonal second order corrections of heff'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     for idx, w in enumerate(frequencies):
@@ -148,14 +148,14 @@ def extract_linear_couplings(path, memmap, coupling_terms, frequencies):
 def extract_quadratic_couplings(path, memmap, coupling_terms, frequencies):
     """fill the array coupling_terms with appropriate values from the memmap'ed file
     the frequencies need to be provided in wavenumbers"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Diagonal second order corrections of heff'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Off-diagonal second order corrections heff'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     for idx, w in enumerate(frequencies):
@@ -182,14 +182,14 @@ def extract_quadratic_couplings(path, memmap, coupling_terms, frequencies):
 def extract_offdiag_quadratic_couplings(path, memmap, coupling_terms, frequencies):
     """fill the array coupling_terms with appropriate values from the memmap'ed file
     the frequencies need to be provided in wavenumbers"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Off-diagonal second order corrections heff'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Diagonal Cubic corrections of heff'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     for idx1, w1 in enumerate(frequencies):
@@ -240,7 +240,7 @@ def read_model_h_file(path_file_h):
     """ reads/parses molecule_vibron.h file"""
     path_file_params = path_file_h[:-2] + ".in"
 
-    # declare the arrays used to store the model's paramters
+    # declare the arrays used to store the model's parameters
     # all numbers have units of electron volts
     excitation_energies = None
     frequencies = None

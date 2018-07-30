@@ -9,7 +9,7 @@ Keeps file naming consistant over the many modules if changes need to be made
 # third party imports
 # local imports
 
-# TODO - conside the idea of making the template strings parameterizable as well as including different generating functions - seems like a lot of overhead for little gain?
+# TODO - consider the idea of making the template strings parameterizable as well as including different generating functions - seems like a lot of overhead for little gain?
 
 
 """ the execution output of a pimc run
@@ -75,6 +75,18 @@ def sos(B="{B:d}"):
     """
     return _sos.format(B)
 
+""" output of Trotter for coupled model
+B - refers the number of basis functions to obtain results inside file (int)
+"""
+_trotter = "trotter_P{:s}_B{:s}.json"
+
+
+def trotter(P="{P:d}", B="{B:d}"):
+    """ wrapper function to allow parameterized search for files
+        can pass in any regular expression
+        most commonly will just pass in "*" to search for all files of a given argument
+    """
+    return _trotter.format(P, B)
 
 """ R values used for training ML algorithms
 P - refers the number of beads (int)

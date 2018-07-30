@@ -38,7 +38,7 @@ echo ${SOS_SCRIPT} "-SH" ${BASIS_SIZE} ${SURFACES} ${MODES} ${NUM_OF_TEMPS} ${DA
 # execute the job
 ${SOS_SCRIPT} "-SH" ${BASIS_SIZE} ${SURFACES} ${MODES} ${NUM_OF_TEMPS} ${DATA_SET_ID}
 
-# retrive useful information about the job's execution and then print that info
+# retrieve useful information about the job's execution and then print that info
 EXECSTATS=$(ssh ${Q_HOSTNAME} sacct -j $SLURM_JOBID --format=CPUTime,CPUTimeRAW,AveVMSize)
 
 echo "Execution stats: "

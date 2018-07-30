@@ -19,14 +19,14 @@ from .vibronic_model_keys import VibronicModelKeys as VMK
 
 def extract_energies(path, memmap):
     """x"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
-    beginString = 'Electronic Hamitonian'
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
+    beginString = 'Electronic Hamitonian'  # NOTE - THIS IS NOT A SPELLING ERROR (Hamitonian)
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Electronic transition moments'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip the header
@@ -43,7 +43,7 @@ def extract_energies(path, memmap):
     numStates = len(lines)
     States = range(numStates)
 
-    # save the reference hamiltonian into the energies array
+    # save the reference Hamiltonian into the energies array
     energies = np.zeros((numStates, numStates))
     for a in States:
         list_of_words = lines[a].split()
@@ -56,14 +56,14 @@ def extract_energies(path, memmap):
 
 def extract_normal_mode_frequencies(path, memmap):
     """store output in frequency_array"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Frequencies'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Zeropoint energy'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip headers
@@ -93,14 +93,14 @@ def extract_normal_mode_frequencies(path, memmap):
 
 def extract_linear_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Linear Coupling Constants'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Diagonal Quadratic Coupling Constants'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip headers
@@ -124,14 +124,14 @@ def extract_linear_couplings(path, memmap, coupling_terms):
 
 def extract_quadratic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Diagonal Quadratic Coupling Constants'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Cubic Coupling Constants'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip headers
@@ -155,14 +155,14 @@ def extract_quadratic_couplings(path, memmap, coupling_terms):
 
 def extract_cubic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Cubic Coupling Constants'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Quartic Coupling Constants'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip headers
@@ -186,14 +186,14 @@ def extract_cubic_couplings(path, memmap, coupling_terms):
 
 def extract_bicubic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Bi-Cubic Constants'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Bi-Quartic Constants'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip headers
@@ -218,14 +218,14 @@ def extract_bicubic_couplings(path, memmap, coupling_terms):
 
 def extract_quartic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Quartic Coupling Constants'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'Bi-Cubic Constants'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip headers
@@ -249,14 +249,14 @@ def extract_quartic_couplings(path, memmap, coupling_terms):
 
 def extract_biquartic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the begining and ending of the important region
-    memmap.seek(0)  # start looking from the begining of the file
+    # find the beginning and ending of the important region
+    memmap.seek(0)  # start looking from the beginning of the file
     beginString = 'Bi-Quartic Constants'
     begin = helper.find_string_in_file(memmap, path, beginString)
     endString = 'end-parameter-section'
     end = helper.find_string_in_file(memmap, path, endString)
 
-    # go to the begining of that region
+    # go to the beginning of that region
     memmap.seek(begin)
 
     # skip headers
@@ -290,7 +290,7 @@ def extract_biquartic_couplings(path, memmap, coupling_terms):
 def read_model_op_file(path_file_op):
     """reads/parses molecule_vibron.op file"""
 
-    # declare the arrays used to store the model's paramters
+    # declare the arrays used to store the model's parameters
     # all numbers have units of electron volts
     excitation_energies = None
     frequencies = None
@@ -361,7 +361,7 @@ def read_model_op_file(path_file_op):
         quartic_couplings[:, :, :, :, a, b] += np.tril(quartic_couplings[:, :, :, :, a, b], k=-1).T
         quartic_couplings[:, :, :, :, a, b] += quartic_couplings[:, :, :, :, b, a]
 
-    # don't overcount the diagonals
+    # don't over count the diagonals
     for a in States:
         linear_couplings[:, a, a] /= 2.
         quadratic_couplings[:, :, a, b] /= 2.

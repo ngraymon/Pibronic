@@ -4,6 +4,7 @@
 import inspect
 import math
 import os
+from os.path import dirname, join
 
 
 # local imports
@@ -59,7 +60,7 @@ def test_estimate_jackknife():
 @pytest.fixture()
 def path():
     # does this work when deployed?
-    return os.path.join(os.path.dirname(os.path.dirname(inspect.getfile(pibronic))), "tests/test_models/")
+    return join(dirname(dirname(inspect.getfile(pibronic))), "tests/test_models/")
 
 
 @pytest.fixture(params=[(0, 0), (0, 1), (1, 0), (1, 1)])
