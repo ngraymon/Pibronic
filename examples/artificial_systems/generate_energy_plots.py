@@ -29,21 +29,30 @@ def automate_energy_grid_plots(name):
 
 
 if (__name__ == "__main__"):
-    multiprocessing_flag = False
+
+    # If you want to speed things up you can split the work across four processes
+    # pool is not used because these processes are I/O intensive and we want them to run concurrently
+    multiprocessing_flag = True
 
     if multiprocessing_flag:
-        lst_p = [0]*len(systems.name_lst)
-
-        for idx in range(len(systems.name_lst)):
-            lst_p[idx] = Process(target=automate_energy_grid_plots, args=(systems.name_lst[idx],))
-
+        # create a thread for each system
+        lst_p = [Process(target=automate_energy_grid_plots,
+                         args=(name,)
+                         ) for name in systems.name_lst
+                 ]
+        # start the threads
         for p in lst_p:
             p.start()
 
+        # wait until they are all finished
         for p in lst_p:
             p.join()
+
     else:
+        # Sequential, comment out lines if you only need to run for individual models
         automate_energy_grid_plots(systems.name_lst[0])
         automate_energy_grid_plots(systems.name_lst[1])
         automate_energy_grid_plots(systems.name_lst[2])
+        pass
+
     print("Done plotting")

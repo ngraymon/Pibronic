@@ -21,29 +21,35 @@ def automate_simple_z_plots(name):
     # Currently we implement very simple plotting, only plotting the Z_MC
     for id_data in systems.id_dict[name]:
         for id_rho in systems.rho_dict[name][id_data]:
-            FS = fs.FileStructure(root, id_data, id_rho)
-            plotObj = pl.plot_Z_test(FS)
-            plotObj.load_data()
-            plotObj.plot()
-            print(f"Finished plotting D{id_data:d} R{id_rho:d}")
+            try:
+                FS = fs.FileStructure(root, id_data, id_rho)
+                plotObj = pl.plot_Z_test(FS)
+                plotObj.load_data()
+                plotObj.plot()
+                print(f"Finished plotting D{id_data:d} R{id_rho:d}")
+            except Exception as e:
+                print(e)
+                continue
     return
 
 
 if (__name__ == "__main__"):
-
     # If you want to speed things up you can split the work across four processes
     # pool is not used because these processes are I/O intensive and we want them to run concurrently
-    multiprocessing_flag = False
+    multiprocessing_flag = True
 
     if multiprocessing_flag:
-        lst_p = [0]*len(systems.name_lst)
+        # create a thread for each system
+        lst_p = [Process(target=automate_simple_z_plots,
+                         args=(name,)
+                         ) for name in systems.name_lst
+                 ]
 
-        for idx in range(4):
-            lst_p[idx] = Process(target=automate_simple_z_plots, args=(systems.name_lst[idx],))
-
+        # start the threads
         for p in lst_p:
             p.start()
 
+        # wait until they are all finished
         for p in lst_p:
             p.join()
 

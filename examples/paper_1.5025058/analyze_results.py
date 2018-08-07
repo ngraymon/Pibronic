@@ -2,6 +2,7 @@
 
 # system imports
 import os
+from multiprocessing import Process
 
 # third party imports
 
@@ -21,7 +22,7 @@ def simple_wrapper(FS):
     return
 
 
-def automate_wrapper(name):
+def automate_statistical_analysis(name):
     """ loops over the data sets and different rhos """
     systems.assert_system_name_is_valid(name)
 
@@ -39,8 +40,29 @@ def automate_wrapper(name):
 
 
 if (__name__ == "__main__"):
-    # Sequential, comment out lines if you only need to run for individual models
-    automate_wrapper("superimposed")
-    automate_wrapper("displaced")
-    automate_wrapper("elevated")
-    automate_wrapper("jahnteller")
+
+    # If you want to speed things up you can split the work across four processes
+    # pool is not used because these processes can be I/O intensive and we want them to run concurrently
+    multiprocessing_flag = True
+
+    if multiprocessing_flag:
+        # create a thread for each system
+        lst_p = [Process(target=automate_statistical_analysis,
+                         args=(name,)
+                         ) for name in systems.name_lst
+                 ]
+        # start the threads
+        for p in lst_p:
+            p.start()
+
+        # wait until they are all finished
+        for p in lst_p:
+            p.join()
+
+    else:
+        # Sequential, comment out lines if you only need to run for individual models
+        automate_statistical_analysis("superimposed")
+        automate_statistical_analysis("displaced")
+        automate_statistical_analysis("elevated")
+        automate_statistical_analysis("jahnteller")
+

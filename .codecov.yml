@@ -18,6 +18,9 @@ coverage:
     patch: off
     changes: off
 
+ignore:
+  - "pibronic/vibronic/orthonormal/sequences.py"
+
 parsers:
   gcov:
     branch_detection:

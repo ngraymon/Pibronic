@@ -1,18 +1,14 @@
-""" this module creates an orthonormal matrix used in the creation of 'artifical' vibronic models"""
+""" this module creates an orthonormal matrix used in the creation of 'artificial' vibronic models"""
 
 # system imports
-import pickle
 import sys
-import os
 
 # third party imports
 import numpy as np
 from scipy.linalg import expm
 
 # local imports
-from .sequences import sequence_filename
-from .sequences import load_sequence
-from .sequences import select_pair
+from . import sequences as seq
 
 
 def create_orthonormal_matrix_lambda_close_to_identity(order, tuning_parameter):
@@ -23,36 +19,36 @@ def create_orthonormal_matrix_lambda_close_to_identity(order, tuning_parameter):
     takes: the order of the matrix and tuning_parameter
     """
 
-    # Once we finish the code to generate sequences we can re-enable this
-    if True:
-        assert 0.0 <= tuning_parameter <= 1.0, f"The tuning parameter ({tuning_parameter:}) is restricted to [0.0, 1.0]"
+    assert 0.0 <= tuning_parameter <= 1.0, f"The tuning parameter ({tuning_parameter:}) is restricted to [0.0, 1.0]"
 
+    SKSM, identity = seq.build_SKSM_and_identity(order)
+
+    # a tuning parameter of 0 should map to identity
     if tuning_parameter == 0.0:
-        return np.eye(order)
+        return identity
 
-    upper_tri = np.tri(order, k=0).T
+    sequence = seq.load_sequence(order)
+    pair = seq.select_pair(sequence, tuning_parameter)
 
-    skew_symmetric_matrix = upper_tri - upper_tri.T
+    # generate the orthonormal matrix
+    mat = expm(pair.x * SKSM)
 
-    # Once we finish the code to generate sequences we can re-enable this
-    if True:
-        sequence = load_sequence(order)
-        pair = select_pair(sequence, tuning_parameter)
-        tuning_parameter = pair[1]
-
-    # generate an orthonormal matrix, which depends on the tuning parameter
-    mat = expm(tuning_parameter * skew_symmetric_matrix)
     assert np.allclose(mat.dot(mat.T), np.eye(order)), "matrix is not orthonormal"
     return mat
 
 
-if (__name__ == "__main__"):
-    assert len(sys.argv) is 3, "Need two arguments"
+def main(args):
+    assert len(args) is 3, "Need two arguments"
 
-    order = sys.argv[1]
-    tuning_parameter = sys.argv[1]
+    order = args[1]
+    tuning_parameter = args[2]
 
     assert isinstance(order, int), "The first argument must be the order of the matrix (type int)"
-    assert isinstance(tuning_parameter, float), "The first argument must be the tuning parameter (type float)"
+    assert isinstance(tuning_parameter, float), "The second argument must be the tuning parameter (type float)"
 
     create_orthonormal_matrix_lambda_close_to_identity(order, tuning_parameter)
+    return
+
+
+if (__name__ == "__main__"):
+    main(sys.argv)

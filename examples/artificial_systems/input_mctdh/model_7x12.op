@@ -41,26 +41,8 @@ EH_s07_s07               =      14.247753    , ev
 
 #     Electronic transition moments
 # ----------------------------------
-
-# tmom in direction Ex
-Ex_s07_s01               =       0.100000    , ev
-Ex_s07_s02               =       0.100000    , ev
-Ex_s07_s03               =       0.100000    , ev
-Ex_s07_s04               =       0.100000    , ev
-Ex_s07_s05               =       0.100000    , ev
-Ex_s07_s06               =       0.100000    , ev
-
 #     Magnetic transition moments
 # ----------------------------------
-
-# tmom in direction Mx
-Mx_s07_s01               =       0.100000    , ev
-Mx_s07_s02               =       0.100000    , ev
-Mx_s07_s03               =       0.100000    , ev
-Mx_s07_s04               =       0.100000    , ev
-Mx_s07_s05               =       0.100000    , ev
-Mx_s07_s06               =       0.100000    , ev
-
 #  Linear Coupling Constants
 # --------------------------
 

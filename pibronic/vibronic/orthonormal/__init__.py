@@ -1,6 +1,6 @@
 """
 ======================================================
-Code involved in the creation of orthonormal matricies
+Code involved in the creation of orthonormal matrices
 ======================================================
 """
 

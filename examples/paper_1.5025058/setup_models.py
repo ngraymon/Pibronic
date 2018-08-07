@@ -4,7 +4,7 @@
 import shutil
 import glob
 import os
-from os.path import join
+from os.path import join, abspath, dirname
 
 # third party imports
 
@@ -20,7 +20,7 @@ def parse_input_mctdh_files_into_directories(FS, system_name):
     starts from MCTDH *.op files and creates the relevant *.json files """
 
     # where the MCTDH input files for each model are stored
-    dir_src = join(os.path.abspath(os.path.dirname(__file__)), "input_mctdh")
+    dir_src = join(abspath(dirname(__file__)), "input_mctdh")
 
     path_src = join(dir_src, f"{system_name:s}_{FS.id_data%10:d}.op")
     path_dst = shutil.copy(path_src, FS.path_es)
@@ -30,7 +30,7 @@ def parse_input_mctdh_files_into_directories(FS, system_name):
     # but simulating the full procedure is fine
     vIO.create_coupling_from_op_file(FS, path_dst)
     vIO.create_harmonic_model(FS)
-    # this basic sampling model is simply the diagonal of the hamiltonian
+    # this basic sampling model is simply the diagonal of the Hamiltonian
     vIO.create_basic_sampling_model(FS)
     return
 
@@ -40,13 +40,13 @@ def copy_input_json_files_into_directories(FS, system_name):
     starts from the preconstructed *.json file"""
 
     # where the .json input files for each model are stored
-    dir_src = join(os.path.abspath(os.path.dirname(__file__)), "input_json")
+    dir_src = join(abspath(dirname(__file__)), "input_json")
 
     path_src = join(dir_src, f"{system_name:s}_{FS.id_data%10:d}.json")
 
     # copy the .json file into the appropriate directory
     shutil.copy(path_src, FS.path_vib_model)
-    # this basic sampling model is simply the diagonal of the hamiltonian
+    # this basic sampling model is simply the diagonal of the Hamiltonian
     print(FS.path_rho_params)
     vIO.create_basic_sampling_model(FS)
     return
@@ -57,7 +57,7 @@ def copy_alternate_rhos_into_directories(FS, system_name):
     make directories for and copy in all relevant files """
 
     # where the .json input files for each sampling distribution are stored
-    dir_src = join(os.path.abspath(os.path.dirname(__file__)), "alternate_rhos")
+    dir_src = join(abspath(dirname(__file__)), "alternate_rhos")
 
     # collect all possible alternative rho's
     globPath = join(dir_src, f"{system_name:s}_D{FS.id_data%10:d}_R*.json")
@@ -97,7 +97,7 @@ def prepare_model(system_name, id_data=0, root=None):
 
 
 def automate_prepare_model():
-    """ convience/wrapper function
+    """ convenience/wrapper function
     loops over all the models we want to prepare
     """
 

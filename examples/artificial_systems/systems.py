@@ -1,4 +1,4 @@
-""" fixed data for each of the artifical systems """
+""" fixed data for each of the artificial systems """
 
 # system imports
 import itertools as it
@@ -7,18 +7,17 @@ import itertools as it
 
 # third party imports
 
-
 # each system has a name
 # the names are used to identify the input files in the directories
 # as well as provide an easy way to distinguish them
 name_lst = ["2x2", "4x6", "7x12"]
 
-# this dictionary is for conviently accesing iterators of the coupled model id's for each system
+# this dictionary is for conveniently accessing iterators of the coupled model id's for each system
 # where the system's name is the key
 id_dict = {
-    name_lst[0]: [11, 12, 13, 14, 15],
-    name_lst[1]: [21, 22, 23, 24, 25],
-    name_lst[2]: [31, 32, 33, 34, 35],
+    name_lst[0]: list(range(11, 16)),
+    name_lst[1]: list(range(21, 26)),
+    name_lst[2]: list(range(31, 36)),
     }
 
 all_model_ids = [id_dict[key] for key in id_dict.keys()]
@@ -28,24 +27,24 @@ id_dict["valid"] = list(it.chain(*all_model_ids))
 # this would need to be modified if more rhos/sampling distributions where chosen
 # it has no knowledge of the *actual* files in the directory
 rho_dict = {
-    name_lst[0]: {11: list(range(2)),
-                  12: list(range(2)),
-                  13: list(range(2)),
-                  14: list(range(2)),
-                  15: list(range(2)),
-                  16: list(range(2)),
+    name_lst[0]: {11: list(range(4)),
+                  12: list(range(4)),
+                  13: list(range(4)),
+                  14: list(range(4)),
+                  15: list(range(4)),
+                  16: list(range(4)),
                   },
-    name_lst[1]: {21: list(range(2)),
-                  22: list(range(2)),
-                  23: list(range(2)),
-                  24: list(range(2)),
-                  25: list(range(2)),
+    name_lst[1]: {21: list(range(4)),
+                  22: list(range(4)),
+                  23: list(range(4)),
+                  24: list(range(4)),
+                  25: list(range(4)),
                   },
-    name_lst[2]: {31: list(range(2)),
-                  32: list(range(2)),
-                  33: list(range(2)),
-                  34: list(range(2)),
-                  35: list(range(2)),
+    name_lst[2]: {31: list(range(4)),
+                  32: list(range(4)),
+                  33: list(range(4)),
+                  34: list(range(4)),
+                  35: list(range(4)),
                   },
 }
 

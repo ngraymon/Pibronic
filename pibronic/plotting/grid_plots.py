@@ -179,9 +179,10 @@ class plotGrids():
         if VMK.G1.value not in self.coupled_model:
             raise Exception("Linear terms are zero, nothing to plot")
 
-        linear = np.array(self.coupled_model[VMK.G1.value])
-
+        linear = np.array(self.original_model[VMK.G1.value])
         self.plot_original_linear_grids(linear)
+
+        linear = np.array(self.coupled_model[VMK.G1.value])
         self.plot_coupled_linear_grids(linear)
         return
 
@@ -223,11 +224,12 @@ class plotGrids():
         prepare_mpl_rc_file(pretty_but_slow=True)
         load_latex_module_on_server()
 
-        if VMK.G2.value not in self.coupled_model:
+        if VMK.G2.value not in self.coupled_model or VMK.G2.value not in self.original_model:
             raise Exception("Linear terms are zero, nothing to plot")
 
-        quadratic = np.array(self.coupled_model[VMK.G2.value])
-
+        quadratic = np.array(self.original_model[VMK.G2.value])
         self.plot_original_quadratic_grids(quadratic)
+
+        quadratic = np.array(self.coupled_model[VMK.G2.value])
         self.plot_coupled_quadratic_grids(quadratic)
         return

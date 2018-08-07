@@ -254,14 +254,13 @@ def _generate_linear_terms(linear_terms, shape, displacement):
     for i in range(shape[VMK.w][0]):
         upTri = Uniform(-displacement[i], displacement[i], shape[VMK.E])
         # force the linear terms to be symmetric
-        linear_terms[:] = np.tril(upTri) + np.tril(upTri, k=-1).T
+        linear_terms[i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
     return
 
 
 def _generate_quadratic_terms(quadratic_terms, shape, displacement, Modes):
     """ generate quadratic terms that are 'reasonable' """
-    for i, j in it.combinations_with_replacement(Modes, 2):
-        # does the combinations_with_replacement work???
+    for i, j in it.product(Modes, repeat=2):
         upTri = Uniform(-displacement[i, j], displacement[i, j], shape[VMK.E])
         # force the quadratic terms to be symmetric
         quadratic_terms[i, j, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T

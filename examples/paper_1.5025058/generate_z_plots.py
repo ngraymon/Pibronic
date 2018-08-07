@@ -59,6 +59,6 @@ if (__name__ == "__main__"):
         automate_simple_z_plots(systems.name_lst[0])
         automate_simple_z_plots(systems.name_lst[1])
         automate_simple_z_plots(systems.name_lst[2])
-        pass
+        automate_simple_z_plots(systems.name_lst[3])
 
     print("Done plotting")

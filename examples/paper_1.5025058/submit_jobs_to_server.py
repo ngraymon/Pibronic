@@ -1,4 +1,4 @@
-# setup_models.py - creates all the directories and copies in the necessary files
+#
 
 # system imports
 import subprocess
@@ -43,8 +43,7 @@ def generate_analytical_results(root, id_data, id_rho, temperature_list):
 
         cmd = ("srun"
                f" --job-name=analytc_D{id_data:d}_R{id_rho:d}_T{T:.2f}"
-               " python3"
-               " -c '{:s}'".format(func_call.format(temperature=T))
+               " python3 -c '{:s}'".format(func_call.format(temperature=T))
                )
 
         p = subprocess.Popen(cmd,
@@ -69,10 +68,10 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     # instantiate the FileStructure object which creates the directories
     FS = fs.FileStructure(root, id_data, id_rho)
 
-    lst_P = [12, ]
+    # lst_P = [12, ]
     # lst_P2 = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, ]
-    # lst_P = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
-    #          100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 250, 300]
+    lst_P = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
+             100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 250, 300]
     # lst_P = list(set(lst_P) - set(lst_P2))
     # lst_P.sort()
     lst_T = [300.00, ]
@@ -101,8 +100,8 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     return
 
 
-def automate_wrapper(name):
-    """ loops over the data sets and different rhos submiting PIMC jobs for each one  """
+def automate_pimc_wrapper(name):
+    """ loops over the data sets and different rhos submitting PIMC jobs for each one  """
     systems.assert_system_name_is_valid(name)
 
     for id_data in systems.id_dict[name]:
@@ -112,7 +111,7 @@ def automate_wrapper(name):
 
 
 if (__name__ == "__main__"):
-    automate_wrapper("superimposed")
-    automate_wrapper("displaced")
-    automate_wrapper("elevated")
-    automate_wrapper("jahnteller")
+    automate_pimc_wrapper("superimposed")
+    automate_pimc_wrapper("displaced")
+    automate_pimc_wrapper("elevated")
+    automate_pimc_wrapper("jahnteller")
