@@ -127,11 +127,11 @@ def submit_pimc_job(FS=None, path_root=None, id_data=None, id_rho=None, param_di
                       }
 
     # read in the model parameters from the JSON files
-    A, N = vIO.extract_dimensions_of_coupled_model(FS=FS)
+    A, N = vIO.extract_dimensions_of_model(FS=FS)
     param_dict["coupled_modes"] = N
     param_dict["coupled_surfaces"] = A
     # read in the model parameters from the JSON files
-    A, N = vIO.extract_dimensions_of_sampling_model(FS=FS)
+    A, N = vIO.extract_dimensions_of_diagonal_model(FS=FS)
     param_dict["uncoupled_modes"] = N
     param_dict["uncoupled_surfaces"] = A
 

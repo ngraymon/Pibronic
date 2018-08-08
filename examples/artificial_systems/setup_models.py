@@ -22,7 +22,7 @@ from submit_jobs_to_server import iterative_method_wrapper
 def generate_modified_energy(FS, path_rho_src):
     """ generate new E^{aa} values for the iterative model, as an attempt to solve the weight issue for uncoupled models """
 
-    iterative_model = vIO.load_sample_from_JSON(path_rho_src)
+    iterative_model = vIO.load_diagonal_model_from_JSON(path_rho_src)
     assert VMK.G2 not in iterative_model, "doesn't support quadratic terms at the moment"
     Ai, Ni = iterative_model[VMK.A], iterative_model[VMK.N]
     w = iterative_model[VMK.w]
@@ -85,7 +85,7 @@ def create_sampling_distributions(FS, name):
     #  which is simply the diagonal of the Hamiltonian (not the original)
     id_rho = 0
     FS.change_rho(id_rho)
-    vIO.create_basic_sampling_model(FS)
+    vIO.create_basic_diagonal_model(FS)
 
     # for the second sampling model we want to use the original_coupled_model as our sampling model
     #  which is simply the diagonal of the Hamiltonian (not the original)
@@ -98,7 +98,7 @@ def create_sampling_distributions(FS, name):
     # the orig_model, even though it is already diagonal, rho_model's have only
     # one surface dimension not 2
 
-    iterate = False
+    iterate = True
     # for the third sampling model we want to use the iterative method
     if iterate:
         id_rho = 2
@@ -116,9 +116,9 @@ def create_sampling_distributions(FS, name):
         path_iterate = join(FS.path_vib_params, "iterative_model.json")
         shutil.copy(path_iterate, FS.path_rho_model)
         # modify model
-        model = vIO.load_sample_from_JSON(FS.path_rho_model)
+        model = vIO.load_diagonal_model_from_JSON(FS.path_rho_model)
         model[VMK.E] = E
-        vIO.save_sample_to_JSON(FS.path_rho_model, model)
+        vIO.save_diagonal_model_to_JSON(FS.path_rho_model, model)
 
     # TODO - write function for vIO that just converts the array's between sizes
     # and throws an error if the input is not diagonal

@@ -216,5 +216,5 @@ class FileStructure:
         """ create two new data attributes which store the hash values (hash_vib, hash_rho)
         created by the functions vIO.create_model_hash() and vIO.create_sampling_hash()"""
         self.hash_vib = vIO.create_model_hash(FS=self)
-        self.hash_rho = vIO.create_sampling_hash(FS=self)
+        self.hash_rho = vIO.create_diagonal_model_hash(FS=self)
         return

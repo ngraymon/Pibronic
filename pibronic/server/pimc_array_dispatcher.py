@@ -76,7 +76,7 @@ if (__name__ == "__main__"):
     delta_beta = 2.0E-4
 
     # read in the model parameters from the vibronic_model_dictionary.JSON file
-    number_of_surfaces, number_of_modes = vIO.extract_dimensions_of_coupled_model(data_set_id)
+    number_of_surfaces, number_of_modes = vIO.extract_dimensions_of_model(data_set_id)
 
     # we read all appropriate parameters from the model_parameters_source.txt
     source_file = "./model_parameters_source.txt"

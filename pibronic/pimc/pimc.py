@@ -282,7 +282,7 @@ class ModelSampling(ModelClass):
         return
 
     def load_model(self, filePath):
-        newStates, sameModes = vIO.extract_dimensions_of_sampling_model(path=filePath)
+        newStates, sameModes = vIO.extract_dimensions_of_diagonal_model(path=filePath)
 
         # replace the vibronic models state size with rho's state size
         self.param_dict['A'] = self.states = newStates
@@ -315,7 +315,7 @@ class ModelSampling(ModelClass):
         kwargs[VMK.G1] = self.linear
         # print(kwargs[VMK.G1], "\n", self.linear)
         kwargs[VMK.G2] = self.quadratic
-        vIO.load_sample_from_JSON(filePath, kwargs)
+        vIO.load_diagonal_model_from_JSON(filePath, kwargs)
         self.modes = kwargs[VMK.N]
         self.states = kwargs[VMK.A]
         self.energy = kwargs[VMK.E]
@@ -475,7 +475,7 @@ class BoxData:
         data.path_vib_model = FS.path_vib_model
         data.path_rho_model = FS.path_rho_model
 
-        A, N = vIO.extract_dimensions_of_coupled_model(FS)
+        A, N = vIO.extract_dimensions_of_model(FS)
         data.states = A
         data.modes = N
 

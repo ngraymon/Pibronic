@@ -17,7 +17,6 @@ from ..data import postprocessing as pp
 from ..data import file_structure as fs
 from ..constants import beta
 from ..vibronic import vIO
-# from ..vibronic import vIO, VMK
 
 
 class plot_Z_multiple_FS(plotVirtual):
@@ -296,7 +295,7 @@ class plot_original_Z_test(plotVirtual):
         ax[0].set_ylabel(y_label)
 
         # plot title
-        A, N = vIO.extract_dimensions_of_coupled_model(self.FS_lst[0])
+        A, N = vIO.extract_dimensions_of_diagonal_model(self.FS_lst[0])
         plot_title = r'$\tau$ convergence'
         plot_title += f"\nData Set {self.FS_lst[0].id_data:d}"
         plot_title += f"\n{A:d} surfaces {N:d} normal modes"
@@ -367,18 +366,20 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
             return
 
         for idx_FS, FS in enumerate(self.FS_lst):
-            for T in self.lst_T[idx_FS]:
-                idx_T = self.lst_T[idx_FS].index(T)
+            for X in self.lst_X[idx_FS]:  # don't plot more than the lowest # of samples
+                idx_X = self.lst_X[idx_FS].index(X)
+                for T in self.lst_T[idx_FS]:
+                    idx_T = self.lst_T[idx_FS].index(T)
 
-                view = self.arr[idx_FS][:, idx_T, 0].view()
-                lytical = self.analytical_orig_list[idx_FS][f"{T:.2f}"]["Z_coupled"]
+                    view = self.arr[idx_FS][:, idx_T, idx_X].view()
+                    lytical = self.analytical_orig_list[idx_FS][f"{T:.2f}"]["Z_coupled"]
 
-                view["Z"] -= lytical
-                view["Z"] *= 100.0
-                view["Z"] /= lytical
+                    view["Z"] -= lytical
+                    view["Z"] *= 100.0
+                    view["Z"] /= lytical
 
-                view["Z error"] *= 100.0
-                view["Z error"] /= lytical
+                    view["Z error"] *= 100.0
+                    view["Z error"] /= lytical
         return
 
     def load_data(self):
@@ -414,7 +415,7 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
                 idx_T = self.lst_T[idx_FS].index(T)
                 tau_values = self.generate_tau_values(T, idx_FS)
                 # for X in self.lst_X[idx_FS]:  # don't plot more than the lowest # of samples
-                X = self.lst_X[idx_FS][0]
+                X = self.lst_X[idx_FS][-1]
                 idx_X = self.lst_X[idx_FS].index(X)
 
                 x = tau_values.view()
@@ -460,7 +461,7 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
             # HACK CONSTANTS
             # F_index = -1
             idx_T = 0
-            idx_X = 0
+            idx_X = -1
             T = 300.00
             # dataView = self.arr[F_index, R_index, T_index, 0, :].view()
             slice_insert = np.s_[-1:-2:-1]
@@ -525,7 +526,7 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
         # ax[0].set_yscale('log')
 
         # plot title
-        A, N = vIO.extract_dimensions_of_coupled_model(self.FS_lst[0])
+        A, N = vIO.extract_dimensions_of_diagonal_model(self.FS_lst[0])
         plot_title = r'$\tau$ convergence'
         plot_title += f"\nData Set {self.FS_lst[0].id_data:d}"
         plot_title += f"\n{A:d} surfaces {N:d} normal modes"

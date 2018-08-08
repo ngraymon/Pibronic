@@ -276,14 +276,14 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     # TODO - need to add a check that only generates analytical results if the
     # file doesn't exists OR the hash values don't match up!
     generate_analytical_results(FS, lst_T)
-    A, N = vIO.extract_dimensions_of_coupled_model(FS=FS)
+    A, N = vIO.extract_dimensions_of_model(FS=FS)
 
     # this is the minimum amount of data needed to run an execution
     parameter_dictionary = {
-        "number_of_samples": int(1e4),
+        "number_of_samples": int(1e6),
         "number_of_states": A,
         "number_of_modes": N,
-        "bead_list": lst_P2,
+        "bead_list": lst_P3,
         "temperature_list": lst_T,
         "delta_beta": constants.delta_beta,
         "id_data": id_data,

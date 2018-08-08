@@ -60,7 +60,7 @@ class plotGrids():
 
     def annotate_intensity_grid(self, fig, ax, data, title):
         """ commonly shared code for plotting"""
-        A, N = vIO.extract_dimensions_of_coupled_model(self.FS)
+        A, N = vIO.extract_dimensions_of_diagonal_model(self.FS)
 
         # We want 1 tick for each square
         plt.locator_params(nbins=A)
@@ -154,7 +154,7 @@ class plotGrids():
 
     def plot_original_linear_grids(self, data):
         """ x """
-        A, N = vIO.extract_dimensions_of_coupled_model(self.FS)
+        A, N = vIO.extract_dimensions_of_diagonal_model(self.FS)
         for j in range(N):
             title = f"Original linear terms Grid (Mode {j+1:d})"
             filename = f"original_linear_grid_D{self.FS.id_data:d}_N{j+1:d}.pdf"
@@ -163,7 +163,7 @@ class plotGrids():
 
     def plot_coupled_linear_grids(self, data):
         """ x """
-        A, N = vIO.extract_dimensions_of_coupled_model(self.FS)
+        A, N = vIO.extract_dimensions_of_diagonal_model(self.FS)
         for j in range(N):
             title = f"Coupled linear terms Grid (Mode {j+1:d})"
             filename = f"coupled_linear_grid_D{self.FS.id_data:d}_N{j+1:d}.pdf"
@@ -202,7 +202,7 @@ class plotGrids():
 
     def plot_original_quadratic_grids(self, data):
         """ x """
-        A, N = vIO.extract_dimensions_of_coupled_model(self.FS)
+        A, N = vIO.extract_dimensions_of_diagonal_model(self.FS)
         for j1,  j2 in it.product(range(N), range(N)):
             title = f"Original quadratic terms Grid (Modes {j1+1:d}{j2+1:d})"
             filename = f"original_quadratic_grid_D{self.FS.id_data:d}_N{j1+1:d}_N{j2+1:d}.pdf"
@@ -211,7 +211,7 @@ class plotGrids():
 
     def plot_coupled_quadratic_grids(self, data):
         """ x """
-        A, N = vIO.extract_dimensions_of_coupled_model(self.FS)
+        A, N = vIO.extract_dimensions_of_diagonal_model(self.FS)
         for j1,  j2 in it.product(range(N), range(N)):
             title = f"Coupled quadratic terms Grid (Modes {j1+1:d}{j2+1:d})"
             filename = f"coupled_quadratic_grid_D{self.FS.id_data:d}_N{j1+1:d}_N{j2+1:d}.pdf"

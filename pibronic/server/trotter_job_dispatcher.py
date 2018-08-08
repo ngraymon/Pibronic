@@ -107,7 +107,7 @@ if (__name__ == "__main__"):
     data_set_dir = "data_set_{:d}/".format(data_set_id)
 
     # read in the model parameters from the vibronic_model_dictionary.JSON file
-    number_of_surfaces, number_of_modes = vIO.extract_dimensions_of_coupled_model(data_set_id)
+    number_of_surfaces, number_of_modes = vIO.extract_dimensions_of_diagonal_model(data_set_id)
     # currently can only process one or two mode models
     assert(number_of_modes == 1 or number_of_modes == 2)
 

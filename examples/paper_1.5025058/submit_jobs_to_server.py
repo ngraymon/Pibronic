@@ -78,7 +78,7 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     # lst_T = [250., 275., 300., 325., 350., ]
 
     generate_analytical_results(FS.path_root, id_data, id_rho, lst_T)
-    A, N = vIO.extract_dimensions_of_coupled_model(FS=FS)
+    A, N = vIO.extract_dimensions_of_model(FS=FS)
 
     # this is the minimum amount of data needed to run an execution
     parameter_dictionary = {

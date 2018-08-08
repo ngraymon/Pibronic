@@ -3,7 +3,9 @@
 # system imports
 import itertools as it
 import hashlib
+import random
 import shutil
+import copy
 import json
 import os
 from os.path import join
@@ -47,7 +49,7 @@ def model_shape_dict(A, N):
     return dictionary
 
 
-def sample_shape_dict(A, N):
+def diagonal_model_shape_dict(A, N):
     """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensionality of the associated value in the .json file
     Takes A - number of surfaces and N - number of modes
 
@@ -64,11 +66,10 @@ def sample_shape_dict(A, N):
     return dictionary
 
 
-def model_array_diagonal_in_surfaces(array):
-    """ Boolean function that returns true if the provided numpy array is diagonal or symmetric in the surface dimension
+def _array_is_symmetric_in_A(array):
+    """ Boolean function that returns true if the provided numpy array is symmetric in the surface dimension
     where the surface dimensions (A) are by convention the last two dimensions
     this function assumes that the array is properly formatted
-
     """
 
     new_dims = list(range(array.ndim))
@@ -78,11 +79,73 @@ def model_array_diagonal_in_surfaces(array):
     return np.allclose(array, array.transpose(new_dims))
 
 
+def model_parameters_are_symmetric_in_surfaces(kwargs):
+    """ Boolean function that returns true if the provided model's arrays are all symmetric in the surface dimension
+    where the surface dimensions (A) are by convention the last two dimensions
+    this function assumes that the arrays is properly formatted
+    """
+    verify_model_parameters(kwargs)
+
+    for key in kwargs.keys():
+        if isinstance(kwargs[key], np.ndarray) and kwargs[key].ndim >= 2:
+            if not _array_is_symmetric_in_A(kwargs[key]):
+                log.debug(f"{key} not symmetric in surfaces")
+                return False
+
+    return True
+
+
+def model_parameters_are_symmetric_in_modes(kwargs):
+    """ Boolean function that returns true if the provided model's quadratic and quartic arrays are symmetric in their mode dimensions
+    this is a bit trickier than the surface dimension
+    this function assumes that the arrays is properly formatted
+    """
+    verify_model_parameters(kwargs)
+
+    # do the quadratic case
+    key = VMK.G2
+    if key in kwargs.keys():
+        new_dims = list(range(kwargs[key].ndim))
+        new_dims[0], new_dims[1] = new_dims[1], new_dims[0]
+        if not np.allclose(kwargs[key], kwargs[key].transpose(new_dims)):
+            return False
+
+    # I don't think there is a general approach for the cubic case
+
+    # do the quartic case
+    key = VMK.G4
+    if key in kwargs.keys():
+        new_dims = list(range(kwargs[key].ndim))
+        new_dims[0], new_dims[1] = new_dims[1], new_dims[0]
+        new_dims[2], new_dims[3] = new_dims[3], new_dims[2]
+        if not np.allclose(kwargs[key], kwargs[key].transpose(new_dims)):
+            return False
+
+    return True
+
+
 def model_zeros_template_json_dict(A, N):
     """ returns a dictionary that is a valid model, where all values (other than states and modes) are set to 0
-
     """
     shape = model_shape_dict(A, N)
+    dictionary = {
+                  VMK.N: N,
+                  VMK.A: A,
+                  VMK.E: np.zeros(shape[VMK.E], dtype=F64),
+                  VMK.w: np.zeros(shape[VMK.w], dtype=F64),
+                  VMK.G1: np.zeros(shape[VMK.G1], dtype=F64),
+                  VMK.G2: np.zeros(shape[VMK.G2], dtype=F64),
+                  VMK.G3: np.zeros(shape[VMK.G3], dtype=F64),
+                  VMK.G4: np.zeros(shape[VMK.G4], dtype=F64),
+                  }
+
+    return dictionary
+
+
+def diagonal_model_zeros_template_json_dict(A, N):
+    """ returns a dictionary that is a valid diagonal model, where all values (other than states and modes) are set to 0
+    """
+    shape = diagonal_model_shape_dict(A, N)
     dictionary = {
                   VMK.N: N,
                   VMK.A: A,
@@ -114,13 +177,13 @@ def verify_model_parameters(kwargs):
     return
 
 
-def verify_sample_parameters(kwargs):
+def verify_diagonal_model_parameters(kwargs):
     """make sure the provided sample parameters follow the file conventions"""
     assert VMK.N in kwargs, "need the number of modes"
     assert VMK.A in kwargs, "need the number of surfaces"
 
     A, N = _extract_dimensions_from_dictionary(kwargs)
-    shape_dict = sample_shape_dict(A, N)
+    shape_dict = diagonal_model_shape_dict(A, N)
 
     for key, value in kwargs.items():
         if key in shape_dict:
@@ -131,6 +194,95 @@ def verify_sample_parameters(kwargs):
     return
 
 
+def _same_model(d1, d2):
+    """ returns True if all parameters of the two dictionaries have the same dimensions
+    and the same floating point numbers up to standard precision comparison
+    raises an assertion error if either dictionary has incorrect parameters"""
+
+    verify_model_parameters(d1)
+    verify_model_parameters(d2)
+
+    A1, N1 = _extract_dimensions_from_dictionary(d1)
+    A2, N2 = _extract_dimensions_from_dictionary(d1)
+
+    if A1 != A2 or N1 != N2:
+        return False
+
+    new_d1 = model_zeros_template_json_dict(A1, N1)
+    new_d1.update(d1)
+
+    new_d2 = model_zeros_template_json_dict(A2, N2)
+    new_d2.update(d2)
+
+    for key in new_d1.keys():
+        if not np.allclose(new_d1[key], new_d2[key]):
+            log.debug(f"These models differ for key {key}\nd1: {new_d1[key]}\nd2: {new_d2[key]}")
+            return False
+        # elif (key not in d2 and np.count_nonzero(d1[key]) > 0) or \
+        #      (key not in d1 and np.count_nonzero(d2[key]) > 0):
+        #     print(f"These models differ for key {key}\nd1: {d1[key]}\nd2: {d2[key]}")
+        #     return False
+
+    else:
+        return True
+
+    raise Exception("This line of code should not be reached!?")
+
+
+def _same_diagonal_model(d1, d2):
+    """ returns True if all parameters of the two dictionaries have the same dimensions
+    and the same floating point numbers up to standard precision comparison
+    raises an assertion error if either dictionary has incorrect parameters"""
+
+    verify_diagonal_model_parameters(d1)
+    verify_diagonal_model_parameters(d2)
+
+    A1, N1 = _extract_dimensions_from_dictionary(d1)
+    A2, N2 = _extract_dimensions_from_dictionary(d1)
+
+    if A1 != A2 or N1 != N2:
+        return False
+
+    new_d1 = diagonal_model_zeros_template_json_dict(A1, N1)
+    new_d1.update(d1)
+
+    new_d2 = diagonal_model_zeros_template_json_dict(A2, N2)
+    new_d2.update(d2)
+
+    for key in new_d1.keys():
+        if not np.allclose(new_d1[key], new_d2[key]):
+            print(f"These diagonal models differ for key {key}\nd1: {new_d1[key]}\nd2: {new_d2[key]}")
+            return False
+    else:
+        return True
+
+    raise Exception("This line of code should not be reached!?")
+
+
+def create_random_model():
+    """ returns a dictionary that is a valid model
+    """
+    d = {'numStates': random.randint(2, 10),
+         'numModes': random.randint(2, 20),
+         'quadratic_scaling': random.uniform(0.04, 0.12),
+         'linear_scaling': random.uniform(0.02, 0.06),
+         'diagonal': False,
+         }
+    return generate_vibronic_model_data(d)
+
+
+def create_random_diagonal_model():
+    """ returns a dictionary that is a valid diagonal model
+    """
+    d = {'numStates': random.randint(2, 10),
+         'numModes': random.randint(2, 20),
+         'quadratic_scaling': random.uniform(0.04, 0.12),
+         'linear_scaling': random.uniform(0.02, 0.06),
+         'diagonal': True,
+         }
+    return generate_vibronic_model_data(d)
+
+
 def _hash(string):
     """creates a SHA512 hash of the input string and returns the byte representation"""
     m = hashlib.sha512()
@@ -139,7 +291,7 @@ def _hash(string):
 
 
 def create_model_hash(FS=None, path=None):
-    """ create a has of the coupled_model.json file's contents
+    """ create a hash of the coupled_model.json file's contents
     this is used to confirm that result files were generated for the current model and not an older one
     uses a FileStructure or an absolute path to the file"""
     if FS is None:
@@ -153,8 +305,8 @@ def create_model_hash(FS=None, path=None):
     return _hash(string)
 
 
-def create_sampling_hash(FS=None, path=None):
-    """ create a has of the sampling_model.json file's contents
+def create_diagonal_model_hash(FS=None, path=None):
+    """ create a hash of the sampling_model.json file's contents
     this is used to confirm that result files were generated for the current model and not an older one
     uses a FileStructure or an absolute path to the file"""
     if FS is None:
@@ -168,90 +320,9 @@ def create_sampling_hash(FS=None, path=None):
     return _hash(string)
 
 
-def generate_default_root():
-    """backwards compatibility fix for functions that rely on having a predefined default_root"""
-    return "/work/ngraymon/pimc/"
-
-
-def pretty_print_model(id_data, unitsOfeV=False):
-    """one method of printing the models in a human readable format - outdated and should probably be removed or modified"""
-
-    # import pandas as pd
-    from xarray import DataArray as dArr
-
-    path_root = generate_default_root()
-    FS = file_structure.FileStructure(path_root, id_data)
-    kwargs = load_model_from_JSON(FS.path_vib_model)
-
-    # parameter values
-    A = kwargs[VMK.A]
-    N = kwargs[VMK.N]
-    States = range(A)
-    Modes = range(N)
-
-    # formatting
-    a_labels = ['a%d' % a for a in range(1, A+1)]
-    b_labels = ['b%d' % a for a in range(1, A+1)]
-    i_labels = ['i%d' % j for j in range(1, N+1)]
-    j_labels = ['j%d' % j for j in range(1, N+1)]
-
-    # label the arrays for readability
-    energy = kwargs[VMK.E].view()
-    omega = kwargs[VMK.w].view()
-    linear = kwargs[VMK.G1].view()
-    quadratic = kwargs[VMK.G2].view()
-
-    # by default convert the output to wave numbers
-    conversionFactor = 1 if unitsOfeV else constants.wavenumber_per_eV
-
-    # stringify the lists
-    for i in Modes:
-        omega[i] *= conversionFactor
-        omega[i] = str(omega[i])
-
-    for a, b in it.product(States, States):
-        energy[a][b] *= conversionFactor
-        energy[a][b] = str(energy[a][b])
-
-    for a, b, i in it.product(States, States, Modes):
-        linear[i][a][b] *= conversionFactor
-        linear[i][a][b] = str(linear[i][a][b])
-
-    for a, b, i, j in it.product(States, States, Modes, Modes):
-        quadratic[i][j][a][b] *= conversionFactor
-        quadratic[i][j][a][b] = str(quadratic[i][j][a][b])
-
-    # load the data into xarray's DataArrays
-    omegaArray = dArr(omega, name=VMK.w,
-                      coords=[i_labels],
-                      dims=['mode i'],)
-
-    energyArray = dArr(energy, name=VMK.E,
-                       coords=[a_labels, b_labels],
-                       dims=['surface a', 'surface b'],)
-
-    linArray = dArr(linear, name=VMK.G1,
-                    coords=[i_labels, a_labels, b_labels],
-                    dims=['mode i', 'surface a', 'surface b'],)
-
-    quadArray = dArr(quadratic, name=VMK.G2,
-                     coords=[i_labels, j_labels, a_labels, b_labels],
-                     dims=['mode i', 'mode j ', 'surface a', 'surface b'],)
-
-    # print the data, relying on panda's DataArrays to print in a human legible manner
-    print(omegaArray.to_dataframe(),
-          energyArray.to_dataframe(),
-          linArray.to_dataframe(),
-          quadArray.to_dataframe(),
-          sep="\n",
-          )
-
-    return
-
-
-def _generate_linear_terms(linear_terms, shape, displacement):
+def _generate_linear_terms(linear_terms, shape, displacement, Modes):
     """ generate linear terms that are 'reasonable' """
-    for i in range(shape[VMK.w][0]):
+    for i in Modes:
         upTri = Uniform(-displacement[i], displacement[i], shape[VMK.E])
         # force the linear terms to be symmetric
         linear_terms[i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
@@ -268,28 +339,21 @@ def _generate_quadratic_terms(quadratic_terms, shape, displacement, Modes):
     return
 
 
-def _remove_coupling_from_generated_model(modes, energy, linear_terms, quadratic_terms):
-    """ x """
-    energy[:] = np.diagflat(np.diag(energy))
-    for i in modes:
-        linear_terms[i] = np.diag(np.diag(linear_terms[i]))
-    for i, j in it.product(modes, modes):
-        quadratic_terms[i, j, ...] = np.diag(np.diag(quadratic_terms[i, j, ...]))
-    return
-
-
-def generate_vibronic_model_data(paramDict=None):
+def generate_vibronic_model_data(input_parameters=None):
     """redo this one but otherwise its fine returns e,w,l,q filled with appropriate values"""
-    if paramDict is None:
-        paramDict = {   # default values
-                        'frequency_range': [0.02, 0.04],
-                        'energy_range': [0.0, 2.0],
-                        'quadratic_scaling': 0.08,
-                        'linear_scaling': 0.04,
-                        'nonadiabatic': True,
-                        'numStates': 2,
-                        'numModes': 3,
-                        }
+    paramDict = {   # default values
+                    'frequency_range': [0.02, 0.04],
+                    'energy_range': [0.0, 2.0],
+                    'quadratic_scaling': 0.08,
+                    'linear_scaling': 0.04,
+                    'diagonal': False,
+                    'numStates': 2,
+                    'numModes': 3,
+                    }
+
+    if input_parameters is not None:
+        paramDict.update(input_parameters)
+
     # readability
     minE, maxE = paramDict['energy_range']
     minFreq, maxFreq = paramDict['frequency_range']
@@ -302,23 +366,20 @@ def generate_vibronic_model_data(paramDict=None):
     # generate the array dimensions
     shape = model_shape_dict(numStates, numModes)
 
-    # initialize arrays
-    frequencies = np.zeros(shape[VMK.w])
-    energy = np.zeros(shape[VMK.E])
-    l_terms = np.zeros(shape[VMK.G1])
-    q_terms = np.zeros(shape[VMK.G2])
+    # assume we are building a coupled model
+    model = model_zeros_template_json_dict(numStates, numModes)
 
     # generate frequencies
-    frequencies[:] = np.linspace(minFreq, maxFreq, num=numModes, endpoint=True, dtype=F64)
+    model[VMK.w] = np.linspace(minFreq, maxFreq, num=numModes, endpoint=True, dtype=F64)
 
     # generate energy
-    energy[:] = Uniform(minE, maxE, shape[VMK.E])
+    model[VMK.E] = Uniform(minE, maxE, shape[VMK.E])
     # force the energy to be symmetric
-    energy[:] = np.tril(energy) + np.tril(energy, k=-1).T
+    model[VMK.E] = np.tril(model[VMK.E]) + np.tril(model[VMK.E], k=-1).T
 
     # calculate the linear displacement
-    l_shift = paramDict['linear_scaling'] / frequencies
-    _generate_linear_terms(l_terms, shape, l_shift)
+    l_shift = paramDict['linear_scaling'] / model[VMK.w]
+    _generate_linear_terms(model[VMK.G1], shape, l_shift, Modes)
 
     # TODO - no quadratic terms for the moment - turn back on after further testing
     # calculate the quadratic displacement
@@ -326,23 +387,22 @@ def generate_vibronic_model_data(paramDict=None):
     # _generate_quadratic_terms(q_terms, shape, q_shift, Modes)
 
     # if we are building a harmonic model then zero out all off-diagonal entries
-    if not paramDict['nonadiabatic']:
-        _remove_coupling_from_generated_model(Modes, energy, l_terms, q_terms)
+    if paramDict['diagonal']:
+        d_model = diagonal_model_zeros_template_json_dict(numStates, numModes)
 
-    assert model_array_diagonal_in_surfaces(energy), "energy not symmetric in surfaces"
-    assert model_array_diagonal_in_surfaces(l_terms), "linear terms not symmetric in surfaces"
-    assert model_array_diagonal_in_surfaces(q_terms), "quadratic terms not symmetric in surfaces"
-    assert np.allclose(q_terms, q_terms.transpose(1, 0, 2, 3)), "quadratic terms not symmetric in modes"
+        d_model[VMK.E] = np.diag(model[VMK.E])
+        d_model[VMK.w] = model[VMK.w]
+        for i in Modes:
+            d_model[VMK.G1][i, ...] = np.diag(model[VMK.G1][i, ...])
+        for i, j in it.product(Modes, repeat=2):
+            d_model[VMK.G2][i, j, ...] = np.diag(model[VMK.G2][i, j, ...])
 
-    d = {VMK.N: numModes,
-         VMK.A: numStates,
-         VMK.E: energy,
-         VMK.w: frequencies,
-         VMK.G1: l_terms,
-         VMK.G2: q_terms,
-         }
+        return d_model
 
-    return d
+    assert model_parameters_are_symmetric_in_surfaces(model)
+    assert model_parameters_are_symmetric_in_modes(model)
+
+    return model
 
 
 def read_model_h_file(path_file_h):
@@ -415,7 +475,7 @@ def _extract_dimensions_from_file(path):
     return _extract_dimensions_from_dictionary(input_dictionary)
 
 
-def extract_dimensions_of_coupled_model(FS=None, path=None):
+def extract_dimensions_of_model(FS=None, path=None):
     """return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file"""
     if FS is None:
         assert path is not None, "no arguments provided"
@@ -424,7 +484,7 @@ def extract_dimensions_of_coupled_model(FS=None, path=None):
     return _extract_dimensions_from_file(path)
 
 
-def extract_dimensions_of_sampling_model(FS=None, path=None):
+def extract_dimensions_of_diagonal_model(FS=None, path=None):
     """return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file
     """
 
@@ -439,19 +499,20 @@ def extract_dimensions_of_sampling_model(FS=None, path=None):
 
 
 def _save_to_JSON(path, dictionary):
-    VMK.change_dictionary_keys_from_enum_members_to_strings(dictionary)
+    dict_copy = copy.deepcopy(dictionary)
+    VMK.change_dictionary_keys_from_enum_members_to_strings(dict_copy)
     """ converts each numpy array to a list so that json can serialize them properly"""
-    for key, value in list(dictionary.items()):
+    for key, value in list(dict_copy.items()):
         if isinstance(value, (np.ndarray, np.generic)):
             if np.count_nonzero(value) > 0:
-                dictionary[key] = value.tolist()
+                dict_copy[key] = value.tolist()
             else:
-                del dictionary[key]
+                del dict_copy[key]
         else:
             log.debug(f"Value {value} with Key {key} does not appear to be an ndarray")
 
     with open(path, mode='w', encoding='UTF8') as target_file:
-        target_file.write(json.dumps(dictionary))
+        target_file.write(json.dumps(dict_copy))
 
     return
 
@@ -466,11 +527,11 @@ def save_model_to_JSON(path, dictionary):
     return
 
 
-def save_sample_to_JSON(path, dictionary):
+def save_diagonal_model_to_JSON(path, dictionary):
     """ wrapper for _save_to_JSON
     calls verify_sample_parameters() before calling _save_to_JSON()
     """
-    verify_sample_parameters(dictionary)
+    verify_diagonal_model_parameters(dictionary)
     log.debug(f"Saving sample to {path:s}")
     _save_to_JSON(path, dictionary)
     return
@@ -546,7 +607,7 @@ def load_model_from_JSON(path, dictionary=None):
     return
 
 
-def load_sample_from_JSON(path, dictionary=None):
+def load_diagonal_model_from_JSON(path, dictionary=None):
     """
     if kwargs is not provided then returns a dictionary filled with the values stored in the .json file located at path
 
@@ -560,30 +621,47 @@ def load_sample_from_JSON(path, dictionary=None):
 
         # TODO - we might want to make sure that none of the values in the dictionary have all zero values or are None
 
-        verify_sample_parameters(new_model_dict)
+        verify_diagonal_model_parameters(new_model_dict)
         return new_model_dict
 
     # arrays were provided so fill them with the appropriate values
     else:
-        verify_sample_parameters(dictionary)
+        verify_diagonal_model_parameters(dictionary)
         _load_inplace_from_JSON(path, dictionary)
         # check twice? might as well be cautious for the moment until test cases are written
-        verify_sample_parameters(dictionary)
+        verify_diagonal_model_parameters(dictionary)
     return
 # ------------------------------------------------------------------------
+
+
+def fill_offdiagonal_of_model_with_zeros(model):
+    """ takes a dictionary who must have values of dimensionality (..., A, A)
+    and set the off-diagonal (surface) elements to zero
+    """
+    verify_model_parameters(model)
+    for key, value in model.items():
+        if hasattr(value, 'shape') and len(value.shape) >= 2:
+            # ndims = len(value.shape)
+            for a, b in it.permutations(range(model[VMK.A]), 2):
+                model[key][..., a, b] = 0.0
+            # x = np.diagonal(model[key], axis1=ndims-2, axis2=ndims-1).copy()
+            # print(x.shape)
+            # model[key][..., :, :] = np.diagonal(model[key], axis1=ndims-2, axis2=ndims-1).copy()
+    return
 
 
 def remove_coupling_from_model(path_source, path_destination):
     """reads in a model from path_source whose values can have dimensionality (..., A, A)
     creates a new model whose values have dimensionality (..., A) from the diagonal of the A dimension of the input model
     saves the new model to the provided path_destination"""
-    kwargs = load_model_from_JSON(path_source)
+    model = load_model_from_JSON(path_source)
 
-    for key, value in kwargs.items():
+    for key, value in model.items():
         if hasattr(value, 'shape') and len(value.shape) >= 2:
             ndims = len(value.shape)
-            kwargs[key] = np.diagonal(kwargs[key], axis1=ndims-2, axis2=ndims-1).copy()
-    save_sample_to_JSON(path_destination, kwargs)
+            model[key] = np.diagonal(model[key], axis1=ndims-2, axis2=ndims-1).copy()
+
+    save_diagonal_model_to_JSON(path_destination, model)
     return
 
 
@@ -597,8 +675,8 @@ def create_harmonic_model(FS):
     return dest
 
 
-def create_basic_sampling_model(FS):
-    """wrapper function to make the simplest sampling model"""
+def create_basic_diagonal_model(FS):
+    """wrapper function to make the simplest diagonal(sampling) model"""
     source = create_harmonic_model(FS)
     dest = FS.path_rho_model
 
@@ -636,8 +714,8 @@ def create_fake_coupled_model(FS, tuning_parameter=0.01, transformation_matrix=N
     """
     assert os.path.isfile(FS.path_vib_model), "coupled_model file doesn't exist!"
 
-    model_dict = load_model_from_JSON(FS.path_vib_model)
-    A, N = _extract_dimensions_from_dictionary(model_dict)
+    model = load_model_from_JSON(FS.path_vib_model)
+    A, N = _extract_dimensions_from_dictionary(model)
 
     # we will store the matrix in U
     U = transformation_matrix
@@ -646,23 +724,23 @@ def create_fake_coupled_model(FS, tuning_parameter=0.01, transformation_matrix=N
     if U is None:
         # if no parameter is provided we create a new orthonormal matrix
         U = create_orthonormal_matrix_lambda_close_to_identity(A, tuning_parameter)
-    elif U == "re-use":
+    elif isinstance(U, str) and U == "re-use":
         # if this special flag is provided then we will load a previous orthonormal matrix
         U = np.load(FS.path_ortho_mat)
     elif isinstance(U, np.ndarray):
         # and finally we might be given the orthonormal matrix
         assert np.allclose(U.dot(U.T), np.eye(A)), "matrix is not orthonormal"
     else:
-        raise Exception("This shouldn't happen")
+        raise Exception("Your transformation_matrix argument is most likely incorrect?")
 
-    for key in filter(model_dict.__contains__, VMK.key_list()):
+    # TODO - should we validate that the model is diagonal and not just symmetric in the surfaces?
+    assert model_parameters_are_symmetric_in_surfaces(model)
+    assert model_parameters_are_symmetric_in_modes(model)
+
+    for key in filter(model.__contains__, VMK.key_list()):
 
         # the array of coefficients that we are going to modify
-        array = model_dict[key].view()
-
-        # TODO - do we really need to assert this? should this already have been called when we loaded the model?
-        assert model_array_diagonal_in_surfaces(array), f"{key} not diagonal in surfaces"
-        """ we assert if the array is diagonal in modes inside each if statement because the checks are all unique, the surface check is the same because all arrays have the same structure where the last two dimensions are the surface dimensions """
+        array = model[key].view()
 
         # simulating a case statement
         op_switcher = {
@@ -691,12 +769,17 @@ def create_fake_coupled_model(FS, tuning_parameter=0.01, transformation_matrix=N
     shutil.copyfile(FS.path_vib_model,  FS.path_orig_model)
 
     # overwrite the old model with the new model
-    save_model_to_JSON(FS.path_vib_model, model_dict)
+    save_model_to_JSON(FS.path_vib_model, model)
 
     # save the orthogonal matrix in case we need to use it later
     np.save(FS.path_ortho_mat, U)
     return
 
 
+def main():
+    """ currently does nothing """
+    return
+
+
 if (__name__ == "__main__"):
-    print("Currently does nothing")
+    main()

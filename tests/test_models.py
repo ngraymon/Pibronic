@@ -47,7 +47,7 @@ class TestProcessingVibronicModel():
 
     # only want to check that the rho 0 sampling models are the same as the harmonic models
     def test_creating_basic_sampling_model_from_harmonic_model(self, files):
-        vIO.create_basic_sampling_model(files)
+        vIO.create_basic_diagonal_model(files)
         samefile = filecmp.cmp(files.path_rho_model, files.path_rho_params + "sampling_model_reference.json")
         assert samefile
         return

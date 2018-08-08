@@ -31,7 +31,7 @@ def parse_input_mctdh_files_into_directories(FS, system_name):
     vIO.create_coupling_from_op_file(FS, path_dst)
     vIO.create_harmonic_model(FS)
     # this basic sampling model is simply the diagonal of the Hamiltonian
-    vIO.create_basic_sampling_model(FS)
+    vIO.create_basic_diagonal_model(FS)
     return
 
 
@@ -48,7 +48,7 @@ def copy_input_json_files_into_directories(FS, system_name):
     shutil.copy(path_src, FS.path_vib_model)
     # this basic sampling model is simply the diagonal of the Hamiltonian
     print(FS.path_rho_params)
-    vIO.create_basic_sampling_model(FS)
+    vIO.create_basic_diagonal_model(FS)
     return
 
 

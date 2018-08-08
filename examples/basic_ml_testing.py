@@ -112,7 +112,7 @@ if (__name__ == "__main__"):
     # but we want to be able to replace the fake_vibron.op data with real data eventually
     vIO.create_coupling_from_op_file(FS, new_path)
     vIO.create_harmonic_model(FS)
-    vIO.create_basic_sampling_model(FS)
+    vIO.create_basic_diagonal_model(FS)
 
     # you can change the bead number to a smaller value if thats helpful, although it has to be at least 3, don't use a bigger value atm, that will just generate excess data
     P = 12

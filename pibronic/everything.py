@@ -145,7 +145,7 @@ def execute(file_path, id_model):
     path_model_harmonic = vIO.create_harmonic_model(id_data)
 
     # Create the sampling model
-    path_model_sampling = vIO.create_basic_sampling_model(id_data, id_rho)
+    path_model_sampling = vIO.create_basic_diagonal_model(id_data, id_rho)
 
     # Copy to rho_0 to represent the simple sampling model
     # path_model_sampling = files.path_data + "rho_0/parameters/sampling_model.json"
@@ -159,7 +159,7 @@ def execute(file_path, id_model):
     # ---------------------------------------------------------------------------------------------
     # SUBMIT PIMC JOBS
 
-    A, N = vIO.extract_dimensions_of_coupled_model(FS=files)
+    A, N = vIO.extract_dimensions_of_model(FS=files)
 
     # this is the minimum amount of data needed to run an execution
     parameter_dictionary = {
