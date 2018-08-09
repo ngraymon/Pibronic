@@ -107,13 +107,6 @@ calculations_list = [
 """ get the name of the function that called the current function """
 # inspect.currentframe().f_back.f_code.co_name
 
-
-# quick hacky cheats!!
-
-file_name_state = "execution_state.txt"
-
-# quick hacky cheats!!
-
 # -----------------------------------------------------------
 # MEMORY MAPPED HELPER FUNCTIONS
 # -----------------------------------------------------------
@@ -196,13 +189,23 @@ number_dictionary = {
     # 21:   ("", 221),
     }
 
+name_of_state_file = "execution_state.txt"
 
-def pretty_print_job_status():
-    """ quick hack for scripting"""
-    path_root = "/work/ngraymon/pimc/data_set_{:d}/electronic_structure/execution_state.txt"
+
+def pretty_print_job_status(path=None):
+    """ quick hack for scripting, path should look something like
+    /**/data_set_{:d}/electronic_structure/execution_state.txt"""
+
+    # use the default path
+    if path is None:
+        path = join("/work/ngraymon/pimc/data_set_{:d}/electronic_structure/", name_of_state_file)
+
+    # assume that we we're provided with the root of the path
+    if "data_set_" not in path:
+        path = join(path, "data_set_{:d}/electronic_structure/", name_of_state_file)
 
     for model in number_dictionary.values():
-        path_file_state = path_root.format(model[1])
+        path_file_state = path.format(model[1])
         if isfile(path_file_state):
             with open(path_file_state, 'r') as file:
                 lines = file.readlines()
@@ -213,8 +216,8 @@ def pretty_print_job_status():
                 break
             log.info("({:}, {:}) last state was {:}".format(model[0], model[1], last_state))
         else:
-            s = "({:}, {:}) does not have an execution_state.txt file"
-            log.info(s.format(model[0], model[1]))
+            s = "({:}, {:}) does not have an {:s} file"
+            log.info(s.format(model[0], model[1], name_of_state_file))
 
     return
 
@@ -455,6 +458,7 @@ def hartree_fock_calculation(path_root, name, zmat, parameter_dictionary, hf_typ
     file_path = join(path_root, file_name)
 
     verify_aces2_completed(path_root, file_path, job_id)
+def temp_file_path(root):
 
     return
 
@@ -1439,7 +1443,7 @@ class VibronExecutionClass:
         self.path_root = root
         self.file_in = default_file_in.copy()
         self.file_out = default_file_out.copy()
-        self.path_state = self.path_root + file_name_state
+        self.path_state = join(self.path_root, name_of_state_file)
 
         # fill in names
         for key, val in self.file_in.items():
@@ -1682,8 +1686,7 @@ def calculate_vibronic_model_wrapper_one(data_set_num, molecule_name="ch2o", ini
     return
 
 
-if (__name__ == "__main__"):
-
+def main():
     # we provide a specific named file
     if len(sys.argv) is 2:
         test_one(str(sys.argv[1]))
@@ -1696,3 +1699,7 @@ if (__name__ == "__main__"):
 
     else:
         test_one()
+
+
+if (__name__ == "__main__"):
+    main()
