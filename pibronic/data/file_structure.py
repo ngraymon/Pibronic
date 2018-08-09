@@ -212,9 +212,15 @@ class FileStructure:
         files.make_directories()
         return
 
-    def generate_model_hashes(self):
-        """ create two new data attributes which store the hash values (hash_vib, hash_rho)
+    def generate_model_hashes(self, force_flag=False):
+        """ create two new data attributes (if they don't already exist) which store the hash values (hash_vib, hash_rho)
         created by the functions vIO.create_model_hash() and vIO.create_sampling_hash()"""
+
+        if hasattr(self, 'hash_vib') and hasattr(self, 'hash_rho') and not force_flag:
+            print("a")
+            return
+
+        # TODO - should we add a try-except or an assert here to make sure the paths are files?
         self.hash_vib = vIO.create_model_hash(FS=self)
         self.hash_rho = vIO.create_diagonal_model_hash(FS=self)
         return

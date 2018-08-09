@@ -143,7 +143,7 @@ def apply_parameter_restrictions(args):
     # apply the restriction
     args["temperatures"] = np.intersect1d(args["temperatures"], temperature_restriction)
     args["pimc_beads"] = np.intersect1d(args["pimc_beads"], pimc_restriction)
-    return
+    # return
 
 
 def starmap_wrapper(FS, P, T, statistical_operation):
@@ -166,10 +166,14 @@ def starmap_wrapper(FS, P, T, statistical_operation):
     output_dict = statistical_operation(T, pimc_results, rhoData)
 
     # now we should add the hash identifiers to it
-    output_dict["hash_vib"] = FS.hash_vib
-    output_dict["hash_rho"] = FS.hash_rho
+    try:
+        output_dict["hash_vib"] = FS.hash_vib
+        output_dict["hash_rho"] = FS.hash_rho
+    except AttributeError as e:
+        raise AttributeError(f"FS {FS:} doesn't have hash_vib or hash_rho attributes!")
 
     # save the data to disk
+    assert pimc_results.samples is not 0, "pimc_results has 0 samples! reading the data failed?!"
     path = FS.template_jackknife.format(P=P, T=T, X=pimc_results.samples)
 
     with open(path, mode='w', encoding='UTF8') as target_file:
@@ -213,9 +217,8 @@ def alpha_statistical_analysis(temperature, pimc_result, analytic_data):
     return alpha_dict
 
 
-def statistical_analysis_of_pimc(path, id_data, id_rho=0, method="basic", location="local", samples=None):
+def statistical_analysis_of_pimc(FS, method="basic", location="local", samples=None):
     """ preform calculation of Z, E, Cv for the given model, using either basic or alpha/difference terms """
-    FS = fs.FileStructure(path, id_data, id_rho)
     FS.generate_model_hashes()  # build the hashes so that we can check against them
     list_pimc = pp.retrive_pimc_file_list(FS)
 
@@ -237,6 +240,8 @@ def statistical_analysis_of_pimc(path, id_data, id_rho=0, method="basic", locati
         operation = basic_statistical_analysis
     elif method is "alpha":
         operation = alpha_statistical_analysis
+    else:
+        raise Exception(f"Invalid value for parameter method:({method})")
 
     # dispatch multiple processes to execute the analyze concurrently
     if location is "local":
@@ -255,7 +260,7 @@ def statistical_analysis_of_pimc(path, id_data, id_rho=0, method="basic", locati
         # TODO - write code that submits jobs to the server
 
     else:
-        raise Exception(f"Invalid value for paramter location:({location:s})")
+        raise Exception(f"Invalid value for parameter location:({location})")
 
     return
 
@@ -329,9 +334,8 @@ def alpha_jackknife_analysis(temperature, pimc_result, analytic_data):
     return output_dict
 
 
-def jackknife_analysis_of_pimc(path, id_data, id_rho=0, method="basic", location="local", samples=None):
+def jackknife_analysis_of_pimc(FS, method="basic", location="local", samples=None):
     """ preform calculation of Z, E, Cv for the given model, using either basic or alpha/difference terms with the jackknife method"""
-    FS = fs.FileStructure(path, id_data, id_rho)
     FS.generate_model_hashes()  # build the hashes so that we can check against them
     list_pimc = pp.retrive_pimc_file_list(FS)
 
@@ -374,20 +378,24 @@ def jackknife_analysis_of_pimc(path, id_data, id_rho=0, method="basic", location
     return
 
 
-def testing_execution(path, id_data, id_rho):
-    """ temporary """
-    statistical_analysis_of_pimc(path, id_data, id_rho, method="basic")
-    statistical_analysis_of_pimc(path, id_data, id_rho, method="alpha")
-    jackknife_analysis_of_pimc(path, id_data, id_rho, method="basic")
-    jackknife_analysis_of_pimc(path, id_data, id_rho, method="alpha")
+def testing_execution(FS):
+    """ temporary"""
+    statistical_analysis_of_pimc(FS, method="basic")
+    statistical_analysis_of_pimc(FS, method="alpha")
+    jackknife_analysis_of_pimc(FS, method="basic")
+    jackknife_analysis_of_pimc(FS, method="alpha")
     return
 
 
-if (__name__ == "__main__"):
+def main():
     """ this is only used for testing at the moment """
     test_path = "/work/ngraymon/pimc/testing/"
     id_data = int(sys.argv[1])
     id_rho = 0
-    testing_execution(test_path, id_data, id_rho)
-
+    FS = fs.FileStructure(test_path, id_data, id_rho)
+    testing_execution(FS)
     print("Finished")
+
+
+if (__name__ == "__main__"):
+    main()
