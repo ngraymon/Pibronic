@@ -265,6 +265,7 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     lst_P3 = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
               100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 250, 300]
 
+    lst_P4 = [10, 20, 30, 40, 50, 75, 100, 150, 200, 300, 400, 500]
     # don't resubmit the same jobs if not needed
     # lst_P3 = list(set(lst_P3) - set(lst_P2))
 
@@ -277,13 +278,12 @@ def simple_pimc_wrapper(root=None, id_data=11, id_rho=0):
     # file doesn't exists OR the hash values don't match up!
     generate_analytical_results(FS, lst_T)
     A, N = vIO.extract_dimensions_of_model(FS=FS)
-
     # this is the minimum amount of data needed to run an execution
     parameter_dictionary = {
-        "number_of_samples": int(1e6),
+        "number_of_samples": int(1e5),
         "number_of_states": A,
         "number_of_modes": N,
-        "bead_list": lst_P3,
+        "bead_list": lst_P4,
         "temperature_list": lst_T,
         "delta_beta": constants.delta_beta,
         "id_data": id_data,

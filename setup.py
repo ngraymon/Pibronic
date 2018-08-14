@@ -20,13 +20,12 @@ def julia_is_installed():
     p = subprocess.run(["julia", "--version"], stdout=subprocess.PIPE, universal_newlines=True)
     if p.stdout.startswith("julia version"):
         bits = p.stdout.split(sep=".")
-        # if the version is 1.X.X or 0.[6-9].X
-        if int(bits[0][-1]) >= 1 or int(bits[1]) >= 6:
-            print("It appears julia 0.6.X or higher is installed")
+        # if the version is 1.X.X or 0.7.X is installed
+        if int(bits[0][-1]) >= 1 or int(bits[1]) >= 7:
+            print("It appears julia 1.X.X or 0.7.X is installed, install should proceed successfully")
             return True
         else:
-            print("It appears julia is installed but I0.6.X or higher is installed")
-
+            print("It appears julia is installed but the version is too old please update to at least 1.0.0 or 0.7.0")
     else:
         print("Julia is not installed and so VibronicToolkit cannot be installed",
               "some features such as: analytic/sos/trotter will not be available")
@@ -49,7 +48,7 @@ def install_VibronicToolkit():
 
     subprocess.run(['julia', '-e', cmd])
     # we trust that the install was successful
-    # although it would be nice to have a clean way to confirm the install was successful
+    # although it would be nice Ato have a clean way to confirm the install was successful
     return
 
 

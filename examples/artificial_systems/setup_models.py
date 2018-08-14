@@ -4,7 +4,6 @@
 import shutil
 import time
 import sys
-import os
 from os.path import join, abspath, dirname, isfile
 
 # third party imports
@@ -98,7 +97,7 @@ def create_sampling_distributions(FS, name):
     # the orig_model, even though it is already diagonal, rho_model's have only
     # one surface dimension not 2
 
-    iterate = True
+    iterate = False
     # for the third sampling model we want to use the iterative method
     if iterate:
         id_rho = 2

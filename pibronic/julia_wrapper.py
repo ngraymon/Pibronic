@@ -5,6 +5,7 @@ import subprocess
 import json
 import sys
 import os
+from os.path import join, isfile
 
 # third party imports
 
@@ -15,7 +16,7 @@ from pibronic.vibronic import vIO
 from pibronic.data import file_structure as fs
 
 
-def compute(command, old_dict, input_beta):
+def compute(command, path_src, old_dict, input_beta):
     """x"""
     log.flow("Computing")
     log.flow(command)
@@ -32,9 +33,10 @@ def compute(command, old_dict, input_beta):
     lineList = [string for string in rawOutput.split("\n") if string is not '']
     output_dict = dict(line.split(":") for line in lineList)
 
+    print(output_dict)
     # check to make sure that we didn't get 0 results
     if not bool(output_dict):
-        print("The dictionary of value is empty, therefore the calculation did not complete successfully")
+        print(f"The results dictionary after running julia code on {path_src} is empty, therefore the calculation did not complete successfully")
         return False
 
     temp_dict = {}
@@ -118,7 +120,7 @@ def analytic_of_sampling_model(FS, beta):
 
     old_dict = {}
 
-    if os.path.isfile(path_analytic):
+    if isfile(path_analytic):
         with open(path_analytic, 'r') as file:
             data = file.read()
             if len(data) > 1:
@@ -127,7 +129,7 @@ def analytic_of_sampling_model(FS, beta):
     validate_old_rho_data(old_dict, FS)
     command = command.format(F=path_src, T=beta)
 
-    if compute(command, old_dict, beta):
+    if compute(command, path_src, old_dict, beta):
         validate_old_model_data(old_dict, FS)
         with open(path_analytic, 'w') as file:
             json.dump(old_dict, file)
@@ -148,7 +150,7 @@ def analytic_of_original_coupled_model(FS, beta):
 
     old_dict = {}
 
-    if os.path.isfile(path_analytic):
+    if isfile(path_analytic):
         with open(path_analytic, 'r') as file:
             data = file.read()
             if len(data) > 1:
@@ -157,7 +159,7 @@ def analytic_of_original_coupled_model(FS, beta):
     validate_old_model_data(old_dict, FS)
     command = command.format(F=path_src, T=beta)
 
-    if compute(command, old_dict, beta):
+    if compute(command, path_src, old_dict, beta):
         validate_old_model_data(old_dict, FS)
         with open(path_analytic, 'w') as file:
             json.dump(old_dict, file)
@@ -177,7 +179,7 @@ def sos_of_coupled_model(FS, basis_size, beta):
 
     command = construct_command_dictionary()["sos"]
 
-    if os.path.isfile(path_sos):
+    if isfile(path_sos):
         with open(path_sos, 'r') as file:
             data = file.read()
             if len(data) > 1:
@@ -186,7 +188,7 @@ def sos_of_coupled_model(FS, basis_size, beta):
     validate_old_model_data(old_dict, FS)
     command = command.format(F=FS.path_vib_model, T=beta, B=basis_size)
 
-    if compute(command, old_dict, beta):
+    if compute(command, path_src, old_dict, beta):
         validate_old_model_data(old_dict, FS)
         with open(path_sos, 'w') as file:
             json.dump(old_dict, file)
@@ -206,7 +208,7 @@ def trotter_of_coupled_model(FS, nbeads, basis_size, beta):
 
     command = construct_command_dictionary()["trotter"]
 
-    if os.path.isfile(path_trotter):
+    if isfile(path_trotter):
         with open(path_trotter, 'r') as file:
             data = file.read()
             if len(data) > 1:
@@ -215,7 +217,7 @@ def trotter_of_coupled_model(FS, nbeads, basis_size, beta):
     validate_old_model_data(old_dict, FS)
     command = command.format(F=FS.path_vib_model, T=beta, B=basis_size, P=nbeads)
 
-    if compute(command, old_dict, beta):
+    if compute(command, path_src, old_dict, beta):
         validate_old_model_data(old_dict, FS)
         with open(path_trotter, 'w') as file:
             json.dump(old_dict, file)
@@ -227,7 +229,7 @@ def iterate_method(FS, n_iterations=50):
     """ this is just a wrapper for the iterate method at the moment
     it doesn't check for old data - it just regenerates the output every time
     """
-    path_iterate = os.path.join(FS.path_vib_params, "iterative_model.json")
+    path_iterate = join(FS.path_vib_params, "iterative_model.json")
     print(path_iterate)
 
     command = construct_command_dictionary()["iterate"]
@@ -248,7 +250,7 @@ def iterate_method(FS, n_iterations=50):
 
 def prepare_julia():
     """preform any tasks necessary to setup the environment for executing julia code"""
-    cmd = ['/usr/bin/modulecmd', 'python', 'load', 'julia/0.6.3']
+    cmd = ['/usr/bin/modulecmd', 'python', 'load', 'julia/1.0.0']
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, error = p.communicate()
     exec(out)
@@ -257,7 +259,28 @@ def prepare_julia():
 
 def construct_command_dictionary():
     """x"""
-    julia = "julia ~/.julia/v0.6/VibronicToolkit/bin/"
+
+    # old_path_toolkit = "/.julia/v0.6/VibronicToolkit/bin/"
+
+    # ------------------------------------------------------------------------------------------
+    """
+    TODO - find a more elegant way to do this, could use the TOML package but it would be desirable not to have to keep adding additional packages
+    TOML package - https://pypi.org/project/toml/
+    this is a temporary workaround as the julia code is being modified for 1.0 and in development mode
+    """
+    path_julia_dev = os.path.expanduser("~/.julia/environments/v1.0/Manifest.toml")
+
+    with open(path_julia_dev, 'r') as file:
+        data = file.readlines()
+
+    for idx, line in enumerate(data):
+        if "[[VibronicToolkit]]" in line:
+            path_toolkit = data[idx+2].split("=")[1].strip().replace('"', '')
+            path_toolkit = os.path.normpath(path_toolkit)
+            assert os.path.exists(path_toolkit)
+
+    julia = "julia " + path_toolkit + "/bin/"
+    # ------------------------------------------------------------------------------------------
 
     a_c = julia + "analytical_coupled.jl --conf {F:} --beta {T:}"
     a_s = julia + "analytical_sampling.jl --conf {F:} --beta {T:}"
@@ -276,7 +299,7 @@ def construct_command_dictionary():
     return d
 
 
-if (__name__ == "__main__"):
+def main():
     """x"""
 
     assert len(sys.argv) in [4, 5], "wrong number of args"
@@ -299,3 +322,7 @@ if (__name__ == "__main__"):
     # analytic_of_original_coupled_model(FS, beta)
     analytic_of_sampling_model(FS, beta)
     # sos_of_coupled_model(FS, beta)
+
+
+if (__name__ == "__main__"):
+    main()

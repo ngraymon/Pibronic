@@ -26,25 +26,27 @@ id_dict["valid"] = list(it.chain(*all_model_ids))
 # all the rho files present in /alternate_rhos/
 # this would need to be modified if more rhos/sampling distributions where chosen
 # it has no knowledge of the *actual* files in the directory
+num_of_rhos = 2
+
 rho_dict = {
-    name_lst[0]: {11: list(range(4)),
-                  12: list(range(4)),
-                  13: list(range(4)),
-                  14: list(range(4)),
-                  15: list(range(4)),
-                  16: list(range(4)),
+    name_lst[0]: {11: list(range(num_of_rhos)),
+                  12: list(range(num_of_rhos)),
+                  13: list(range(num_of_rhos)),
+                  14: list(range(num_of_rhos)),
+                  15: list(range(num_of_rhos)),
+                  16: list(range(num_of_rhos)),
                   },
-    name_lst[1]: {21: list(range(4)),
-                  22: list(range(4)),
-                  23: list(range(4)),
-                  24: list(range(4)),
-                  25: list(range(4)),
+    name_lst[1]: {21: list(range(num_of_rhos)),
+                  22: list(range(num_of_rhos)),
+                  23: list(range(num_of_rhos)),
+                  24: list(range(num_of_rhos)),
+                  25: list(range(num_of_rhos)),
                   },
-    name_lst[2]: {31: list(range(4)),
-                  32: list(range(4)),
-                  33: list(range(4)),
-                  34: list(range(4)),
-                  35: list(range(4)),
+    name_lst[2]: {31: list(range(num_of_rhos)),
+                  32: list(range(num_of_rhos)),
+                  33: list(range(num_of_rhos)),
+                  34: list(range(num_of_rhos)),
+                  35: list(range(num_of_rhos)),
                   },
 }
 

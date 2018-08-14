@@ -15,10 +15,10 @@ import pibronic.data.file_structure as fs
 
 def simple_wrapper(FS):
     # TODO - sort out which ones I want to use
-    stats.statistical_analysis_of_pimc(FS.path_root, FS.id_data, FS.id_rho, method="basic")
-    # stats.statistical_analysis_of_pimc(FS.path_root, FS.id_data, FS.id_rho, method="alpha")
-    stats.jackknife_analysis_of_pimc(FS.path_root, FS.id_data, FS.id_rho, method="basic")
-    # stats.jackknife_analysis_of_pimc(FS.path_root, FS.id_data, FS.id_rho, method="alpha")
+    stats.statistical_analysis_of_pimc(FS, method="basic")
+    # stats.statistical_analysis_of_pimc(FS, method="alpha")
+    stats.jackknife_analysis_of_pimc(FS, method="basic")
+    # stats.jackknife_analysis_of_pimc(FS, method="alpha")
     return
 
 

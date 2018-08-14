@@ -264,7 +264,17 @@ def generate_full_monotonic_sequence(order):
     x_pairs = generate_and_save_x_pairs(order, p_list)
 
     # the period is from (0, max_x) and (0, max_y)
-    max_y = p_list[-1].y
+    numerical_max_y = p_list[-1].y
+    numerical_max_x = p_list[-1].x
+
+    # the analytical value for the maximum y is 2 * sqrt(order)
+    analytical_max_y = 2 * np.sqrt(order)
+    analytical_max_x = None  # we can't know this value ahead of time!
+
+    # we choose to use the analytical option as our maximum y value
+    analytical = True
+    max_y = analytical_max_y if analytical else p_list[-1].y
+
     # the tuning parameter which gives the 'maximally entangling' U matrix is 1/4 of the period
     best_y = max_y / 4.
 
@@ -272,7 +282,7 @@ def generate_full_monotonic_sequence(order):
     frobenius_norm = partial(norm, ord='fro')
 
     # we find the closest x value to get us that 1/4 of the period
-    samples, step = np.linspace(0., p_list[-1].x, n_bins, retstep=True)
+    samples, step = np.linspace(0., numerical_max_x, n_bins, retstep=True)
     for x in samples:
         y = frobenius_norm(diff(x))
         if y > best_y:
@@ -409,8 +419,7 @@ def debugging_matrix_checking_function(args):
 
 
 def main():
-    # for order in range(2, 11, 1):
-    for order in [2, 4, 7]:
+    for order in range(2, 11, 1):
         generate_full_monotonic_sequence(order)
         print(f"Finished generating a sequence of order {order:}")
 

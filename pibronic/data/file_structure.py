@@ -217,7 +217,6 @@ class FileStructure:
         created by the functions vIO.create_model_hash() and vIO.create_sampling_hash()"""
 
         if hasattr(self, 'hash_vib') and hasattr(self, 'hash_rho') and not force_flag:
-            print("a")
             return
 
         # TODO - should we add a try-except or an assert here to make sure the paths are files?
