@@ -1,9 +1,8 @@
-# setup_models.py - creates all the directories and copies in the necessary files
+#
 
 # system imports
-import sys
-import subprocess
 from multiprocessing import Pool
+import subprocess
 
 # third party imports
 
@@ -43,21 +42,23 @@ def _generate_sos_results(FS, temperature_list, basis_size_list):
 
             cmd = ("srun"
                    f" --job-name=sos_D{FS.id_data:d}_T{T:.2f}"
+                   # " --cpus-per-task=1"  # default julia hasn't seen speed ups for more than 1 core
+                   " --mem=20GB"
                    " python3 -c '{:s}'".format(func_call.format(temperature=T, BS=BS))
                    )
 
             p = subprocess.Popen(cmd, shell=True, universal_newlines=True,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  )
-            (out, error) = p.communicate()
+            # (out, error) = p.communicate()
 
-            if error != '' and "Out Of Memory" in error:
-                print(error, "\nMemory error, you need to run this job on toby\n")
-                print(out)
-                exit(0)
-                continue
-
-            print(out)
+            # if error != '' and "Out Of Memory" in error:
+            #     print(error, "\nMemory error, you need to run this job on toby\n")
+            #     print(out)
+            #     exit(0)
+            #     continue
+            # print(error)
+            # print(out)
     return
 
 
@@ -81,19 +82,21 @@ def _generate_trotter_results(FS, temperature_list, bead_list, basis_size_list):
 
                 cmd = ("srun"
                        f" --job-name=trotter_D{FS.id_data:d}_P{P:d}_T{T:.2f}"
+                       # " --cpus-per-task=1"  # default julia hasn't seen speed ups for more than 1 core
+                       " --mem=20GB"
                        " python3 -c '{:s}'".format(func_call.format(temperature=T, nbeads=P, BS=BS))
                        )
 
                 p = subprocess.Popen(cmd, shell=True, universal_newlines=True,
-                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                     # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                      )
-                (out, error) = p.communicate()
+                # (out, error) = p.communicate()
 
-                if error != '' and "Out Of Memory" in error:
-                    print(error, "\nMemory error, you need to run this job on toby\n")
-                    continue
-
-                print(out)
+                # if error != '' and "Out Of Memory" in error:
+                #     print(error, "\nMemory error, you need to run this job on toby\n")
+                #     continue
+                # print(error)
+                # print(out)
     return
 
 
@@ -105,7 +108,9 @@ def simple_sos_trotter_wrapper(lst_BS, root=None, id_data=11, id_rho=0):
         root = context.choose_root_folder()
 
     FS = fs.FileStructure(root, id_data, id_rho)
-    lst_P = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, ]
+    # lst_P = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, ]
+    # lst_P = [10, 50, 100, 150, 200, ]
+    lst_P = [10, ]
     lst_T = [300.00, ]
 
     # TODO - need to add a check that only generates trotter/sos results if the
@@ -153,7 +158,7 @@ def iterative_method_wrapper(root=None, id_data=11):
     # TODO - adjust the run time parameters
     cmd = ("srun"
            f" --job-name=iterative_D{FS.id_data:d}"
-           " --cpus-per-task=4"
+           # " --cpus-per-task=1"  # default julia hasn't seen speed ups for more than 1 core
            " --mem=20GB"
            " python3 -c '{:s}'".format(func_call)
            )
@@ -308,10 +313,9 @@ def automate_pimc_submission(name):
     return
 
 
-if (__name__ == "__main__"):
-
+def main():
     # If you want to speed things up you can split the work across four processes
-    multiprocessing_flag = True
+    multiprocessing_flag = False
 
     if multiprocessing_flag:
         with Pool(len(systems.name_lst)) as p:
@@ -320,10 +324,14 @@ if (__name__ == "__main__"):
     else:
         # during testing
         # Sequential, comment out lines if you only need to run for individual models
-        automate_pimc_submission(systems.name_lst[0])
-        automate_pimc_submission(systems.name_lst[1])
-        automate_pimc_submission(systems.name_lst[2])
-        # automate_sos_trotter_submission(systems.name_lst[0])
+        # automate_pimc_submission(systems.name_lst[0])
+        # automate_pimc_submission(systems.name_lst[1])
+        # automate_pimc_submission(systems.name_lst[2])
+        automate_sos_trotter_submission(systems.name_lst[0])
         # automate_sos_trotter_submission(systems.name_lst[1])
         # automate_sos_trotter_submission(systems.name_lst[2])
         pass
+
+
+if (__name__ == "__main__"):
+    main()

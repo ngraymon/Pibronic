@@ -5,7 +5,7 @@ import subprocess
 import json
 import sys
 import os
-from os.path import join, isfile
+from os.path import join, isfile, dirname, realpath
 
 # third party imports
 
@@ -23,6 +23,7 @@ def compute(command, path_src, old_dict, input_beta):
 
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     (out, error) = p.communicate()
+    # print(out, error)
 
     # check to make sure the job wasn't killed
     if "Killed" in error.decode():
@@ -31,9 +32,13 @@ def compute(command, path_src, old_dict, input_beta):
 
     rawOutput = ''.join(list(out.decode()))
     lineList = [string for string in rawOutput.split("\n") if string is not '']
+    # quick check to make sure that our assumption about the structure of the output is correct
+    for line in lineList:
+        assert ":" in line
+    # the following step requires that every line has a semicolon
     output_dict = dict(line.split(":") for line in lineList)
 
-    print(output_dict)
+    # print(output_dict)
     # check to make sure that we didn't get 0 results
     if not bool(output_dict):
         print(f"The results dictionary after running julia code on {path_src} is empty, therefore the calculation did not complete successfully")
@@ -133,6 +138,8 @@ def analytic_of_sampling_model(FS, beta):
         validate_old_model_data(old_dict, FS)
         with open(path_analytic, 'w') as file:
             json.dump(old_dict, file)
+    else:
+        raise Exception("Calculation did not complete successfully")
 
     return
 
@@ -163,6 +170,8 @@ def analytic_of_original_coupled_model(FS, beta):
         validate_old_model_data(old_dict, FS)
         with open(path_analytic, 'w') as file:
             json.dump(old_dict, file)
+    else:
+        raise Exception("Calculation did not complete successfully")
 
     return
 
@@ -188,10 +197,12 @@ def sos_of_coupled_model(FS, basis_size, beta):
     validate_old_model_data(old_dict, FS)
     command = command.format(F=FS.path_vib_model, T=beta, B=basis_size)
 
-    if compute(command, path_src, old_dict, beta):
+    if compute(command, path_sos, old_dict, beta):
         validate_old_model_data(old_dict, FS)
         with open(path_sos, 'w') as file:
             json.dump(old_dict, file)
+    else:
+        raise Exception("Calculation did not complete successfully")
 
     return
 
@@ -217,10 +228,12 @@ def trotter_of_coupled_model(FS, nbeads, basis_size, beta):
     validate_old_model_data(old_dict, FS)
     command = command.format(F=FS.path_vib_model, T=beta, B=basis_size, P=nbeads)
 
-    if compute(command, path_src, old_dict, beta):
+    if compute(command, path_trotter, old_dict, beta):
         validate_old_model_data(old_dict, FS)
         with open(path_trotter, 'w') as file:
             json.dump(old_dict, file)
+    else:
+        raise Exception("Calculation did not complete successfully")
 
     return
 
@@ -260,27 +273,17 @@ def prepare_julia():
 def construct_command_dictionary():
     """x"""
 
-    # old_path_toolkit = "/.julia/v0.6/VibronicToolkit/bin/"
+    # assuming that prepare_julia() has already been executed
+    cmd = ['julia', '-e', 'import VibronicToolkit; print(pathof(VibronicToolkit))']
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, error = p.communicate()
+    assert error.decode() == '', f"{error.decode()} happened!"
 
-    # ------------------------------------------------------------------------------------------
-    """
-    TODO - find a more elegant way to do this, could use the TOML package but it would be desirable not to have to keep adding additional packages
-    TOML package - https://pypi.org/project/toml/
-    this is a temporary workaround as the julia code is being modified for 1.0 and in development mode
-    """
-    path_julia_dev = os.path.expanduser("~/.julia/environments/v1.0/Manifest.toml")
+    path_root_jl_file = realpath(out.decode())  # get the path to */src/*.jl
+    path_root_folder = dirname(dirname(path_root_jl_file))  # go up 2 directories
+    path_bin = join(path_root_folder, "bin" + os.sep)  # the path to */bin/
 
-    with open(path_julia_dev, 'r') as file:
-        data = file.readlines()
-
-    for idx, line in enumerate(data):
-        if "[[VibronicToolkit]]" in line:
-            path_toolkit = data[idx+2].split("=")[1].strip().replace('"', '')
-            path_toolkit = os.path.normpath(path_toolkit)
-            assert os.path.exists(path_toolkit)
-
-    julia = "julia " + path_toolkit + "/bin/"
-    # ------------------------------------------------------------------------------------------
+    julia = "julia " + path_bin
 
     a_c = julia + "analytical_coupled.jl --conf {F:} --beta {T:}"
     a_s = julia + "analytical_sampling.jl --conf {F:} --beta {T:}"
@@ -320,7 +323,7 @@ def main():
     FS.generate_model_hashes()
 
     # analytic_of_original_coupled_model(FS, beta)
-    analytic_of_sampling_model(FS, beta)
+    # analytic_of_sampling_model(FS, beta)
     # sos_of_coupled_model(FS, beta)
 
 
