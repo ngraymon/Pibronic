@@ -1,0 +1,71 @@
+\documentclass[tikz]{standalone}
+\usepackage[edges]{forest}
+
+%https://tex.stackexchange.com/questions/5073/making-a-simple-directory-tree
+\usepackage{adjustbox}
+\let\oldhash\#%
+\DeclareRobustCommand{\#}{\adjustbox{valign=B,totalheight=.57\baselineskip}{\oldhash}}%
+\definecolor{foldercolor}{RGB}{124,166,198}
+
+\tikzset{pics/folder/.style={code={%
+    \node[inner sep=0pt, minimum size=#1](-foldericon){};
+    \node[folder style, inner sep=0pt, minimum width=0.3*#1, minimum height=0.6*#1, above right, xshift=0.05*#1] at (-foldericon.west){};
+    \node[folder style, inner sep=0pt, minimum size=#1] at (-foldericon.center){};}
+    },
+    pics/folder/.default={20pt},
+    folder style/.style={draw=foldercolor!80!black,top color=foldercolor!40,bottom color=foldercolor}
+}
+
+\forestset{is file/.style={edge path'/.expanded={%
+        ([xshift=\forestregister{folder indent}]!u.parent anchor) |- (.child anchor)},
+        inner sep=1pt},
+    this folder size/.style={edge path'/.expanded={%
+        ([xshift=\forestregister{folder indent}]!u.parent anchor) |- (.child anchor) pic[solid]{folder=#1}}, inner xsep=0.6*#1},
+    folder tree indent/.style={before computing xy={l=#1}},
+    folder icons/.style={folder, this folder size=#1, folder tree indent=2*#1},
+    folder icons/.default={8pt},
+}
+
+\begin{document}
+  \begin{forest}
+    for tree={  font=\sffamily,
+                grow'=0,
+                folder indent=.3em,
+                folder icons,
+                edge=densely dotted
+              }
+    [root,
+        [data\_set\_11,
+            [plots, ]
+            [results, ]
+            [execution\_output, ]
+            [electronic\_structure, ]
+            [parameters,
+                [coupled\_model.json, is file]
+                [trotter\_P\#\_B\#.json, is file]
+                [sos\_B\#.json, is file]
+              ]
+            [rho\_0,
+                [plots, ]
+                [results,
+                    [P10\_T300.00\_J279857\_data\_points.npz, is file]
+                    [P10\_T300.00\_X100000\_thermo, is file]
+                    [P\#\_T\#\_data\_points.npz, is file]
+                    [P\#\_T\#\_X\#\_thermo, is file]
+                  ]
+                [execution\_output,
+                    [D11\_R0\_P10\_T300.00.o279857, is file]
+                    [D11\_R0\_P\#\_T\#.o\#.json, is file]
+                  ]
+                [parameters,
+                    % [analytic\_results.json, is file]
+                    [sampling\_model.json, is file]
+                    [sos\_B\#.json, is file]
+                  ]
+              ]
+            [rho\_\#]
+          ]
+        [data\_set\_\#]
+      ]
+  \end{forest}
+\end{document}
