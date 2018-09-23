@@ -169,7 +169,7 @@ class PimcSubmissionClass:
 
     # the largest number of samples to be drawn for an individual job submitted to the server
     # any job that requires more samples is split into multiple job submissions
-    MAX_SAMPLES_PER_JOB = int(1E5)
+    MAX_SAMPLES_PER_JOB = int(1E4)
 
     # TODO - this method could most likely be improved upon
     # default values

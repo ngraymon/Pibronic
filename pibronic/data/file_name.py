@@ -162,6 +162,10 @@ this can be anything which is diagonal in the electronic states
 """
 sampling_model = "sampling_model.json"
 
+""" contains the parameters which describe the sampling model which has been generated using our iterative decomposition method whose weights have been corrected using single-point energy calculations
+"""
+iterative_model = "iterative_model.json"
+
 """ contains any parameters which can be obtained through analytical methods
 this commonly stores properties of the sampling model at different temperatures
 """

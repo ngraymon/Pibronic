@@ -2,8 +2,10 @@
 
 # system imports
 import shutil
+import time
 import glob
-import os
+import sys
+# import os
 from os.path import join, abspath, dirname
 
 # third party imports
@@ -11,8 +13,10 @@ from os.path import join, abspath, dirname
 # local imports
 import context
 import systems
-from pibronic.vibronic import vIO
+from pibronic.vibronic import vIO, VMK
 import pibronic.data.file_structure as fs
+sys.path.insert(1, abspath(__file__))  # TODO - fix this import in the future
+from submit_jobs_to_server import iterative_method_wrapper
 
 
 def parse_input_mctdh_files_into_directories(FS, system_name):
@@ -74,7 +78,7 @@ def copy_alternate_rhos_into_directories(FS, system_name):
     return
 
 
-def prepare_model(system_name, id_data=0, root=None):
+def prepare_paper_model(system_name, id_data=0, root=None):
     """ wrapper function """
     systems.assert_id_data_is_valid(id_data)
 
@@ -84,15 +88,44 @@ def prepare_model(system_name, id_data=0, root=None):
     # instantiate the FileStructure object which creates the directories
     FS = fs.FileStructure(root, id_data, 0)
 
-    # either way will work - we will just the simple way for the moment
+    # either way will work
     if True:
         copy_input_json_files_into_directories(FS, system_name)
     else:
         parse_input_mctdh_files_into_directories(FS, system_name)
 
     # create all possible rho's
+    # which are the diagonal of the transformed Hamiltonian (id_rho = 0)
+    # and the improved models presented in the paper (id_rho = 1)
+    # (jahn-teller only) the more improved model presented in the paper (id_rho = 2)
     copy_alternate_rhos_into_directories(FS, system_name)
+    return
 
+
+def setup_weight_corrected_iterative_model(FS):
+    """ x """
+    FS.change_rho(systems.iterative_model_id_rho)
+    iterative_method_wrapper(id_data=FS.id_data)
+    time.sleep(2)  # hopefully fixes a race condition, which I encountered one time, possibly due to timing of the Slurm scheduler
+    vIO.recalculate_energy_values_of_diagonal_model(FS, FS.path_iter_model)
+    shutil.copy(FS.path_iter_model, FS.path_rho_model)
+
+
+def prepare_paper_model_plus_iterative_method(system_name, id_data=0, root=None):
+    """ wrapper function """
+
+    # first call the simple setup
+    prepare_paper_model(system_name, id_data=id_data, root=root)
+
+    if root is None:
+        root = context.choose_root_folder()
+
+    # instantiate the FileStructure object which creates the directories
+    FS = fs.FileStructure(root, id_data, 0)
+
+    # creates the additional rho
+    # the weight corrected iterative method (id_rho = 11)
+    setup_weight_corrected_iterative_model(FS)
     return
 
 
@@ -100,13 +133,15 @@ def automate_prepare_model():
     """ convenience/wrapper function
     loops over all the models we want to prepare
     """
-
     for name in systems.name_lst:
         for id_data in systems.id_dict[name]:
             prepare_model(name, id_data=id_data)
-
     return
 
 
-if (__name__ == "__main__"):
+def main():
     automate_prepare_model()
+
+
+if (__name__ == "__main__"):
+    main()

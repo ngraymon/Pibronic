@@ -242,7 +242,7 @@ def iterate_method(FS, n_iterations=50):
     """ this is just a wrapper for the iterate method at the moment
     it doesn't check for old data - it just regenerates the output every time
     """
-    path_iterate = join(FS.path_vib_params, "iterative_model.json")
+    path_iterate = FS.path_iter_model
     print(path_iterate)
 
     command = construct_command_dictionary()["iterate"]
@@ -308,7 +308,7 @@ def main():
     assert len(sys.argv) in [4, 5], "wrong number of args"
     assert sys.argv[3].isnumeric() and int(sys.argv[3]) >= 0, "rho id is invalid"
 
-    temperature = 300.0 if (len(sys.argv) == 4) else float(sys.argv[4])
+    temperature = 300.00 if (len(sys.argv) == 4) else float(sys.argv[4])
     beta = constants.beta(temperature)
 
     prepare_julia()

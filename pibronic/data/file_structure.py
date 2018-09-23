@@ -5,6 +5,7 @@ keeps directory structure consistant over the many modules if changes need to be
 """
 
 # system imports
+import json
 import os
 from os.path import join
 # from pathlib import Path  # should eventually make use of this
@@ -63,7 +64,7 @@ class FileStructure:
         # assert type(path_root) is str, "did not provide a path in str format"
 
         """
-        should FileStructure use log or return something to inidicate if the folders already exist?
+        should FileStructure use log or return something to indicate if the folders already exist?
         should it automatically choose a new data set number if the currently provided one is being used? or should it throw an error?
         """
 
@@ -116,6 +117,7 @@ class FileStructure:
         """
         self.path_vib_model = join(self.path_vib_params, file_name.coupled_model)
         self.path_har_model = join(self.path_vib_params, file_name.harmonic_model)
+        self.path_iter_model = join(self.path_vib_params, file_name.iterative_model)
         self.path_rho_model = join(self.path_rho_params, file_name.sampling_model)
 
         # TODO - maybe these should begin with file_*  instead of path_* ?
@@ -123,7 +125,7 @@ class FileStructure:
         self.path_analytic_vib = join(self.path_vib_params, file_name.analytic_results)
         self.path_analytic_orig = join(self.path_vib_params, file_name.original_analytic_results)
 
-        # only used for artifical systems
+        # only used for artificial systems
         self.path_orig_model = join(self.path_vib_params, file_name.original_model)
         self.path_ortho_mat = join(self.path_vib_params, file_name.orthogonal_matrix)
 
@@ -212,14 +214,38 @@ class FileStructure:
         files.make_directories()
         return
 
+    def _has_vib_hash(self):
+        """ returns the result of hasattr(self, 'hash_vib') """
+        return hasattr(self, 'hash_vib')
+
+    def _has_rho_hash(self):
+        """ returns the result of hasattr(self, 'hash_rho') """
+        return hasattr(self, 'hash_rho')
+
+    def _has_hash_values(self):
+        """ returns the result of hasattr(self, 'hash_vib') and hasattr(self, 'hash_rho') """
+        return self._has_vib_hash() and self._has_rho_hash()
+
     def generate_model_hashes(self, force_flag=False):
         """ create two new data attributes (if they don't already exist) which store the hash values (hash_vib, hash_rho)
         created by the functions vIO.create_model_hash() and vIO.create_sampling_hash()"""
 
-        if hasattr(self, 'hash_vib') and hasattr(self, 'hash_rho') and not force_flag:
+        if self._has_hash_values() and not force_flag:
             return
 
-        # TODO - should we add a try-except or an assert here to make sure the paths are files?
         self.hash_vib = vIO.create_model_hash(FS=self)
         self.hash_rho = vIO.create_diagonal_model_hash(FS=self)
         return
+
+    def valid_vib_hash(self, model_dict):
+        """ takes a dictionary and returns bool if value of 'hash_vib' key is same as hash_vib attribute of self"""
+        assert self._has_vib_hash(), f"This {type(self).__name__} object has no vib hash attribute, you should probably call generate_model_hashes() to generate one"
+        return bool(model_dict["hash_vib"] == self.hash_vib)
+
+    def valid_rho_hash(self, model_dict):
+        """ takes a dictionary and returns bool if value of 'hash_rho' key is same as hash_rho attribute of self"""
+        assert self._has_rho_hash(), f"This {type(self).__name__} object has no rho hash attribute, you should probably call generate_model_hashes() to generate one"
+        return bool(model_dict["hash_rho"] == self.hash_rho)
+
+    def valid_vib_and_rho_hashes(self, path):
+        return self.valid_rho_hash(path) and self.valid_vib_hash(path)

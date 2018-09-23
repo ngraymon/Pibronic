@@ -8,7 +8,7 @@ import shutil
 import copy
 import json
 import os
-from os.path import join
+from os.path import join, isfile
 
 # third party imports
 import numpy as np
@@ -17,9 +17,9 @@ from numpy.random import uniform as Uniform
 
 # local imports
 from ..log_conf import log
-from .. import constants
-from ..data import file_structure
-from ..data import file_name
+# from .. import constants
+# from ..data import file_structure
+# from ..data import file_name
 from .vibronic_model_keys import VibronicModelKeys as VMK
 from . import model_auto
 from . import model_op
@@ -299,6 +299,8 @@ def create_model_hash(FS=None, path=None):
     else:
         path = FS.path_vib_model
 
+    assert isfile(path)
+
     with open(path, mode='r', encoding='UTF8') as file:
         string = file.read()
 
@@ -313,6 +315,8 @@ def create_diagonal_model_hash(FS=None, path=None):
         assert path is not None, "no arguments provided"
     else:
         path = FS.path_rho_model
+
+    assert isfile(path)
 
     with open(path, mode='r', encoding='UTF8') as file:
         string = file.read()
@@ -468,7 +472,7 @@ def _extract_dimensions_from_dictionary(dictionary):
 
 def _extract_dimensions_from_file(path):
     """x"""
-    assert os.path.isfile(path), f"invalid path:\n{path:s}"
+    assert isfile(path), f"invalid path:\n{path:s}"
     with open(path, mode='r', encoding='UTF8') as file:
         input_dictionary = json.loads(file.read())
     VMK.change_dictionary_keys_from_strings_to_enum_members(input_dictionary)
@@ -632,6 +636,82 @@ def load_diagonal_model_from_JSON(path, dictionary=None):
         verify_diagonal_model_parameters(dictionary)
     return
 # ------------------------------------------------------------------------
+
+
+def simple_single_point_energy_calculation(FS, path):
+    """ generate new energy values for the diagonal model stored at the arg 'path'
+    this is intended to be used for re-weighting the oscillators created using the iterative method
+
+    returns a list of energy values in eV which"""
+
+    iterative_model = load_diagonal_model_from_JSON(path)
+    assert VMK.G2 not in iterative_model, "doesn't support quadratic terms at the moment"
+    Ai, Ni = _extract_dimensions_from_dictionary(iterative_model)
+
+    # generate the oscillator minimum's
+    minimums = np.zeros((Ai, Ni))
+
+    # if there is no linear term parameter in the model's dictionary, then they are all zero, and therefore are centered at the origin.
+    if VMK.G1 in iterative_model:
+        w_iter = iterative_model[VMK.w]
+        lin_iter = iterative_model[VMK.G1]
+        for idx in range(Ai):
+            minimums[idx, :] = np.divide(-lin_iter[:, idx],  w_iter[:])
+
+    coupled_model = load_model_from_JSON(FS.path_vib_model)
+    A, N = _extract_dimensions_from_dictionary(coupled_model)
+    assert VMK.G2 not in coupled_model, "doesn't support quadratic terms at the moment"
+    E = coupled_model[VMK.E]
+    w = coupled_model[VMK.w]
+    lin = np.zeros(model_shape_dict(A, N)[VMK.G1])
+    if VMK.G1 in coupled_model:
+        lin[:] = coupled_model[VMK.G1]
+    # quad = coupled_model[VMK.G2]  # TODO - add support for quadratic terms in the future
+
+    new_energy_values = np.zeros(Ai)
+
+    for idx in range(Ai):
+        q = minimums[idx, :]  # we evaluate the (R/q) point
+
+        # compute the harmonic oscillator contribution
+        ho = np.zeros((A, A))
+        np.fill_diagonal(ho, np.sum(w * pow(q, 2)))
+        ho *= 0.5
+
+        V = np.zeros((A, A))
+        V[:] += E
+        V[:] += ho
+
+        for a1 in range(A):
+            for a2 in range(A):
+                V[a1, a2] += np.sum(lin[:, a1, a2] * q)
+
+        eigenvalues = np.linalg.eigvalsh(V)
+        new_energy_values[idx] = min(eigenvalues)
+
+    return new_energy_values
+
+
+def recalculate_energy_values_of_diagonal_model(FS, path):
+    """ x """
+
+    """ note that these new energy values \tilde{E}^{a} values defined in equation 34 on page 4 from the archive paper, however the energy values stored in the *_model.json files are the E^{aa'} values in equation 26 on page 4 so we must subtract the \Delta^{a} term from the 'new_energies' to obtain the correct energy values which will be stored in the *_model.json file
+    """
+    new_energies = simple_single_point_energy_calculation(FS, path)
+
+    # modify the model located at the provided path
+    model = load_diagonal_model_from_JSON(path)
+
+    # TODO - should we force that the linear terms are always present in any loaded model just like the energy values? then we don't need these checks.
+    A, N = _extract_dimensions_from_dictionary(model)
+    lin = np.zeros(diagonal_model_shape_dict(A, N)[VMK.G1])
+    if VMK.G1 in model:
+        lin[:] = model[VMK.G1]
+
+    delta_a = -0.5 * (lin**2. / model[VMK.w][:, np.newaxis]).sum(axis=0)
+    model[VMK.E] = new_energies - delta_a
+    save_diagonal_model_to_JSON(path, model)
+    return
 
 
 def fill_offdiagonal_of_model_with_zeros(model):

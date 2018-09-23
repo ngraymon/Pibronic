@@ -95,6 +95,8 @@ class plot_Z_multiple_FS(plotVirtual):
                 T = pp.extract_temperature_value_from_thermo_file_path(path)
                 X = pp.extract_sample_value_from_thermo_file_path(path)
 
+                if P not in self.lst_P[idx_FS]:
+                    continue
                 idx_P = self.lst_P[idx_FS].index(P)
                 idx_T = self.lst_T[idx_FS].index(T)
                 idx_X = self.lst_X[idx_FS].index(X)
@@ -320,6 +322,7 @@ class plot_original_Z_test(plotVirtual):
         return
 
 
+# should we rename this?
 class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
     """ plotting pimc results drawn from the original_coupled_model.json vs the pimc results drawn from the diagonal of the coupled_model.json vs analytical results of the original model
     when we provide 2 FS objects"""
@@ -406,7 +409,8 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
         labels = {0: "Z (id\_rho={:d}) (X={:.1E}) diagonal of transformed matrix ",
                   1: "Z (id\_rho={:d}) (X={:.1E}) original coupled model ",
                   2: "Z (id\_rho={:d}) (X={:.1E}) iterative model ",
-                  3: "Z (id\_rho={:d}) (X={:.1E}) weight corrected iterative model"
+                  3: "Z (id\_rho={:d}) (X={:.1E}) wrong re-weighted iterative model",
+                  4: "Z (id\_rho={:d}) (X={:.1E}) correct re-weighted iterative model",
                   }
 
         # print Z values
@@ -537,6 +541,260 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
         path_out = join(self.FS_lst[0].path_vib_plots, filename)
         fig.savefig(path_out, transparent=True, bbox_inches='tight', pad_inches=0.2)
         plt.close(fig)
+        return
+
+    def plot(self):
+        """ x """
+
+        # necessary for now
+        prepare_mpl_rc_file(pretty_but_slow=True)
+        load_latex_module_on_server()
+
+        self.plot_Z()
+
+        return
+
+
+class plot_sos_Z_vs_rho_n(plot_Z_multiple_FS):
+    """ plotting pimc results drawn from the coupled_model.json vs the pimc results drawn from a rho vs sos results of the coupled model when we provide 2 FS objects"""
+
+    def __init__(self, list_of_FileStructure_objects):
+        """ x """
+        assert len(list_of_FileStructure_objects) is 2, " this subclass takes exactly 2 FS"
+        super().__init__(list_of_FileStructure_objects)
+
+    def load_sos_data(self):
+        """ x """
+
+        self.sos_params = {}
+
+        # hacky solution for the moment
+        maximum_sos = 80
+        basis_size = maximum_sos
+
+        idx_FS = 0
+        with open(self.FS_lst[idx_FS].template_sos_vib.format(B=basis_size), 'r') as file:
+            data = json.loads(file.read())
+            for T in self.lst_T[idx_FS]:
+                self.sos_params[f"{T:.2f}"] = data[f"{T:.2f}"]
+
+        return
+
+    def load_analytical_data(self):
+        """ x """
+
+        self.analytical_rho_list = [{} for _ in range(len(self.FS_lst))]
+
+        for idx_FS, FS in enumerate(self.FS_lst):
+            with open(FS.path_analytic_rho, 'r') as file:
+                data = json.loads(file.read())
+                for T in self.lst_T[idx_FS]:
+                    self.analytical_rho_list[idx_FS][f"{T:.2f}"] = data[f"{T:.2f}"]
+
+        return
+
+    def prepare_data(self):
+        # we need to modify Z using the analytical rho (Z_rho)
+
+        for idx_FS, FS in enumerate(self.FS_lst):
+            for T in self.lst_T[idx_FS]:
+                Z_rho = self.analytical_rho_list[idx_FS][f"{T:.2f}"]["Z_sampling"]
+                idx_T = self.lst_T[idx_FS].index(T)
+                self.arr[idx_FS][:, idx_T, :]["Z"] *= Z_rho
+                self.arr[idx_FS][:, idx_T, :]["Z error"] *= Z_rho
+
+        # we might also want to modify it to print the percent error
+        self.percent_error = True
+
+        if not self.percent_error:
+            return
+
+        for idx_FS, FS in enumerate(self.FS_lst):
+            for X in self.lst_X[idx_FS]:  # don't plot more than the lowest # of samples
+                idx_X = self.lst_X[idx_FS].index(X)
+                for T in self.lst_T[idx_FS]:
+                    idx_T = self.lst_T[idx_FS].index(T)
+
+                    view = self.arr[idx_FS][:, idx_T, idx_X].view()
+                    sos = self.sos_params[f"{T:.2f}"]["Z_coupled"]
+
+                    view["Z"] -= sos
+                    view["Z"] *= 100.0
+                    view["Z"] /= sos
+
+                    view["Z error"] *= 100.0
+                    view["Z error"] /= sos
+        return
+
+    def load_data(self):
+        """ x """
+        self.load_pimc_data()
+        self.load_sos_data()
+        self.load_analytical_data()
+        self.prepare_data()
+        return
+
+    # TODO - this could be improved
+    def generate_tau_values(self, temperature, idx_FS):
+        """ returns a numpy array of the same length as lst_P
+        takes in one temperature and an array of P values"""
+        tau_arr = np.full(len(self.lst_P[idx_FS]), fill_value=beta(temperature))
+        tau_arr /= self.lst_P[idx_FS]
+        return tau_arr
+
+    def plot_Z(self):
+        fig, ax = plt.subplots(1, 1)
+
+        if not isinstance(ax, list):
+            ax = [ax, ]
+
+        labels = {0: "Z (id\_rho={:d}) (X={:.1E}) diagonal of transformed matrix ",
+                  1: "Z (id\_rho={:d}) (X={:.1E}) alternative sampling distribution from paper",
+                  2: "Z (id\_rho={:d}) (X={:.1E}) 2nd alternative sampling distribution",
+                  10: "Z (id\_rho={:d}) (X={:.1E}) iterative model",
+                  11: "Z (id\_rho={:d}) (X={:.1E}) correct re-weighted iterative model",
+                  12: "Z (id\_rho={:d}) (X={:.1E}) mangled stuff",
+                  }
+
+        # print Z values
+        for idx_FS, FS in enumerate(self.FS_lst):
+            for T in self.lst_T[idx_FS]:
+                idx_T = self.lst_T[idx_FS].index(T)
+                tau_values = self.generate_tau_values(T, idx_FS)
+                # for X in self.lst_X[idx_FS]:  # don't plot more than the lowest # of samples
+                # X = self.lst_X[idx_FS][0]
+                X = int(1E4)
+                idx_X = self.lst_X[idx_FS].index(X)
+
+                x = tau_values.view()
+                y = self.arr[idx_FS][:, idx_T, idx_X]["Z"].view()
+                yerr = self.arr[idx_FS][:, idx_T, idx_X]["Z error"].view()
+                label = labels[FS.id_rho].format(FS.id_rho, X)
+
+                ax[idx_T].errorbar(x, y, xerr=None, yerr=yerr,
+                                   marker='o' if idx_FS == 0 else 'x',
+                                   markerfacecolor="None",
+                                   label=label)
+                ax[idx_T].legend()
+
+                true_answer = self.sos_params[f"{T:.2f}"]["Z_coupled"]
+                if self.percent_error:
+                    true_answer = 0.0
+
+                ax[idx_T].axhline(y=true_answer, linewidth=2, color='r',
+                                  label='SOS derived Z from coupled model'
+                                  )
+
+        # Add an inset to the plot!
+        if self.FS_lst[0].id_data >= 100:
+            print("index A")
+            from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+            from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
+
+            # Build and manually place the inset (for the rho_1 case )
+
+            # ax[0].xaxis.set_minor_formatter(LogFormatterSciNotation(minor_thresholds=(11, 10)))
+
+            ax_ins = fig.add_axes([0, 0, 1, 1], label='inset 1')
+            ip = InsetPosition(ax[0], [0.1, 0.3, 0.5, 0.6])  # [%left, %up, %width, %height]
+            ax_ins.set_axes_locator(ip)
+            # Connect the inset to its respective region
+            mark_inset(ax[0], ax_ins, loc1=3, loc2=4, fc="none", ec="0.5")
+
+            # window dressing?
+            # ax_ins.set_xscale('log')
+            ax_ins.get_xaxis().set_visible(False)
+            ax_ins.tick_params(which='both', direction='in', pad=4)
+            # ax_ins.spines['top'].set_visible(False)
+
+            # HACK CONSTANTS
+            # F_index = -1
+            idx_T = 0
+            # idx_X = 0
+            T = 300.00
+            # dataView = self.arr[F_index, R_index, T_index, 0, :].view()
+            slice_insert = np.s_[-1:-2:-1]
+            # if np.any(np.isnan(dataView)):
+            #     first_Finite = np.where(np.isfinite(self.arr[F_index, R_index, T_index, 0, :]))[0][-1]
+            #     slice_insert = np.s_[first_Finite:first_Finite-10:-1]
+            # --------------------------------------------------------------------------------
+            # Plot the first FS
+            print("index B")
+            idx_FS = 0
+            X = int(1E4)
+            idx_X = self.lst_X[idx_FS].index(X)
+            tau_values = self.generate_tau_values(T, idx_FS)
+            x = tau_values[slice_insert].view()
+            y = self.arr[idx_FS][slice_insert, idx_T, idx_X]["Z"].view()
+            yerr = self.arr[idx_FS][slice_insert, idx_T, idx_X]["Z error"].view()
+            label = labels[idx_FS].format(self.FS_lst[idx_FS].id_rho, self.lst_X[idx_FS][idx_X])
+            ax_ins.errorbar(x, y, xerr=None, yerr=yerr,
+                            marker='o' if idx_FS == 0 else 'x',
+                            markerfacecolor="None",
+                            label=label)
+            # --------------------------------------------------------------------------------
+            # Plot the second FS
+            print(self.arr[idx_FS].shape)
+            idx_FS = 1
+            X = int(1E4)
+            idx_X = self.lst_X[idx_FS].index(X)
+            tau_values = self.generate_tau_values(T, idx_FS)
+            print(self.lst_P[idx_FS])
+            print("tau", tau_values)
+            x = tau_values[slice_insert].view()
+            y = self.arr[idx_FS][slice_insert, idx_T, idx_X]["Z"].view()
+            yerr = self.arr[idx_FS][slice_insert, idx_T, idx_X]["Z error"].view()
+            label = labels[idx_FS].format(self.FS_lst[idx_FS].id_rho, self.lst_X[idx_FS][idx_X])
+            ax_ins.errorbar(x, y, xerr=None, yerr=yerr,
+                            marker='o' if idx_FS == 0 else 'x',
+                            markerfacecolor="None",
+                            label=label)
+            # --------------------------------------------------------------------------------
+            # REFERENCE / EXACT ANSWER
+            true_answer = self.sos_params[f"{T:.2f}"]["Z_coupled"]
+            if self.percent_error:
+                true_answer = 0.0
+
+            ax_ins.axhline(y=true_answer, linewidth=2, color='r',
+                           label='SOS derived Z from coupled model'
+                           )
+            # --------------------------------------------------------------------------------
+
+        #
+        x_label = r'$\tau\,(\text{eV}^{-1})$'
+        ax[0].set_xlabel(x_label)
+        ax[0].set_xscale('log')
+
+        # plt.minorticks_off() # turns off minor ticks that are added with a log plot
+        # points BOTH ticks inward
+        ax[0].tick_params(which='both', direction='in', pad=2)
+
+        # Remove the plot frame lines. They are unnecessary chart junk.
+        ax[0].spines["top"].set_visible(False)
+        ax[0].spines["right"].set_visible(False)
+
+        # y_label = r"$\frac{Z_g}{Z_\varrho}$"
+        y_label = r"$Z_H$"
+        if self.percent_error:
+            # y_label = r"\% Difference    $\frac{Z_g}{Z_\varrho}$"
+            y_label = r"\% Difference    $Z_H$"
+
+        ax[0].set_ylabel(y_label)
+        # ax[0].set_yscale('log')
+
+        # plot title
+        A, N = vIO.extract_dimensions_of_diagonal_model(self.FS_lst[0])
+        plot_title = r'$\tau$ convergence'
+        plot_title += f"\nData Set {self.FS_lst[0].id_data:d}"
+        plot_title += f"\n{A:d} surfaces {N:d} normal modes"
+        fig.suptitle(plot_title)
+
+        fig.set_size_inches(10, 10)
+        filename = "Z_sos_D{:d}_R{:d}_R{:d}.pdf".format(self.FS_lst[0].id_data, self.FS_lst[0].id_rho, self.FS_lst[1].id_rho)
+        path_out = join(self.FS_lst[0].path_vib_plots, filename)
+        fig.savefig(path_out, transparent=True, bbox_inches='tight', pad_inches=0.2)
+        plt.close(fig)
+
         return
 
     def plot(self):
