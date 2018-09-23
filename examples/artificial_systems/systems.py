@@ -12,6 +12,8 @@ import itertools as it
 # as well as provide an easy way to distinguish them
 name_lst = ["2x2", "4x6", "7x12"]
 
+# each system is examined for 5 different values of the lambda parameter, which in some way represents the "strength of the off-diagonality"
+# thus each system is associated with 5 models
 # this dictionary is for conveniently accessing iterators of the coupled model id's for each system
 # where the system's name is the key
 id_dict = {
@@ -23,30 +25,31 @@ id_dict = {
 all_model_ids = [id_dict[key] for key in id_dict.keys()]
 id_dict["valid"] = list(it.chain(*all_model_ids))
 
-# all the rho files present in /alternate_rhos/
-# this would need to be modified if more rhos/sampling distributions where chosen
+# this will need to be modified if more rhos/sampling distributions are chosen
 # it has no knowledge of the *actual* files in the directory
-num_of_rhos = 2
+
+num_of_rhos = 5
+basic_list = list(range(num_of_rhos))
 
 rho_dict = {
-    name_lst[0]: {11: list(range(num_of_rhos)),
-                  12: list(range(num_of_rhos)),
-                  13: list(range(num_of_rhos)),
-                  14: list(range(num_of_rhos)),
-                  15: list(range(num_of_rhos)),
-                  16: list(range(num_of_rhos)),
+    name_lst[0]: {11: basic_list.copy(),
+                  12: basic_list.copy(),
+                  13: basic_list.copy(),
+                  14: basic_list.copy(),
+                  15: basic_list.copy(),
+                  16: basic_list.copy(),
                   },
-    name_lst[1]: {21: list(range(num_of_rhos)),
-                  22: list(range(num_of_rhos)),
-                  23: list(range(num_of_rhos)),
-                  24: list(range(num_of_rhos)),
-                  25: list(range(num_of_rhos)),
+    name_lst[1]: {21: basic_list.copy(),
+                  22: basic_list.copy(),
+                  23: basic_list.copy(),
+                  24: basic_list.copy(),
+                  25: basic_list.copy(),
                   },
-    name_lst[2]: {31: list(range(num_of_rhos)),
-                  32: list(range(num_of_rhos)),
-                  33: list(range(num_of_rhos)),
-                  34: list(range(num_of_rhos)),
-                  35: list(range(num_of_rhos)),
+    name_lst[2]: {31: basic_list.copy(),
+                  32: basic_list.copy(),
+                  33: basic_list.copy(),
+                  34: basic_list.copy(),
+                  35: basic_list.copy(),
                   },
 }
 

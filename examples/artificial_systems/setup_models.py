@@ -7,7 +7,6 @@ import sys
 from os.path import join, abspath, dirname, isfile
 
 # third party imports
-import numpy as np
 
 # local imports
 import context
@@ -18,63 +17,7 @@ sys.path.insert(1, abspath(__file__))  # TODO - fix this import in the future
 from submit_jobs_to_server import iterative_method_wrapper
 
 
-def generate_modified_energy(FS, path_rho_src):
-    """ generate new E^{aa} values for the iterative model, as an attempt to solve the weight issue for uncoupled models """
-
-    iterative_model = vIO.load_diagonal_model_from_JSON(path_rho_src)
-    assert VMK.G2 not in iterative_model, "doesn't support quadratic terms at the moment"
-    Ai, Ni = iterative_model[VMK.A], iterative_model[VMK.N]
-    w = iterative_model[VMK.w]
-    lin = iterative_model[VMK.G1]
-
-    # generate the oscillator minimum's
-    minimums = np.zeros((Ai, Ni))
-    for a in range(Ai):
-        minimums[a, :] = np.divide(-lin[:, a],  w[:])
-        # print("m", minimums[a, :], sep='\n')
-        # print("direct", -lin[:, a] / w[:], sep='\n')
-
-    # print("the da's", minimums.shape, minimums, sep="\n")
-
-    coupled_model = vIO.load_model_from_JSON(FS.path_vib_model)
-    A, N = coupled_model[VMK.A], coupled_model[VMK.N]
-    assert VMK.G2 not in coupled_model, "doesn't support quadratic terms at the moment"
-    E = coupled_model[VMK.E]
-    w = coupled_model[VMK.w]
-    lin = coupled_model[VMK.G1]
-    # quad = coupled_model[VMK.G2]
-
-    new_energy_values = np.zeros(A)
-
-    for a in range(A):
-        q = minimums[a, :]  # we evaluate the R/q point
-
-        # compute the harmonic oscillator contribution
-        ho = np.zeros((A, A))
-        np.fill_diagonal(ho, np.sum(w * pow(q, 2)))
-        ho *= 0.5
-        # print("the H.O.", ho.shape, ho, sep="\n")
-
-        V = np.zeros((A, A))
-        V[:] += E
-        # print("V with energy", V, sep="\n")
-        V[:] += ho
-        # print("V with H.O.", V, sep="\n")
-
-        for b1 in range(A):
-            for b2 in range(A):
-                V[b1, b2] += np.sum(lin[:, b1, b2] * q)
-        # print("V with linear terms", V, sep="\n")
-
-        evals = np.linalg.eigvalsh(V)
-        lowest_eigvals = min(evals)
-        # print(evals, lowest_eigvals)
-        new_energy_values[a] = lowest_eigvals
-
-    return new_energy_values
-
-
-def create_sampling_distributions(FS, name):
+def setup_sampling_distributions(FS, name):
     """ copies the original_coupled_model.json file into the /rho_#/sampling_model.json
     if use_original_model is True
     otherwise it simply uses the diagonal of coupled_model.json as the sampling model"""
@@ -97,27 +40,29 @@ def create_sampling_distributions(FS, name):
     # the orig_model, even though it is already diagonal, rho_model's have only
     # one surface dimension not 2
 
-    iterate = False
+    iterate = True
     # for the third sampling model we want to use the iterative method
     if iterate:
         id_rho = 2
         FS.change_rho(id_rho)
         iterative_method_wrapper(id_data=FS.id_data)
-        # copy to rho 2
-        time.sleep(2)  # fixes a race condition one time, which I encountered one time
-        path_iterate = join(FS.path_vib_params, "iterative_model.json")
-        path_rho_2_model = shutil.copy(path_iterate, FS.path_rho_model)
+        time.sleep(2)  # hopefully fixes a race condition, which I encountered one time, possibly due to timing of the Slurm scheduler
+        shutil.copy(FS.path_iter_model, FS.path_rho_model)
 
         id_rho = 3
         FS.change_rho(id_rho)
-        E = generate_modified_energy(FS, path_rho_2_model)
-        # copy to rho 3
-        path_iterate = join(FS.path_vib_params, "iterative_model.json")
-        shutil.copy(path_iterate, FS.path_rho_model)
+        shutil.copy(FS.path_iter_model, FS.path_rho_model)
         # modify model
+        new_energies = vIO.simple_single_point_energy_calculation(FS, FS.path_iter_model)
         model = vIO.load_diagonal_model_from_JSON(FS.path_rho_model)
-        model[VMK.E] = E
+        model[VMK.E] = new_energies
         vIO.save_diagonal_model_to_JSON(FS.path_rho_model, model)
+
+        id_rho = 4
+        FS.change_rho(id_rho)
+        shutil.copy(FS.path_iter_model, FS.path_rho_model)
+        # modify model
+        vIO.recalculate_energy_values_of_diagonal_model(FS, FS.path_rho_model)
 
     # TODO - write function for vIO that just converts the array's between sizes
     # and throws an error if the input is not diagonal
@@ -190,7 +135,7 @@ def prepare_model(system_name, id_data=0, root=None):
     # and the original_coupled_model (id_rho = 1)
     # and the iterative method (id_rho = 2)
     # and the weight corrected iterative method (id_rho = 3)
-    create_sampling_distributions(FS, system_name)
+    setup_sampling_distributions(FS, system_name)
 
     return
 
@@ -205,5 +150,9 @@ def automate_prepare_model():
     return
 
 
-if (__name__ == "__main__"):
+def main():
     automate_prepare_model()
+
+
+if (__name__ == "__main__"):
+    main()
