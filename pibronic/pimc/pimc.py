@@ -21,8 +21,6 @@ from .. import constants
 from ..constants import hbar
 from ..data import file_structure
 from ..data import file_name  # do we need this?
-# from ..data import vibronic_model_io as vIO
-# from ..data.vibronic_model_keys import VibronicModelKeys as VMK
 from ..vibronic import vIO, VMK
 # from ..server import job_boss
 from ..server.server import ServerExecutionParameters as SEP
@@ -390,6 +388,11 @@ class ModelSampling(ModelClass):
                                                p=self.state_weight
                                                )
 
+        import collections
+        np.set_printoptions(threshold=1E6)
+        print("sample sources", self.sample_sources)
+        print(collections.Counter(self.sample_sources))
+
         # the ordered offsets for multiple surfaces
         self.sample_shift = self.state_shift[self.sample_sources, :]
         # calculate the means of each Gaussian
@@ -619,6 +622,8 @@ class BoxData:
 
         # remove sample dependent normal mode displacement (from sampling model)
         self.qTensor += self.rho.sample_shift[sample_view, NEW, :, NEW]
+        for a in range(self.rho.states):
+            self.qTempTensor[:, a, ...] = self.qTensor[:, 0, ...].copy()
 
         # add surface dependent normal mode displacement (from vibronic model)
         # self.qTensor -= self.vib.state_shift[NEW, :, :, NEW]
@@ -634,6 +639,9 @@ class BoxData:
         self.rho = ModelSampling(self)
         self.rho.load_model(self.path_rho_model)
         self.rho.precompute(self)
+
+        tempSize = [self.block_size, self.rho.states, self.modes, self.beads]
+        self.qTempTensor = np.zeros(tempSize, dtype=F64)
         return
 
     def preprocess(self):
@@ -662,6 +670,7 @@ class BoxData:
 
         # where we store the transformed samples
         self.qTensor = np.zeros(self.size['BANP'], dtype=F64)
+        # self.qTempTensor = None
 
         # storage for the numerator calculation
         self.coupling_matrix = np.zeros(self.size['BPAA'])
@@ -711,6 +720,9 @@ class BoxDataPM(BoxData):
         self.rho = ModelSampling(self)
         self.rho.load_model(self.path_rho_model)
         self.rho.precompute(self)
+
+        tempSize = [self.block_size, self.rho.states, self.modes, self.beads]
+        self.qTempTensor = np.zeros(tempSize, dtype=F64)
         return
 
     def preprocess(self):
@@ -1076,10 +1088,15 @@ def build_o_matrix(data, model, state_shift):
     """Calculates the O matrix of a model, storing the result inside the model object"""
 
     # add surface dependent normal mode displacement (from model)
-    data.qTensor -= state_shift[NEW, :, :, NEW]
+    if state_shift.shape[0] == data.qTensor.shape[1]:
+        data.qTensor -= state_shift[NEW, :, :, NEW]
+        q1 = data.qTensor.view()
+    else:
+        data.qTempTensor -= state_shift[NEW, :, :, NEW]
+        q1 = data.qTempTensor.view()
 
     # name and select the views
-    q1 = data.qTensor.view()
+    # q1 = data.qTensor.view()
     q2 = np.roll(q1.view(), shift=-1, axis=3)
 
     coth = model.cothBANP.view()
@@ -1104,7 +1121,11 @@ def build_o_matrix(data, model, state_shift):
     model.omatrix *= model.omatrix_prefactor[..., NEW]
 
     # remove surface dependent normal mode displacement (from model)
-    data.qTensor += state_shift[NEW, :, :, NEW]
+    if state_shift.shape[0] == data.qTensor.shape[1]:
+        data.qTensor += state_shift[NEW, :, :, NEW]
+    else:
+        data.qTempTensor += state_shift[NEW, :, :, NEW]
+
     return
 
 
@@ -1400,7 +1421,10 @@ def block_compute_pm(data, result):
         data.draw_sample(sample_view)
 
         # process the sampled points
+        # print(data.qTensor.shape)
         data.transform_sampled_coordinates(sample_view)
+        # print(np.allclose(data.qTensor[:,0,:,:],data.qTensor[:,1,:,:]))
+        # print(data.qTensor.shape)
 
         # build O matrices for sampling distribution
         build_o_matrix(data, rho.const, rho.state_shift)
