@@ -19,6 +19,104 @@ from ..constants import beta
 from ..vibronic import vIO
 
 
+
+def load_analytical_original(self):
+    """ generic loading function that can be used by multiple plotting classes """
+
+    # create the list of dictionaries to hold the original analytical data
+    self.analytical_orig_list = [{} for _ in range(len(self.FS_lst))]
+
+    # load that data into each dictionary in the list
+    for idx_FS, FS in enumerate(self.FS_lst):
+
+        with open(FS.path_analytic_orig, 'r') as file:
+            data = json.loads(file.read())
+
+        for T in self.lst_T[idx_FS]:
+            self.analytical_orig_list[idx_FS][f"{T:.2f}"] = data[f"{T:.2f}"]
+
+    return
+
+
+def load_analytical_sampling(self):
+    """ generic loading function that can be used by multiple plotting classes"""
+
+    # create the list of dictionaries to hold the sampling analytical data
+    self.analytical_rho_list = [{} for _ in range(len(self.FS_lst))]
+
+    # load that data into each dictionary in the list
+    for idx_FS, FS in enumerate(self.FS_lst):
+
+        with open(FS.path_analytic_rho, 'r') as file:
+            data = json.loads(file.read())
+
+        for T in self.lst_T[idx_FS]:
+            self.analytical_rho_list[idx_FS][f"{T:.2f}"] = data[f"{T:.2f}"]
+
+    return
+
+
+def load_sos(self, ):
+    """ generic loading function that can be used by multiple plotting classes"""
+
+    # create the list of dictionaries to hold the sum-over-states data
+    self.sos_list = [{} for _ in range(len(self.FS_lst))]
+
+    # temporary constants to avoid any errors
+    # this will be changed in the future
+    MAX_BASIS_SIZE = 80
+
+    # load that data into each dictionary in the list
+    for idx_FS, FS in enumerate(self.FS_lst):
+        path = FS.template_sos_vib.format(B=MAX_BASIS_SIZE)
+
+        with open(path, 'r') as file:
+            data = json.loads(file.read())
+
+        for T in self.lst_T[idx_FS]:
+            self.sos_list[idx_FS][f"{T:.2f}"] = data[f"{T:.2f}"]
+
+    return
+
+
+def load_trotter_coupled(self):
+    """ generic loading function that can be used by multiple plotting classes"""
+
+    # create the list of dictionaries to hold the coupled trotter data
+    self.trotter_coupled_list = [{} for _ in range(len(self.FS_lst))]
+
+    # temporary constants to avoid any errors
+    # this will be changed in the future
+    MAX_BASIS_SIZE = 80
+
+    # load that data into each dictionary in the list
+    for idx_FS, FS in enumerate(self.FS_lst):
+        for idx_P, P, in enumerate(self.lst_P[idx_FS]):
+            path = FS.template_trotter_vib.format(P=P, B=MAX_BASIS_SIZE)
+
+            with open(path, 'r') as file:
+                data = json.loads(file.read())
+
+            temp_dict = {}
+            for T in self.lst_T[idx_FS]:
+                temp_dict[f"{T:.2f}"] = data[f"{T:.2f}"]
+
+            # TODO - is there possibly a better way of doing this?
+            self.trotter_coupled_list[idx_FS].update({P: temp_dict})
+
+    return
+
+
+
+# TODO - this function could be improved
+def generate_tau_values(self, temperature, idx_FS):
+    """ returns a numpy array of the same length as lst_P
+    takes in one temperature and an array of P values"""
+    tau_arr = np.full(len(self.lst_P[idx_FS]), fill_value=beta(temperature))
+    tau_arr /= self.lst_P[idx_FS]
+    return tau_arr
+
+
 class plot_Z_multiple_FS(plotVirtual):
     """ this is just an empty template at the moment, will be completed later"""
 
@@ -30,8 +128,6 @@ class plot_Z_multiple_FS(plotVirtual):
         for idx_FS, FS in enumerate(self.FS_lst):
             self.list_jackknife[idx_FS] = pp.retrive_jackknife_file_list(FS)
             self.list_jackknife[idx_FS] = pp.prune_results_using_hashes(FS, self.list_jackknife[idx_FS])
-
-        return
 
     def generate_parameter_lists(self):
         """ x """
@@ -56,11 +152,8 @@ class plot_Z_multiple_FS(plotVirtual):
         for lst in self.lst_X:
             lst.sort()
 
-        return
-
     def __init__(self, list_of_FileStructure_objects):
         """ x """
-
         super().__init__(list_of_FileStructure_objects)
 
     def load_pimc_data(self):
@@ -334,23 +427,8 @@ class plot_original_Z_vs_diagonal_test(plot_Z_multiple_FS):
 
     def load_analytical_data(self):
         """ x """
-
-        self.analytical_orig_list = [{} for _ in range(len(self.FS_lst))]
-        self.analytical_rho_list = [{} for _ in range(len(self.FS_lst))]
-
-        for idx_FS, FS in enumerate(self.FS_lst):
-
-            with open(FS.path_analytic_orig, 'r') as file:
-                data = json.loads(file.read())
-                for T in self.lst_T[idx_FS]:
-                    self.analytical_orig_list[idx_FS][f"{T:.2f}"] = data[f"{T:.2f}"]
-
-            with open(FS.path_analytic_rho, 'r') as file:
-                data = json.loads(file.read())
-                for T in self.lst_T[idx_FS]:
-                    self.analytical_rho_list[idx_FS][f"{T:.2f}"] = data[f"{T:.2f}"]
-
-        return
+        load_analytical_original(self)
+        load_analytical_sampling(self)
 
     def prepare_data(self):
         # we need to modify Z using the analytical rho (Z_rho)
@@ -563,36 +641,6 @@ class plot_sos_Z_vs_rho_n(plot_Z_multiple_FS):
         assert len(list_of_FileStructure_objects) is 2, " this subclass takes exactly 2 FS"
         super().__init__(list_of_FileStructure_objects)
 
-    def load_sos_data(self):
-        """ x """
-
-        self.sos_params = {}
-
-        # hacky solution for the moment
-        maximum_sos = 80
-        basis_size = maximum_sos
-
-        idx_FS = 0
-        with open(self.FS_lst[idx_FS].template_sos_vib.format(B=basis_size), 'r') as file:
-            data = json.loads(file.read())
-            for T in self.lst_T[idx_FS]:
-                self.sos_params[f"{T:.2f}"] = data[f"{T:.2f}"]
-
-        return
-
-    def load_analytical_data(self):
-        """ x """
-
-        self.analytical_rho_list = [{} for _ in range(len(self.FS_lst))]
-
-        for idx_FS, FS in enumerate(self.FS_lst):
-            with open(FS.path_analytic_rho, 'r') as file:
-                data = json.loads(file.read())
-                for T in self.lst_T[idx_FS]:
-                    self.analytical_rho_list[idx_FS][f"{T:.2f}"] = data[f"{T:.2f}"]
-
-        return
-
     def prepare_data(self):
         # we need to modify Z using the analytical rho (Z_rho)
 
@@ -629,18 +677,9 @@ class plot_sos_Z_vs_rho_n(plot_Z_multiple_FS):
     def load_data(self):
         """ x """
         self.load_pimc_data()
-        self.load_sos_data()
-        self.load_analytical_data()
+        load_sos(self)
+        load_analytical_sampling(self)
         self.prepare_data()
-        return
-
-    # TODO - this could be improved
-    def generate_tau_values(self, temperature, idx_FS):
-        """ returns a numpy array of the same length as lst_P
-        takes in one temperature and an array of P values"""
-        tau_arr = np.full(len(self.lst_P[idx_FS]), fill_value=beta(temperature))
-        tau_arr /= self.lst_P[idx_FS]
-        return tau_arr
 
     def plot_Z(self):
         fig, ax = plt.subplots(1, 1)
@@ -660,7 +699,7 @@ class plot_sos_Z_vs_rho_n(plot_Z_multiple_FS):
         for idx_FS, FS in enumerate(self.FS_lst):
             for T in self.lst_T[idx_FS]:
                 idx_T = self.lst_T[idx_FS].index(T)
-                tau_values = self.generate_tau_values(T, idx_FS)
+                tau_values = generate_tau_values(self, T, idx_FS)
                 # for X in self.lst_X[idx_FS]:  # don't plot more than the lowest # of samples
                 # X = self.lst_X[idx_FS][0]
                 X = int(1E4)
@@ -809,6 +848,89 @@ class plot_sos_Z_vs_rho_n(plot_Z_multiple_FS):
         return
 
 
+class plot_rectangle(plot_Z_multiple_FS):
+
+    def __init__(self, list_of_FileStructure_objects):
+        """ x """
+        assert len(list_of_FileStructure_objects) > 1, " this subclass takes 2 or more FS"
+        super().__init__(list_of_FileStructure_objects)
+
+    def prepare_data(self):
+        """ x """
+
+        # we need to modify Z using the analytical rho (Z_rho)
+        for idx_FS, FS in enumerate(self.FS_lst):
+            for idx_T, T in enumerate(self.lst_T[idx_FS]):
+                Z_rho = self.analytical_rho_list[idx_FS][f"{T:.2f}"]["Z_sampling"].view()
+                self.arr[idx_FS][:, idx_T, :]["Z"] *= Z_rho
+                self.arr[idx_FS][:, idx_T, :]["Z error"] *= Z_rho
+
+        # we might also want to modify it to print the percent error
+        self.percent_error = True
+
+        if not self.percent_error:
+            return
+
+        for idx_FS, FS in enumerate(self.FS_lst):
+            for X in self.lst_X[idx_FS]:  # don't plot more than the lowest # of samples
+                idx_X = self.lst_X[idx_FS].index(X)
+                for T in self.lst_T[idx_FS]:
+                    idx_T = self.lst_T[idx_FS].index(T)
+
+                    sos = self.sos_list[idx_FS][f"{T:.2f}"]
+                    view = self.arr[idx_FS][:, idx_T, idx_X].view()
+
+                    view["Z"] -= sos
+                    view["Z"] *= 100.0
+                    view["Z"] /= sos
+
+                    view["Z error"] *= 100.0
+                    view["Z error"] /= sos
+
+                    # this isn't exactly what we want to do -- should change
+                    trotter = self.trotter_coupled_list[idx_FS][:][f"{T:.2f}"]
+                    trotter -= sos
+                    trotter *= 100.0
+                    trotter /= sos
+
+                    # set the sos to zero since we are doing the percent option
+                    sos[idx_FS][f"{T:.2f}"] = 0.0
+
+        return
+
+    def load_data(self):
+        """ x """
+        self.load_pimc_data()
+        load_sos(self)
+        load_trotter_coupled(self)
+        load_analytical_sampling(self)
+        self.prepare_data()
+        return
+
+    # TODO - this could be improved
+    def generate_tau_values(self, temperature, idx_FS):
+        """ returns a numpy array of the same length as lst_P
+        takes in one temperature and an array of P values"""
+        tau_arr = np.full(len(self.lst_P[idx_FS]), fill_value=beta(temperature))
+        tau_arr /= self.lst_P[idx_FS]
+        return tau_arr
+
+    def plot_Z(self):
+        # to be done later this week
+        return
+
+
+    def plot(self):
+        """ x """
+
+        # necessary for now
+        prepare_mpl_rc_file(pretty_but_slow=True)
+        load_latex_module_on_server()
+
+        self.plot_Z()
+        return
+
+
 class plot_Z_test(plotVirtual):
     """ plotting when we only provide 1 FS object"""
 
@@ -883,14 +1005,6 @@ class plot_Z_test(plotVirtual):
                     self.arr[idx_P, idx_T, idx_X][key] = data[key]
         return
 
-    # TODO - this could be improved
-    def generate_tau_values(self, temperature):
-        """ returns a numpy array of the same length as lst_P
-        takes in one temperature and an array of P values"""
-        tau_arr = np.full(len(self.lst_P[0]), fill_value=beta(temperature))
-        tau_arr /= self.lst_P[0]
-        return tau_arr
-
     def plot_Z(self):
         fig, ax = plt.subplots(1, 1)
 
@@ -898,12 +1012,14 @@ class plot_Z_test(plotVirtual):
         if len(self.lst_T[0]) is 1:
             ax = [ax, ]
 
+        idx_FS = 0
+
         # print Z values
-        for T in self.lst_T[0]:
-            idx_T = self.lst_T[0].index(T)
-            tau_values = self.generate_tau_values(T)
-            for X in self.lst_X[0]:
-                idx_X = self.lst_X[0].index(X)
+        for T in self.lst_T[idx_FS]:
+            idx_T = self.lst_T[idx_FS].index(T)
+            tau_values = generate_tau_values(self, T, idx_FS)
+            for X in self.lst_X[idx_FS]:
+                idx_X = self.lst_X[idx_FS].index(X)
 
                 x = tau_values.view()
                 y = self.arr[:, idx_T, idx_X]["Z"].view()
@@ -915,8 +1031,9 @@ class plot_Z_test(plotVirtual):
 
         fig.suptitle("Z MC")
         fig.set_size_inches(10, 10)
-        filename = "Z_D{:d}_R{:d}.pdf".format(self.FS_lst[0].id_data, self.FS_lst[0].id_rho)
-        path_out = join(self.FS_lst[0].path_rho_plots, filename)
+        filename = "Z_D{:d}_R{:d}.pdf".format(self.FS_lst[idx_FS].id_data,
+                                              self.FS_lst[idx_FS].id_rho)
+        path_out = join(self.FS_lst[idx_FS].path_rho_plots, filename)
         fig.savefig(path_out, transparent=True, bbox_inches='tight', pad_inches=0.2)
         plt.close(fig)
         return
@@ -928,12 +1045,14 @@ class plot_Z_test(plotVirtual):
         if len(self.lst_T[0]) is 1:
             ax = [ax, ]
 
+        idx_FS = 0
+
         # print E values
-        for T in self.lst_T[0]:
-            idx_T = self.lst_T[0].index(T)
-            tau_values = self.generate_tau_values(T)
-            for X in self.lst_X[0]:
-                idx_X = self.lst_X[0].index(X)
+        for T in self.lst_T[idx_FS]:
+            idx_T = self.lst_T[idx_FS].index(T)
+            tau_values = generate_tau_values(self, T, idx_FS)
+            for X in self.lst_X[idx_FS]:
+                idx_X = self.lst_X[idx_FS].index(X)
 
                 x = tau_values.view()
                 y = self.arr[:, idx_T, idx_X]["E"].view()
@@ -945,8 +1064,9 @@ class plot_Z_test(plotVirtual):
 
         fig.suptitle("Energy")
         fig.set_size_inches(10, 10)
-        filename = "E_D{:d}_R{:d}.pdf".format(self.FS_lst[0].id_data, self.FS_lst[0].id_rho)
-        path_out = join(self.FS_lst[0].path_rho_plots, filename)
+        filename = "E_D{:d}_R{:d}.pdf".format(self.FS_lst[idx_FS].id_data,
+                                              self.FS_lst[idx_FS].id_rho)
+        path_out = join(self.FS_lst[idx_FS].path_rho_plots, filename)
         fig.savefig(path_out, transparent=True, bbox_inches='tight', pad_inches=0.2)
         plt.close(fig)
         return
@@ -958,12 +1078,14 @@ class plot_Z_test(plotVirtual):
         if len(self.lst_T[0]) is 1:
             ax = [ax, ]
 
+        idx_FS = 0
+
         # print Cv values
-        for T in self.lst_T[0]:
-            idx_T = self.lst_T[0].index(T)
+        for T in self.lst_T[idx_FS]:
+            idx_T = self.lst_T[idx_FS].index(T)
             tau_values = self.generate_tau_values(T)
-            for X in self.lst_X[0]:
-                idx_X = self.lst_X[0].index(X)
+            for X in self.lst_X[idx_FS]:
+                idx_X = self.lst_X[idx_FS].index(X)
 
                 x = tau_values.view()
                 y = self.arr[:, idx_T, idx_X]["Cv"].view()
@@ -975,8 +1097,9 @@ class plot_Z_test(plotVirtual):
 
         fig.suptitle("Cv")
         fig.set_size_inches(10, 10)
-        filename = "Cv_D{:d}_R{:d}.pdf".format(self.FS_lst[0].id_data, self.FS_lst[0].id_rho)
-        path_out = join(self.FS_lst[0].path_rho_plots, filename)
+        filename = "Cv_D{:d}_R{:d}.pdf".format(self.FS_lst[idx_FS].id_data,
+                                               self.FS_lst[idx_FS].id_rho)
+        path_out = join(self.FS_lst[idx_FS].path_rho_plots, filename)
         fig.savefig(path_out, transparent=True, bbox_inches='tight', pad_inches=0.2)
         plt.close(fig)
         return
