@@ -118,6 +118,8 @@ class FileStructure:
         self.path_vib_model = join(self.path_vib_params, file_name.coupled_model)
         self.path_har_model = join(self.path_vib_params, file_name.harmonic_model)
         self.path_iter_model = join(self.path_vib_params, file_name.iterative_model)
+        self.path_iter_mat = join(self.path_vib_params, file_name.iterative_matrix)
+
         self.path_rho_model = join(self.path_rho_params, file_name.sampling_model)
 
         # TODO - maybe these should begin with file_*  instead of path_* ?

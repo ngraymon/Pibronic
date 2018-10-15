@@ -15,8 +15,8 @@ from codecs import open
 from os import path
 
 
-# verify that the right version of julia is installed
 def julia_is_installed():
+    """verify that the right version of Julia (the programming language) is installed"""
     p = subprocess.run(["julia", "--version"], stdout=subprocess.PIPE, universal_newlines=True)
     if p.stdout.startswith("julia version"):
         bits = p.stdout.split(sep=".")
@@ -32,23 +32,44 @@ def julia_is_installed():
     return False
 
 
-# verify that the right version of julia is installed
 def install_VibronicToolkit():
-
+    """attempts to install the Julia package VibronicToolkit (developed by Dmitri Iouchtchenko)
+    we link to a fork of the package which has modified bin scripts designed to provide formatted output for Pibronic's julia_wrapper.py"""
     url = "https://github.com/ngraymon/VibronicToolkit.jl.git"
     package_name = "VibronicToolkit"
     branch_name = "integrated"
 
-    # should add a try catch so that julia doesn't error out if the package is already installed?
-    # Pkg.installed("VibronicToolkit-Integrated")
+    # should add a try catch so that Julia doesn't error out if the package is already installed?
+    # TODO - update this section once the standard approach is finalized and bugs are ironed out in the v1.0.X versions of Julia
 
-    # This approach is functional but there is probably a better/cleaner way to do this
-    cmd = f'try Pkg.clone("{url:s}", "{package_name:s}") end;'
-    cmd += f'Pkg.checkout("{package_name:s}", "{branch_name:s}");'
-
+    # This approach is functional but there is probably a better way to do this
+    cmd = 'using Pkg;'
+    cmd += f'Pkg.add(PackageSpec(url="{url:s}", rev="{branch_name:s}"));'
     subprocess.run(['julia', '-e', cmd])
+
     # we trust that the install was successful
-    # although it would be nice Ato have a clean way to confirm the install was successful
+    # although it would be nice to have a clean way to confirm the install was successful
+    return
+
+
+def install_VibronicToolkit_in_development_mode():
+    """attempts to install the Julia package VibronicToolkit (developed by Dmitri Iouchtchenko)
+    in development mode
+    we link to a fork of the package which has modified bin scripts designed to provide formatted output for Pibronic's julia_wrapper.py"""
+    url = "https://github.com/ngraymon/VibronicToolkit.jl.git"
+    package_name = "VibronicToolkit"
+    branch_name = "integrated"
+
+    # should add a try catch so that Julia doesn't error out if the package is already installed?
+    # TODO - update this section once the standard approach is finalized and bugs are ironed out in the v1.0.X versions of Julia
+
+    # This approach is functional but there is probably a better way to do this
+    cmd = 'using Pkg;'
+    cmd += f'Pkg.develop(PackageSpec(url="{url:s}", rev="{branch_name:s}"));'
+    subprocess.run(['julia', '-e', cmd])
+
+    # we trust that the install was successful
+    # although it would be nice to have a clean way to confirm the install was successful
     return
 
 

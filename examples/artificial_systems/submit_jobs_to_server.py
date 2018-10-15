@@ -11,7 +11,6 @@ from os.path import isfile
 # local imports
 import context
 import systems
-# from pibronic import julia_wrapper
 from pibronic import constants
 from pibronic.log_conf import log
 from pibronic.vibronic import vIO
@@ -161,12 +160,14 @@ def automate_sos_trotter_submission(name):
     """ loops over the data sets and different rhos submitting sos and trotter jobs for each one  """
     systems.assert_system_name_is_valid(name)
 
+    assert name is "2x2", "Any other model is too large to do trotter or sos"
+
     lst_BS = [80, ]
     lst_T = [300.00, ]
 
     lst_P1 = [10, ]
     lst_P2 = [10, 50, 100, 150, 200, ]
-    lst_P3 = [50, 100, 150, 200, 300, 400, 500]
+    lst_P3 = [50, 100, 150, 200, 300, 400, 500, ]
 
     for id_data in systems.id_dict[name]:
         simple_sos_wrapper(lst_BS, lst_T, id_data=id_data)

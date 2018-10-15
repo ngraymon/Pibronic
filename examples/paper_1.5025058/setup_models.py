@@ -135,7 +135,7 @@ def automate_prepare_model():
     """
     for name in systems.name_lst:
         for id_data in systems.id_dict[name]:
-            prepare_model(name, id_data=id_data)
+            prepare_paper_model(name, id_data=id_data)
     return
 
 

@@ -2,7 +2,7 @@
 Bookkeeping provided by file_name module
 
 Store all naming conventions in one place
-Keeps file naming consistant over the many modules if changes need to be made
+Keeps file naming consistent over the many modules if changes need to be made
 """
 
 # system imports
@@ -16,7 +16,7 @@ Keeps file naming consistant over the many modules if changes need to be made
 D - refers to the id of the data set
 R - refers to the id of the sampling set (rho)
 P - refers the number of beads (int)
-T - refers to the tempearture in Kelvin (float-2 places)
+T - refers to the temperature in Kelvin (float-2 places)
  - number of samples used to obtain results inside file (int)
 """
 _execution_output = "D{:s}_R{:s}_P{:s}_T{:s}.o{:s}"
@@ -32,8 +32,8 @@ def execution_output(D="{D:d}", R="{R:d}", P="{P:d}", T="{T:.2f}", J="{J:d}"):
 
 """ the results of a pimc run
 P - refers the number of beads (int)
-T - refers to the tempearture in Kelvin (float-2 places)
-J - jobnumber, default is zero (int)
+T - refers to the temperature in Kelvin (float-2 places)
+J - job number, default is zero (int)
 """
 _pimc = "P{:s}_T{:s}_J{:s}_data_points.npz"
 
@@ -48,7 +48,7 @@ def pimc(P="{P:d}", T="{T:.2f}", J="{J:d}"):
 
 """ output of postprocess + jackknife
 P - refers the number of beads (int)
-T - refers to the tempearture in Kelvin (float-2 places)
+T - refers to the temperature in Kelvin (float-2 places)
 X - number of samples used to obtain results inside file (int)
 """
 _jackknife = "P{:s}_T{:s}_X{:s}_thermo"
@@ -75,6 +75,7 @@ def sos(B="{B:d}"):
     """
     return _sos.format(B)
 
+
 """ output of Trotter for coupled model
 B - refers the number of basis functions to obtain results inside file (int)
 """
@@ -88,10 +89,11 @@ def trotter(P="{P:d}", B="{B:d}"):
     """
     return _trotter.format(P, B)
 
+
 """ R values used for training ML algorithms
 P - refers the number of beads (int)
-T - refers to the tempearture in Kelvin (float-2 places)
-J - jobnumber, default is zero (int)
+T - refers to the temperature in Kelvin (float-2 places)
+J - job number, default is zero (int)
 """
 _training_data_input = "P{:s}_T{:s}_J{:s}_training_data_input.npz"
 
@@ -106,8 +108,8 @@ def training_data_input(P="{P:d}", T="{T:.2f}", J="{J:d}"):
 
 """ output of a g(R) run - used for training ML algorithms
 P - refers the number of beads (int)
-T - refers to the tempearture in Kelvin (float-2 places)
-J - jobnumber, default is zero (int)
+T - refers to the temperature in Kelvin (float-2 places)
+J - job number, default is zero (int)
 """
 _training_data_g_output = "P{:s}_T{:s}_J{:s}_training_data_g_output.npz"
 
@@ -122,8 +124,8 @@ def training_data_g_output(P="{P:d}", T="{T:.2f}", J="{J:d}"):
 
 """ output of a rho(R) run - used for training ML algorithms
 P - refers the number of beads (int)
-T - refers to the tempearture in Kelvin (float-2 places)
-J - jobnumber, default is zero (int)
+T - refers to the temperature in Kelvin (float-2 places)
+J - job number, default is zero (int)
 """
 _training_data_rho_output = "P{:s}_T{:s}_J{:s}_training_data_rho_output.npz"
 
@@ -136,7 +138,7 @@ def training_data_rho_output(P="{P:d}", T="{T:.2f}", J="{J:d}"):
     return _training_data_rho_output.format(P, T, J)
 
 
-# TODO - maybe only need one file name for both rho and sos???
+# TODO - maybe only need one file name for both rho and SOS???
 """ output of SOS for model diagonal in electronic states
 B - refers the number of basis functions to obtain results inside file (int)
 """
@@ -162,9 +164,16 @@ this can be anything which is diagonal in the electronic states
 """
 sampling_model = "sampling_model.json"
 
-""" contains the parameters which describe the sampling model which has been generated using our iterative decomposition method whose weights have been corrected using single-point energy calculations
+""" contains the parameters which describe the sampling model
+which has been generated using our iterative decomposition method
+whose weights have been corrected using single-point energy calculations
 """
 iterative_model = "iterative_model.json"
+
+""" contains the transformation matrix
+which was used in our iterative decomposition method to generate the iterative model
+"""
+iterative_matrix = "iterative_matrix.txt"
 
 """ contains any parameters which can be obtained through analytical methods
 this commonly stores properties of the sampling model at different temperatures
@@ -177,7 +186,9 @@ which describe the system's Hamiltonian before we did a unitary transformation
 original_analytic_results = "original_analytic_results.json"
 
 
-""" contains the orthonormal matrix which was used to preform the unitary transformation on the original_coupled_model.json to get the coupled_model.json
+""" contains the orthonormal matrix
+which was used to preform the unitary transformation on the original_coupled_model.json
+to get the coupled_model.json
 """
 orthogonal_matrix = "orthogonal_matrix.npy"
 
