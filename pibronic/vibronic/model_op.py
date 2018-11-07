@@ -124,12 +124,16 @@ def extract_linear_couplings(path, memmap, coupling_terms):
 
 def extract_quadratic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the beginning and ending of the important region
-    memmap.seek(0)  # start looking from the beginning of the file
-    beginString = 'Diagonal Quadratic Coupling Constants'
-    begin = helper.find_string_in_file(memmap, path, beginString)
-    endString = 'Cubic Coupling Constants'
-    end = helper.find_string_in_file(memmap, path, endString)
+    try:
+        # find the beginning and ending of the important region
+        memmap.seek(0)  # start looking from the beginning of the file
+        beginString = 'Diagonal Quadratic Coupling Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Cubic Coupling Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+    except Exception as e:
+        print("Couldn't find Quadratic couplings")
+        return
 
     # go to the beginning of that region
     memmap.seek(begin)
@@ -155,12 +159,16 @@ def extract_quadratic_couplings(path, memmap, coupling_terms):
 
 def extract_cubic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the beginning and ending of the important region
-    memmap.seek(0)  # start looking from the beginning of the file
-    beginString = 'Cubic Coupling Constants'
-    begin = helper.find_string_in_file(memmap, path, beginString)
-    endString = 'Quartic Coupling Constants'
-    end = helper.find_string_in_file(memmap, path, endString)
+    try:
+        # find the beginning and ending of the important region
+        memmap.seek(0)  # start looking from the beginning of the file
+        beginString = 'Cubic Coupling Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Quartic Coupling Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+    except Exception as e:
+        print("Couldn't find Cubic couplings")
+        return
 
     # go to the beginning of that region
     memmap.seek(begin)
@@ -186,12 +194,16 @@ def extract_cubic_couplings(path, memmap, coupling_terms):
 
 def extract_bicubic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the beginning and ending of the important region
-    memmap.seek(0)  # start looking from the beginning of the file
-    beginString = 'Bi-Cubic Constants'
-    begin = helper.find_string_in_file(memmap, path, beginString)
-    endString = 'Bi-Quartic Constants'
-    end = helper.find_string_in_file(memmap, path, endString)
+    try:
+        # find the beginning and ending of the important region
+        memmap.seek(0)  # start looking from the beginning of the file
+        beginString = 'Bi-Cubic Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Bi-Quartic Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+    except Exception as e:
+        print("Couldn't find biCubic couplings")
+        return
 
     # go to the beginning of that region
     memmap.seek(begin)
@@ -218,12 +230,18 @@ def extract_bicubic_couplings(path, memmap, coupling_terms):
 
 def extract_quartic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the beginning and ending of the important region
-    memmap.seek(0)  # start looking from the beginning of the file
-    beginString = 'Quartic Coupling Constants'
-    begin = helper.find_string_in_file(memmap, path, beginString)
-    endString = 'Bi-Cubic Constants'
-    end = helper.find_string_in_file(memmap, path, endString)
+    try:
+        # find the beginning and ending of the important region
+        memmap.seek(0)  # start looking from the beginning of the file
+        beginString = 'Quartic Coupling Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'Bi-Cubic Constants'
+        end = helper.find_string_in_file(memmap, path, endString)
+    except Exception as e:
+        print("Couldn't find Quartic couplings")
+        return
+
+
 
     # go to the beginning of that region
     memmap.seek(begin)
@@ -249,12 +267,16 @@ def extract_quartic_couplings(path, memmap, coupling_terms):
 
 def extract_biquartic_couplings(path, memmap, coupling_terms):
     """x"""
-    # find the beginning and ending of the important region
-    memmap.seek(0)  # start looking from the beginning of the file
-    beginString = 'Bi-Quartic Constants'
-    begin = helper.find_string_in_file(memmap, path, beginString)
-    endString = 'end-parameter-section'
-    end = helper.find_string_in_file(memmap, path, endString)
+    try:
+        # find the beginning and ending of the important region
+        memmap.seek(0)  # start looking from the beginning of the file
+        beginString = 'Bi-Quartic Constants'
+        begin = helper.find_string_in_file(memmap, path, beginString)
+        endString = 'end-parameter-section'
+        end = helper.find_string_in_file(memmap, path, endString)
+    except Exception as e:
+        print("Couldn't find biQuadratic couplings")
+        return
 
     # go to the beginning of that region
     memmap.seek(begin)

@@ -83,6 +83,9 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Sublime Projects
+.sublime-workspace
+
 # pyenv
 .python-version
 

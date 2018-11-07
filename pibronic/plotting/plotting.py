@@ -3,6 +3,7 @@
 
 # system imports
 import json
+import os
 from os.path import join
 
 # third party imports
@@ -17,7 +18,6 @@ from ..data import postprocessing as pp
 from ..data import file_structure as fs
 from ..constants import beta
 from ..vibronic import vIO
-
 
 
 def load_analytical_original(self):
@@ -56,22 +56,19 @@ def load_analytical_sampling(self):
     return
 
 
-def load_sos(self, ):
+def load_sos(self, basis_size=80):
     """ generic loading function that can be used by multiple plotting classes"""
 
     # create the list of dictionaries to hold the sum-over-states data
     self.sos_list = [{} for _ in range(len(self.FS_lst))]
 
-    # temporary constants to avoid any errors
-    # this will be changed in the future
-    MAX_BASIS_SIZE = 80
-
     # load that data into each dictionary in the list
     for idx_FS, FS in enumerate(self.FS_lst):
-        path = FS.template_sos_vib.format(B=MAX_BASIS_SIZE)
+        path = FS.template_sos_vib.format(B=basis_size)
 
-        with open(path, 'r') as file:
-            data = json.loads(file.read())
+        if os.path.isfile(path):
+            with open(path, 'r') as file:
+                data = json.loads(file.read())
 
         for T in self.lst_T[idx_FS]:
             self.sos_list[idx_FS][f"{T:.2f}"] = data[f"{T:.2f}"]
@@ -79,33 +76,48 @@ def load_sos(self, ):
     return
 
 
-def load_trotter_coupled(self):
+def load_trotter_coupled(self, basis_size=80):
     """ generic loading function that can be used by multiple plotting classes"""
 
     # create the list of dictionaries to hold the coupled trotter data
     self.trotter_coupled_list = [{} for _ in range(len(self.FS_lst))]
 
-    # temporary constants to avoid any errors
-    # this will be changed in the future
-    MAX_BASIS_SIZE = 80
-
     # load that data into each dictionary in the list
     for idx_FS, FS in enumerate(self.FS_lst):
-        for idx_P, P, in enumerate(self.lst_P[idx_FS]):
-            path = FS.template_trotter_vib.format(P=P, B=MAX_BASIS_SIZE)
 
-            with open(path, 'r') as file:
-                data = json.loads(file.read())
+        # create the empty lists
+        for T in self.lst_T[idx_FS]:
+            # self.trotter_coupled_list[idx_FS][f"{T:.2f}"] = []
+            trotter_key_list = ["Z_trotter", "E_trotter", "SvN_trotter", "S2_trotter"]
+            temp_lists = [[] for key in trotter_key_list]
+
+            # this could be troublesome if the order of the list is changed
+            # maybe if we used a pair object as the key for a dictionary?
+            # but we want to maintain the functionality of being able to index all the beads
+            for idx_P, P, in enumerate(self.lst_P[idx_FS]):
+                path = FS.template_trotter_vib.format(P=P, B=basis_size)
+
+                # check if path exists -> and if not then we should append a None?
+                try:
+                    with open(path, 'r') as file:
+                        data = json.loads(file.read())
+
+                    for idx, key in enumerate(trotter_key_list):
+                        val = data[f"{T:.2f}"].get(key, None)
+                        temp_lists[idx].append(val)
+                except:
+                    # if path doesn't exist then we just us a None
+                    # which becomes a nan when converted into a numpy array of floats
+                    for idx, key in enumerate(trotter_key_list):
+                        temp_lists[idx].append(None)
 
             temp_dict = {}
-            for T in self.lst_T[idx_FS]:
-                temp_dict[f"{T:.2f}"] = data[f"{T:.2f}"]
+            for idx, key in enumerate(trotter_key_list):
+                temp_dict[key] = np.array(temp_lists[idx], dtype=F64)
 
-            # TODO - is there possibly a better way of doing this?
-            self.trotter_coupled_list[idx_FS].update({P: temp_dict})
+            self.trotter_coupled_list[idx_FS][f"{T:.2f}"] = temp_dict
 
     return
-
 
 
 # TODO - this function could be improved
@@ -155,6 +167,11 @@ class plot_Z_multiple_FS(plotVirtual):
     def __init__(self, list_of_FileStructure_objects):
         """ x """
         super().__init__(list_of_FileStructure_objects)
+        for idx_FS, FS in enumerate(self.FS_lst):
+            if len(self.list_jackknife[idx_FS]) != 0:
+                break
+        else:
+            raise Exception("All result lists are empty!! No Data to plot!")
 
     def load_pimc_data(self):
         """ x """
@@ -918,7 +935,6 @@ class plot_rectangle(plot_Z_multiple_FS):
     def plot_Z(self):
         # to be done later this week
         return
-
 
     def plot(self):
         """ x """

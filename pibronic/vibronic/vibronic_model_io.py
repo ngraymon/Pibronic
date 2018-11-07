@@ -2,13 +2,14 @@
 
 # system imports
 import itertools as it
+import importlib
 import hashlib
 import random
 import shutil
 import copy
 import json
 import os
-from os.path import join, isfile
+from os.path import isfile
 
 # third party imports
 import numpy as np
@@ -17,14 +18,21 @@ from numpy.random import uniform as Uniform
 
 # local imports
 from ..log_conf import log
-# from .. import constants
-# from ..data import file_structure
-# from ..data import file_name
 from .vibronic_model_keys import VibronicModelKeys as VMK
-from . import model_auto
 from . import model_op
 from . import model_h
 from . import orthonormal
+
+try:
+    from . import model_auto
+except (ImportError, ModuleNotFoundError) as e:
+    class _FakeModule:
+        def read_model_auto_file(*args, **kwargs):
+            s = "fortranformat not installed, cannot call read_model_auto_file() from model_auto"
+            raise Exception(s)
+
+    model_auto = _FakeModule()
+
 
 np.set_printoptions(precision=8, suppress=True)  # Print Precision!
 
@@ -316,7 +324,7 @@ def create_diagonal_model_hash(FS=None, path=None):
     else:
         path = FS.path_rho_model
 
-    assert isfile(path)
+    assert isfile(path), f"The path provided is not a valid file! Path:\n{path}"
 
     with open(path, mode='r', encoding='UTF8') as file:
         string = file.read()
@@ -480,7 +488,10 @@ def _extract_dimensions_from_file(path):
 
 
 def extract_dimensions_of_model(FS=None, path=None):
-    """return number_of_modes and number_of_surfaces for coupling_model.json files by using a FileStructure or an absolute path to the file"""
+    """returns A, N in that order
+    A is the number_of_surfaces and N is the number_of_modes
+    for coupling_model.json files by using a FileStructure or an absolute path to the file
+    """
     if FS is None:
         assert path is not None, "no arguments provided"
     else:
@@ -489,7 +500,9 @@ def extract_dimensions_of_model(FS=None, path=None):
 
 
 def extract_dimensions_of_diagonal_model(FS=None, path=None):
-    """return number_of_modes and number_of_surfaces for sampling_model.json files by using a FileStructure or an absolute path to the file
+    """returns A, N in that order
+    A is the number_of_surfaces and N is the number_of_modes
+    for sampling_model.json files by using a FileStructure or an absolute path to the file
     """
 
     """ TODO - it might be nice to have the ability to specify id_data or id_rho, although this should be done in a way that queries file_structure so as to not "leak" the file structure out to other areas of the code
@@ -645,13 +658,16 @@ def simple_single_point_energy_calculation(FS, path):
     returns a list of energy values in eV which"""
 
     iterative_model = load_diagonal_model_from_JSON(path)
-    assert VMK.G2 not in iterative_model, "doesn't support quadratic terms at the moment"
+    if VMK.G2 in iterative_model and not np.allclose(iterative_model[VMK.G2], 0.0):
+        raise Exception("Support for non-zero quadratic terms in simple_single_point_energy_calculation() has not been implemented")
+
     Ai, Ni = _extract_dimensions_from_dictionary(iterative_model)
 
     # generate the oscillator minimum's
     minimums = np.zeros((Ai, Ni))
 
-    # if there is no linear term parameter in the model's dictionary, then they are all zero, and therefore are centered at the origin.
+    # if there is no linear term parameter in the model's dictionary, then they are all zero
+    # and therefore are centered at the origin.
     if VMK.G1 in iterative_model:
         w_iter = iterative_model[VMK.w]
         lin_iter = iterative_model[VMK.G1]
@@ -660,13 +676,14 @@ def simple_single_point_energy_calculation(FS, path):
 
     coupled_model = load_model_from_JSON(FS.path_vib_model)
     A, N = _extract_dimensions_from_dictionary(coupled_model)
-    assert VMK.G2 not in coupled_model, "doesn't support quadratic terms at the moment"
     E = coupled_model[VMK.E]
     w = coupled_model[VMK.w]
     lin = np.zeros(model_shape_dict(A, N)[VMK.G1])
+
     if VMK.G1 in coupled_model:
         lin[:] = coupled_model[VMK.G1]
-    # quad = coupled_model[VMK.G2]  # TODO - add support for quadratic terms in the future
+    if VMK.G2 in coupled_model and not np.allclose(coupled_model[VMK.G2], 0.0):
+        raise Exception("Support for non-zero quadratic terms in simple_single_point_energy_calculation() has not been implemented")
 
     new_energy_values = np.zeros(Ai)
 

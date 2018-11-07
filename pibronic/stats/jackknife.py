@@ -65,7 +65,7 @@ def calculate_jackknife_term(length, array):
     # subtract each term from the sum
     jk_term -= array
     # normalize
-    jk_term /= length
+    jk_term /= (length - 1)
 
     return jk_term
 
