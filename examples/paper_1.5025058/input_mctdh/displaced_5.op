@@ -18,8 +18,8 @@ w02                      =       0.04   , ev
 #   Vertical energies - Zeropoint
 # -------------------------------
 
-EH_s01_s01               =      0.09959721908298894    , ev
-EH_s02_s02               =      0.19959721908298894    , ev
+EH_s01_s01               =      0.0996                 , ev
+EH_s02_s02               =      0.1996                 , ev
 
 #     Electronic transition moments
 # ----------------------------------
