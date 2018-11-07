@@ -15,9 +15,11 @@ from os import path
 
 def julia_is_installed():
     """verify that the right version of Julia (the programming language) is installed"""
-    p = subprocess.run(["julia", "--version"], stdout=subprocess.PIPE, universal_newlines=True)
-    if p.stdout.startswith("julia version"):
-        bits = p.stdout.split(sep=".")
+    result = subprocess.run(["julia", "--version"], universal_newlines=True, shell=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    if result.stdout.startswith("julia version"):
+        bits = result.stdout.split(sep=".")
         # if the version is 1.X.X or 0.7.X is installed
         if int(bits[0][-1]) >= 1 or int(bits[1]) >= 7:
             print("It appears julia 1.X.X or 0.7.X is installed, install should proceed successfully")
@@ -157,5 +159,6 @@ def setup_package():
 
 
 if __name__ == '__main__':
-    install_VibronicToolkit()
+    if julia_is_installed():
+        install_VibronicToolkit()
     setup_package()

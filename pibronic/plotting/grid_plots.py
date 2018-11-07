@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # local imports
-from .server import prepare_mpl_rc_file, load_latex_module_on_server
+from .prepare import prepare_mpl_rc_file, load_latex_module_on_server
 from ..data import file_structure as fs
 from ..vibronic import vIO, VMK
 

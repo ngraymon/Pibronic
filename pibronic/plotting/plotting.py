@@ -12,7 +12,7 @@ from numpy import float64 as F64
 import matplotlib.pyplot as plt
 
 # local imports
-from .server import prepare_mpl_rc_file, load_latex_module_on_server
+from .prepare import prepare_mpl_rc_file, load_latex_module_on_server
 from .virtual import plotVirtual
 from ..data import postprocessing as pp
 from ..data import file_structure as fs
