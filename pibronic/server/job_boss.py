@@ -3,8 +3,6 @@ assumes the server uses SLURM"""
 
 # system imports
 import subprocess
-from subprocess import Popen
-# from subprocess import TimeoutExpired
 import threading
 import socket
 import signal
@@ -40,13 +38,22 @@ def get_path_of_job_boss_directory():
     return os.path.abspath(__file__)
 
 
-def subprocess_run_wrapper(cmd):
+def subprocess_submit_asynch_wrapper(cmd, **kwargs):
+    """ wrapper for subprocess.Popen function to allow for different implementation for different python versions"""
+    if sys.version_info[:2] >= (3, 7):
+        return subprocess.Popen(cmd, text=True, **kwargs)
+    if (3, 5) <= sys.version_info[:2] <= (3, 7):
+        return subprocess.Popen(cmd, universal_newlines=True, **kwargs)
+
+
+def subprocess_run_wrapper(cmd, **kwargs):
     """ wrapper for subprocess.run function to allow for different implementation for different python versions"""
     if sys.version_info[:2] >= (3, 7):
-        return subprocess.run(cmd, capture_output=True, text=True)
+        return subprocess.run(cmd, capture_output=True, text=True, **kwargs)
     if (3, 5) <= sys.version_info[:2] <= (3, 7):
         return subprocess.run(cmd, universal_newlines=True,
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              **kwargs)
 
 
 def get_hostname():
@@ -178,7 +185,7 @@ def submit_job(command, parameter_dictionary):
     command = command.format(**parameter_dictionary)
 
     """ submits the job to the slurm server"""
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    result = subprocess_run_wrapper(command, shell=True)
     result.check_returncode()
 
     id_job = extract_id_job_from_output(result.stdout)

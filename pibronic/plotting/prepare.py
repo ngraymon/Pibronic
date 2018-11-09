@@ -1,13 +1,13 @@
 """ functions which prepare the environment for executing matplotlib on the server """
 
 # system imports
-import subprocess
 
 # third party imports
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 # local imports
+from pibronic.server.job_boss import subprocess_run_wrapper
 
 
 def prepare_mpl_rc_file(pretty_but_slow=False):
@@ -34,8 +34,7 @@ def load_latex_module_on_server(version="2017"):
     """ load the texlive module so that we can make plots with latex
     this function will only work on our local server
     TODO - there should be a replacement for local execution and execution on other servers"""
-    cmd = ['/usr/bin/modulecmd', 'python', 'load', f'texlive/{version:s}']
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, error = p.communicate()
-    exec(out)  # this is necessary!
+    cmd = ['modulecmd', 'python', 'load', f'texlive/{version:s}']
+    result = subprocess_run_wrapper(cmd)
+    exec(result.stdout)  # this is necessary!
     return

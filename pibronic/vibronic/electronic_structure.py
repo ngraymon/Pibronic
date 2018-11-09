@@ -2,7 +2,6 @@
 #
 # system imports
 import itertools as it
-# import subprocess
 # import threading
 # import warnings
 # import inspect

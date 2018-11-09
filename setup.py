@@ -11,12 +11,20 @@ from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
 from os import path
+import sys
 
 
 def julia_is_installed():
     """verify that the right version of Julia (the programming language) is installed"""
-    result = subprocess.run(["julia", "--version"], universal_newlines=True, shell=True,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    if sys.version_info[:2] >= (3, 7):
+        kwargs = {'capture_output': True, 'text': True}
+    if (3, 5) <= sys.version_info[:2] <= (3, 7):
+        kwargs = {'universal_newlines': True,
+                  'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE,
+                  }
+
+    result = subprocess.run(["julia", "--version"], **kwargs)
 
     if result.stdout.startswith("julia version"):
         bits = result.stdout.split(sep=".")

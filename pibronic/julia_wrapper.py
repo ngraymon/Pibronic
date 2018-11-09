@@ -14,6 +14,7 @@ from os.path import join, isfile, dirname, realpath
 from pibronic import constants
 from pibronic.log_conf import log
 from pibronic.data import file_structure as fs
+from pibronic.server.job_boss import subprocess_run_wrapper
 
 """ this dictionary is used to map the output of processes running Julia scripts
 each Julia script prints out some number of "Name: value" strings
@@ -287,13 +288,12 @@ def prepare_julia(version="1.0.0"):
 
     # a dynamic approach to checking possibly Julia versions would be preferred
     assert version in ["0.7.0", "1.0.0", "1.0.1"], "Incompatible Julia version"
-    result = subprocess.run(['julia', '-v'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+    result = subprocess_run_wrapper(['julia', '-v'])
 
-    if not ("julia version" in result):
+    if not ("julia version" in result.stdout):
         cmd = ['modulecmd', 'python', 'load', f'Julia/{version:s}']
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, error = p.communicate()
-        exec(out)  # this line is what ACTUALLY executes the module load
+        result = subprocess_run_wrapper(cmd)
+        exec(result.stdout)  # this line is what ACTUALLY executes the module load
     return
 
 
@@ -302,11 +302,10 @@ def construct_command_dictionary():
 
     prepare_julia()
     cmd = ['julia', '-e', 'import VibronicToolkit; print(pathof(VibronicToolkit))']
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, error = p.communicate()
-    assert error.decode() == '', f"{error.decode()} happened!"
+    result = subprocess_run_wrapper(cmd)
+    assert result.stderr == '', f"{result.stderr} happened!"
 
-    path_root_jl_file = realpath(out.decode())  # get the path to */src/*.jl
+    path_root_jl_file = realpath(result.stdout)  # get the path to */src/*.jl
     path_root_folder = dirname(dirname(path_root_jl_file))  # go up 2 directories
     path_bin = join(path_root_folder, "pibronic_bin" + os.sep)  # the path to */bin/
 

@@ -2,7 +2,6 @@
 
 # system imports
 from multiprocessing import Pool
-import subprocess
 import json
 from os.path import isfile
 
@@ -23,6 +22,29 @@ jl_import = (
           'from pibronic import julia_wrapper as jw;'
           'from pibronic.constants import beta;'
            )
+
+
+def submission_wrapper(command, wait_for_output=False, **kwargs):
+    """ wrapper for subprocess.Popen() or subprocess.run() commands
+    if wait_for_output is False then we use Popen and if it is True then we use run"""
+
+    if wait_for_output:
+        return job_boss.subprocess_run_wrapper(command, **kwargs)
+    else:
+        return job_boss.subprocess_submit_asynch_wrapper(command, **kwargs)
+
+
+def execute_command_wrapper(command, debugging=False):
+    """ wrapper for executing commands """
+    if debugging:
+        result = submission_wrapper(command, wait_for_output=True, shell=True)
+        if result.stderr != '' and "Out Of Memory" in result.stderr:
+            raise Exception(f"{result.stderr}\n{result.stdout}\nMemory error\n")
+        print(f"Out:\n{result.stderr}\nError:\n{result.stderr}\n")
+    else:
+        submission_wrapper(command, shell=True)
+
+    return
 
 
 def _valid_hash(FS, path):
@@ -65,23 +87,10 @@ def _generate_sos_results(FS, temperature_list, basis_size_list):
 
             cmd = ("srun"
                    f" --job-name=sos_D{FS.id_data:d}_T{T:.2f}"
-                   # " --cpus-per-task=1"  # default Julia shows no speed ups for multi-core
                    " --mem=20GB"
                    " python3 -c '{:s}'".format(func_call.format(temperature=T, BS=BS))
                    )
-
-            p = subprocess.Popen(cmd, shell=True, universal_newlines=True,
-                                 # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 )
-            # (out, error) = p.communicate()
-
-            # if error != '' and "Out Of Memory" in error:
-            #     print(error, "\nMemory error, you need to run this job on toby\n")
-            #     print(out)
-            #     exit(0)
-            #     continue
-            # print(error)
-            # print(out)
+            execute_command_wrapper(cmd, debugging=False)
     return
 
 
@@ -110,21 +119,10 @@ def _generate_trotter_results(FS, temperature_list, basis_size_list, bead_list):
 
                 cmd = ("srun"
                        f" --job-name=trotter_D{FS.id_data:d}_P{P:d}_T{T:.2f}"
-                       # " --cpus-per-task=1"  # default Julia shows no speed ups for multi-core
                        " --mem=20GB"
                        " python3 -c '{:s}'".format(func_call.format(temperature=T, nbeads=P, BS=BS))
                        )
-
-                p = subprocess.Popen(cmd, shell=True, universal_newlines=True,
-                                     # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                     )
-                # (out, error) = p.communicate()
-
-                # if error != '' and "Out Of Memory" in error:
-                #     print(error, "\nMemory error, you need to run this job on toby\n")
-                #     continue
-                # print(error)
-                # print(out)
+            execute_command_wrapper(cmd, debugging=False)
     return
 
 
@@ -201,21 +199,10 @@ def iterative_method_wrapper(root=None, id_data=11):
     cmd = ("srun"
            " --pty"
            f" --job-name=iterative_D{FS.id_data:d}"
-           # " --cpus-per-task=1"  # default julia hasn't seen speed ups for more than 1 core
            " --mem=20GB"
            " python3 -c '{:s}'".format(func_call)
            )
-
-    p = subprocess.Popen(cmd, shell=True, universal_newlines=True,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         )
-    (out, error) = p.communicate()
-
-    if error != '' and "Out Of Memory" in error:
-        print(error, "\nMemory error, you need to run this job on toby\n")
-
-    print(out)
-
+    execute_command_wrapper(cmd, debugging=True)
     return
 
 
@@ -246,13 +233,7 @@ def _generate_original_analytic_results(FS, temperature_list):
                f" --job-name=analytic_D{FS.id_data:d}_T{T:.2f}"
                " python3 -c '{:s}'".format(func_call.format(temperature=T))
                )
-
-        p = subprocess.Popen(cmd, shell=True, universal_newlines=True,
-                             # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             )
-        # (out, error) = p.communicate()
-        # print(out)
-        # print(error)
+        execute_command_wrapper(cmd, debugging=False)
     return
 
 
@@ -274,13 +255,7 @@ def _generate_sampling_analytic_results(FS, temperature_list):
                f" --job-name=analytic_D{FS.id_data:d}_R{FS.id_rho:d}_T{T:.2f}"
                " python3 -c '{:s}'".format(func_call.format(temperature=T))
                )
-
-        p = subprocess.Popen(cmd, shell=True, universal_newlines=True,
-                             # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             )
-        # (out, error) = p.communicate()
-        # print(out)
-        # print(error)
+        execute_command_wrapper(cmd, debugging=False)
     return
 
 
