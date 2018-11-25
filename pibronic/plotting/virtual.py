@@ -21,15 +21,19 @@ class plotVirtual:
     def generate_parameter_lists(self):
         """ create lists of all possible unique valid parameters that are to be plotted
         for example:
-            a list of all possible bead values might be [12, 20, 50],
-            a list of all possible temperature values might be [250.00, 275.00, 300.00]
+
+        *   a list of all possible bead values might be [12, 20, 50],
+        *   a list of all possible temperature values might be [250.00, 275.00, 300.00]
+
         which could arise from 3 data files with the following parameters:
-            [12, 250.00], [20, 275.00], [50, 300.00]
+
+        *   [12, 250.00], [20, 275.00], [50, 300.00]
+
         or 5 data files with the following parameters:
-            [12, 250.00], [12, 275.00], [12, 300.00], [22, 300.00], [50, 300.00]
+
+        *   [12, 250.00], [12, 275.00], [12, 300.00], [22, 300.00], [50, 300.00]
 
         the purposes of this function is to generate lists which allow for modifying the range of each parameter separately using intersections
-
         """
         return
 

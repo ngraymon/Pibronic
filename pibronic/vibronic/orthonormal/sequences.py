@@ -3,9 +3,10 @@
 # TODO - this section is out of date and should probably be modified
 
 The orthonormal matrices are used to create 'artificial' vibronic models (S):
- - To begin you choose any real square matrix (E), which we can consider the 'eigenvalues' of the desired output matrix (S).
- - Next a orthonormal matrix (U) is generated, we can consider these the 'eigenvectors' of the desired output matrix (S).
- - Finally we preform a unitary transformation on (E) using (U) which gives us (S).
+
+*  To begin you choose any real square matrix (E), which we can consider the 'eigenvalues' of the desired output matrix (S).
+*  Next a orthonormal matrix (U) is generated, we can consider these the 'eigenvectors' of the desired output matrix (S).
+*  Finally we preform a unitary transformation on (E) using (U) which gives us (S).
 
 Of importance is how (U) is generated.
 It would be optimal to have a function g(A, P) which generates an orthonormal matrix (U).
@@ -18,17 +19,18 @@ We chose to define the 'distance' as the Frobenius norm (AKA matrix norm) of the
 'distance(P)' = ||U(P) - Identity||
 
 Our first attempt at solving this problem was:
- - Generate a random matrix (K) of order A
- - Create a skew symmetric matrix S = K - K.T
- - Calculate the orthonormal matrix U(P) = expm(P * S)
+*  Generate a random matrix (K) of order A
+*  Create a skew symmetric matrix S = K - K.T
+*  Calculate the orthonormal matrix U(P) = expm(P * S)
 
 However because we randomly generated the matrix (K) this method suffers from periodicity issues.
 For a matrix of order 2, the 'distance' of (U) from Identity is periodic, and the period depends on the matrix (K).
 It behaves as follows:
- - P = 0            : U is Identity
- - P = period / 4   : U is maximally diagonal and has a trace of 0
- - P = period / 2   : U is -Identity and has a trace of -2
- - P = 3 period / 4 : U is maximally diagonal and has a trace of 0
+
+*  P = 0            : U is Identity
+*  P = period / 4   : U is maximally diagonal and has a trace of 0
+*  P = period / 2   : U is -Identity and has a trace of -2
+*  P = 3 period / 4 : U is maximally diagonal and has a trace of 0
 
 For a matrix of order 3 or higher it is non trivial to determine the period
 
@@ -38,21 +40,24 @@ Therefore we have chosen to go with a repeatable solution:
 Instead of randomly generating the matrix (K) we always choose (K) to be a upper unitriangular matrix of order (A).
 This allows us to precalculate an estimate of the period of the 'distance' of the matrix (U).
 Our approach to finding the period, for a fixed (A), works as follows:
- - Generate an upper unitriangular matrix (K) of order A
- - Create a skew symmetric matrix S = K - K.T
- - Calculate the 'distance(x)' = ||U(x) - Identity|| for x in [0, 1E6]
- - Plot y='distance(x)' and visually or algorithmically select a continuous sequence of increasing y values, optimally the sequence begins very close to identity
- - This sequence of pairs [(y_{i}, x_{i}) (y_{i+n}, y_{i+n}] is then saved to a file
+
+*  Generate an upper unitriangular matrix (K) of order A
+*  Create a skew symmetric matrix S = K - K.T
+*  Calculate the 'distance(x)' = ||U(x) - Identity|| for x in [0, 1E6]
+*  Plot y='distance(x)' and visually or algorithmically select a continuous sequence of increasing y values, optimally the sequence begins very close to identity
+*  This sequence of pairs [(y_{i}, x_{i}) (y_{i+n}, y_{i+n}] is then saved to a file
 
 For each choice of (A) we can then obtain a sequence which forms the range of the function g(A, P).
 We restrict the domain of (P) values to be [0.0, 1.0] and choose a mapping of any P > 0.0 to a given pair in the sequence (y, x).
 
 Thus the code for creating an orthonormal matrix which is used to create an 'artificial' vibronic models (S) is:
- - Generate an upper unitriangular matrix (K) of order A
- - Create a skew symmetric matrix S = K - K.T
- - If P = 0.0 then U = Identity, otherwise:
-    - Retrieve a pair (y,x) using the tuning parameter (P)
-    - Calculate the orthonormal matrix U = expm(x * S)
+
+*  Generate an upper unitriangular matrix (K) of order A
+*  Create a skew symmetric matrix S = K - K.T
+*  If P = 0.0 then U = Identity, otherwise:
+
+   *  Retrieve a pair (y,x) using the tuning parameter (P)
+   *  Calculate the orthonormal matrix U = expm(x * S)
 """
 
 # system imports

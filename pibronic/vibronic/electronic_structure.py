@@ -192,8 +192,9 @@ name_of_state_file = "execution_state.txt"
 
 
 def pretty_print_job_status(path=None):
-    """ quick hack for scripting, path should look something like
-    /**/data_set_{:d}/electronic_structure/execution_state.txt"""
+    """quick hack for scripting, path should look something like
+    `/**/data_set_{:d}/electronic_structure/execution_state.txt`
+    """
 
     # use the default path
     if path is None:

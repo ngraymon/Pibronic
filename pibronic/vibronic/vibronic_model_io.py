@@ -14,7 +14,6 @@ from os.path import isfile
 # third party imports
 import numpy as np
 from numpy import float64 as F64
-from numpy.random import uniform as Uniform
 
 # local imports
 from ..log_conf import log
@@ -335,7 +334,7 @@ def create_diagonal_model_hash(FS=None, path=None):
 def _generate_linear_terms(linear_terms, shape, displacement, Modes):
     """ generate linear terms that are 'reasonable' """
     for i in Modes:
-        upTri = Uniform(-displacement[i], displacement[i], shape[VMK.E])
+        upTri = np.random.uniform(-displacement[i], displacement[i], shape[VMK.E])
         # force the linear terms to be symmetric
         linear_terms[i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
     return
@@ -344,7 +343,7 @@ def _generate_linear_terms(linear_terms, shape, displacement, Modes):
 def _generate_quadratic_terms(quadratic_terms, shape, displacement, Modes):
     """ generate quadratic terms that are 'reasonable' """
     for i, j in it.product(Modes, repeat=2):
-        upTri = Uniform(-displacement[i, j], displacement[i, j], shape[VMK.E])
+        upTri = np.random.uniform(-displacement[i, j], displacement[i, j], shape[VMK.E])
         # force the quadratic terms to be symmetric
         quadratic_terms[i, j, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
         quadratic_terms[j, i, ...] = np.tril(upTri) + np.tril(upTri, k=-1).T
@@ -385,7 +384,7 @@ def generate_vibronic_model_data(input_parameters=None):
     model[VMK.w] = np.linspace(minFreq, maxFreq, num=numModes, endpoint=True, dtype=F64)
 
     # generate energy
-    model[VMK.E] = Uniform(minE, maxE, shape[VMK.E])
+    model[VMK.E] = np.random.uniform(minE, maxE, shape[VMK.E])
     # force the energy to be symmetric
     model[VMK.E] = np.tril(model[VMK.E]) + np.tril(model[VMK.E], k=-1).T
 

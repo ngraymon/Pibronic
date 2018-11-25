@@ -6,6 +6,13 @@ pibronic.vibronic package
     :undoc-members:
     :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+
+    pibronic.vibronic.orthonormal
+
 Submodules
 ----------
 
