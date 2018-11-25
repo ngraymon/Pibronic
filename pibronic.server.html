@@ -6,16 +6,17 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.server package &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.server package &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pibronic.stats package" href="pibronic.stats.html" />
     <link rel="prev" title="pibronic.plotting package" href="pibronic.plotting.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -29,30 +30,52 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
-  <div class="section" id="pibronic-server-package">
-<h1>pibronic.server package<a class="headerlink" href="#pibronic-server-package" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-pibronic.server">
+<span id="pibronic-server-package"></span><h1>pibronic.server package<a class="headerlink" href="#module-pibronic.server" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="scripts-related-to-communicating-with-server">
+<h2>Scripts related to communicating with server<a class="headerlink" href="#scripts-related-to-communicating-with-server" title="Permalink to this headline">¶</a></h2>
+</div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pibronic.server.job_boss">
 <span id="pibronic-server-job-boss-module"></span><h2>pibronic.server.job_boss module<a class="headerlink" href="#module-pibronic.server.job_boss" title="Permalink to this headline">¶</a></h2>
-<p>provides a number of job submission related functions - a helper module for job submission</p>
+<p>provides a number of job submission related functions - a helper module for job submission
+assumes the server uses SLURM</p>
 <dl class="class">
 <dt id="pibronic.server.job_boss.PimcSubmissionClass">
-<em class="property">class </em><code class="descclassname">pibronic.server.job_boss.</code><code class="descname">PimcSubmissionClass</code><span class="sig-paren">(</span><em>FS</em>, <em>param_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#PimcSubmissionClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.PimcSubmissionClass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>x</p>
+<em class="property">class </em><code class="descclassname">pibronic.server.job_boss.</code><code class="descname">PimcSubmissionClass</code><span class="sig-paren">(</span><em>input_FS</em>, <em>input_param_dict=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#PimcSubmissionClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.PimcSubmissionClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.server.job_boss.SubmissionClass" title="pibronic.server.job_boss.SubmissionClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.server.job_boss.SubmissionClass</span></code></a></p>
+<p>Class to store all the logic involved with submitting 1 or more jobs to a server running SLURM - should be self consistent</p>
 <dl class="attribute">
-<dt id="pibronic.server.job_boss.PimcSubmissionClass.LARGEST_JOB_SAMPLE">
-<code class="descname">LARGEST_JOB_SAMPLE</code><em class="property"> = 10000</em><a class="headerlink" href="#pibronic.server.job_boss.PimcSubmissionClass.LARGEST_JOB_SAMPLE" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.server.job_boss.PimcSubmissionClass.MAX_SAMPLES_PER_JOB">
+<code class="descname">MAX_SAMPLES_PER_JOB</code><em class="property"> = 100000</em><a class="headerlink" href="#pibronic.server.job_boss.PimcSubmissionClass.MAX_SAMPLES_PER_JOB" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pibronic.server.job_boss.PimcSubmissionClass.param_dict">
-<code class="descname">param_dict</code><em class="property"> = {'bead_list': [0], 'block_size': 100, 'cores_per_socket': 4, 'cpus_per_task': 4, 'delta_beta': 0.0002, 'id_data': 0, 'id_rho': 0, 'memory_per_node': 20, 'number_of_beads': 0, 'number_of_blocks': 0, 'number_of_modes': 0, 'number_of_samples': 0, 'number_of_states': 0, 'partition': 'serial', 'path_data': '', 'path_rho': '', 'path_root': '', 'path_scratch': '', 'temperature_list': [0.0], 'total_memory': 20, 'wait_param': ''}</em><a class="headerlink" href="#pibronic.server.job_boss.PimcSubmissionClass.param_dict" title="Permalink to this definition">¶</a></dt>
+<code class="descname">param_dict</code><em class="property"> = {'bead_list': [0], 'block_size': 1000, 'cores_per_socket': 4, 'cpus_per_task': 4, 'hostname': None, 'id_data': 0, 'id_rho': 0, 'memory_per_node': 20, 'number_of_beads': 0, 'number_of_blocks': 0, 'number_of_modes': 0, 'number_of_samples': 0, 'number_of_samples_overall': 0, 'number_of_samples_per_job': 0, 'number_of_states': 0, 'partition': None, 'path_data': '', 'path_rho': '', 'path_root': '', 'path_scratch': '', 'script_name': 'pimc.py', 'temperature_list': [0.0], 'total_memory': 20, 'wait_param': ''}</em><a class="headerlink" href="#pibronic.server.job_boss.PimcSubmissionClass.param_dict" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.server.job_boss.PimcSubmissionClass.prepare_paths">
+<code class="descname">prepare_paths</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#PimcSubmissionClass.prepare_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.PimcSubmissionClass.prepare_paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill the param_dict with values from the give FileStructure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.server.job_boss.PimcSubmissionClass.setup_blocks_and_jobs">
+<code class="descname">setup_blocks_and_jobs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#PimcSubmissionClass.setup_blocks_and_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.PimcSubmissionClass.setup_blocks_and_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculates the following:
+- the number of blocks per job
+- the number of samples per job
+- the number of jobs
+and stores them in the param_dict</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pibronic.server.job_boss.PimcSubmissionClass.submit_job_array">
@@ -74,27 +97,111 @@
 <dd><p>signal handler - uses job_state_lock to record signal using the bool job_almost_done_flag</p>
 </dd></dl>
 
+<dl class="class">
+<dt id="pibronic.server.job_boss.SubmissionClass">
+<em class="property">class </em><code class="descclassname">pibronic.server.job_boss.</code><code class="descname">SubmissionClass</code><span class="sig-paren">(</span><em>input_FS</em>, <em>input_param_dict=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#SubmissionClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.SubmissionClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="pibronic.server.job_boss.SubmissionClass.MAX_SAMPLES_PER_JOB">
+<code class="descname">MAX_SAMPLES_PER_JOB</code><em class="property"> = 10000</em><a class="headerlink" href="#pibronic.server.job_boss.SubmissionClass.MAX_SAMPLES_PER_JOB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.server.job_boss.SubmissionClass.construct_job_command">
+<code class="descname">construct_job_command</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#SubmissionClass.construct_job_command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.SubmissionClass.construct_job_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>this</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.job_boss.SubmissionClass.node_dict">
+<code class="descname">node_dict</code><em class="property"> = {'feynman': &lt;function prepare_job_nlogn&gt;, 'graham': &lt;function prepare_job_graham&gt;, 'nlogn': &lt;function prepare_job_nlogn&gt;, 'orca': &lt;function prepare_job_orca&gt;}</em><a class="headerlink" href="#pibronic.server.job_boss.SubmissionClass.node_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.job_boss.SubmissionClass.param_dict">
+<code class="descname">param_dict</code><em class="property"> = {'bead_list': [0], 'block_size': 1, 'cores_per_socket': 1, 'cpus_per_task': 1, 'delta_beta': 0.0002, 'hostname': '', 'id_data': 0, 'id_rho': 0, 'memory_per_node': 1, 'number_of_beads': 0, 'number_of_blocks': 0, 'number_of_links': 0, 'number_of_modes': 0, 'number_of_samples': 0, 'number_of_samples_overall': 0, 'number_of_samples_per_job': 0, 'number_of_states': 0, 'partition': None, 'path_data': '', 'path_rho': '', 'path_root': '', 'path_scratch': '', 'script_name': None, 'temperature_list': [0.0], 'total_memory': 1, 'wait_param': ''}</em><a class="headerlink" href="#pibronic.server.job_boss.SubmissionClass.param_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.server.job_boss.SubmissionClass.prepare_paths">
+<code class="descname">prepare_paths</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#SubmissionClass.prepare_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.SubmissionClass.prepare_paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill the param_dict with values from the give FileStructure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.server.job_boss.SubmissionClass.verify_hostname_is_valid">
+<code class="descname">verify_hostname_is_valid</code><span class="sig-paren">(</span><em>hostname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#SubmissionClass.verify_hostname_is_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.SubmissionClass.verify_hostname_is_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>this checks the hostname against a pre-defined dictionary
+this should alert the user if they are trying to submit jobs on a server
+without first preparing a job submission wrapper</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.assert_partition_exists">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">assert_partition_exists</code><span class="sig-paren">(</span><em>partition_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#assert_partition_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.assert_partition_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>only checks that the given string is listed as a partition by sinfo</p>
+</dd></dl>
+
 <dl class="function">
 <dt id="pibronic.server.job_boss.check_acct_state">
 <code class="descclassname">pibronic.server.job_boss.</code><code class="descname">check_acct_state</code><span class="sig-paren">(</span><em>id_job</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#check_acct_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.check_acct_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>get the recorded state of the job</p>
+<dd><p>returns the recorded state of the job (from SLURM) as a string</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.server.job_boss.check_running_state">
 <code class="descclassname">pibronic.server.job_boss.</code><code class="descname">check_running_state</code><span class="sig-paren">(</span><em>id_job</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#check_running_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.check_running_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>get the running state of the job</p>
+<dd><p>returns the running state of the job (from SLURM) as a string</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.server.job_boss.check_slurm_output">
 <code class="descclassname">pibronic.server.job_boss.</code><code class="descname">check_slurm_output</code><span class="sig-paren">(</span><em>path_root</em>, <em>id_job</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#check_slurm_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.check_slurm_output" title="Permalink to this definition">¶</a></dt>
-<dd><p>checks ouput file from slurm  for errors memory issues, incorrect arguments, etc</p>
+<dd><p>checks ouput file from slurm for errors memory issues, incorrect arguments, etc</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.extract_id_job_from_output">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">extract_id_job_from_output</code><span class="sig-paren">(</span><em>out</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#extract_id_job_from_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.extract_id_job_from_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the job id inside the str argument ‘out’ or None if the job id is not present
+if no job id can be found then a warning is raised</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.get_hostname">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">get_hostname</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#get_hostname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.get_hostname" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the hostname of the cluster of the server (from SLURM) as a string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.get_path_of_job_boss_directory">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">get_path_of_job_boss_directory</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#get_path_of_job_boss_directory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.get_path_of_job_boss_directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the absolute path to the directory holding job_boss.py</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.get_path_to_python_executable">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">get_path_to_python_executable</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#get_path_to_python_executable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.get_path_to_python_executable" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the absolute path to the python executable currently executing this script</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.prepare_job_compute_canada">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">prepare_job_compute_canada</code><span class="sig-paren">(</span><em>param_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#prepare_job_compute_canada"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.prepare_job_compute_canada" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for jobs on compute canada servers</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pibronic.server.job_boss.prepare_job_feynman">
 <code class="descclassname">pibronic.server.job_boss.</code><code class="descname">prepare_job_feynman</code><span class="sig-paren">(</span><em>param_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#prepare_job_feynman"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.prepare_job_feynman" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for job_boss job submission</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.prepare_job_graham">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">prepare_job_graham</code><span class="sig-paren">(</span><em>param_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#prepare_job_graham"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.prepare_job_graham" title="Permalink to this definition">¶</a></dt>
 <dd><p>wrapper for job_boss job submission</p>
 </dd></dl>
 
@@ -105,66 +212,168 @@
 </dd></dl>
 
 <dl class="function">
+<dt id="pibronic.server.job_boss.prepare_job_orca">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">prepare_job_orca</code><span class="sig-paren">(</span><em>param_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#prepare_job_orca"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.prepare_job_orca" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for job_boss job submission</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.serialize_BoxData_dictionary">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">serialize_BoxData_dictionary</code><span class="sig-paren">(</span><em>parameter_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#serialize_BoxData_dictionary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.serialize_BoxData_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for the call to BoxData’s json_serialize()
+takes a dictionary of parameters and returns a string which is a ‘serialized’ version of those parameters
+when the submitted job eventually executes it initializes a BoxData (or child) object using that ‘serialized’ string</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="pibronic.server.job_boss.submit_job">
 <code class="descclassname">pibronic.server.job_boss.</code><code class="descname">submit_job</code><span class="sig-paren">(</span><em>command</em>, <em>parameter_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#submit_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.submit_job" title="Permalink to this definition">¶</a></dt>
 <dd><p>craft the job submission command - no error checking</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pibronic.server.job_boss.subprocess_run_wrapper">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">subprocess_run_wrapper</code><span class="sig-paren">(</span><em>cmd</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#subprocess_run_wrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.subprocess_run_wrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for subprocess.run function to allow for different implementation for different python versions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.server.job_boss.subprocess_submit_asynch_wrapper">
+<code class="descclassname">pibronic.server.job_boss.</code><code class="descname">subprocess_submit_asynch_wrapper</code><span class="sig-paren">(</span><em>cmd</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#subprocess_submit_asynch_wrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.subprocess_submit_asynch_wrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for subprocess.Popen function to allow for different implementation for different python versions</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="pibronic.server.job_boss.synchronize_with_job">
 <code class="descclassname">pibronic.server.job_boss.</code><code class="descname">synchronize_with_job</code><span class="sig-paren">(</span><em>id_job</em>, <em>job_type='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/server/job_boss.html#synchronize_with_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.job_boss.synchronize_with_job" title="Permalink to this definition">¶</a></dt>
-<dd><p>sychronizes with a submitted job</p>
+<dd><p>synchronizes with a submitted job</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pibronic.server.pimc_array_dispatcher">
-<span id="pibronic-server-pimc-array-dispatcher-module"></span><h2>pibronic.server.pimc_array_dispatcher module<a class="headerlink" href="#module-pibronic.server.pimc_array_dispatcher" title="Permalink to this headline">¶</a></h2>
-<p>x</p>
-</div>
-<div class="section" id="module-pibronic.server">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pibronic.server" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="scripts-related-to-communicating-with-server">
-<h3>Scripts related to communicating with server<a class="headerlink" href="#scripts-related-to-communicating-with-server" title="Permalink to this headline">¶</a></h3>
-</div>
+<div class="section" id="module-pibronic.server.server">
+<span id="pibronic-server-server-module"></span><h2>pibronic.server.server module<a class="headerlink" href="#module-pibronic.server.server" title="Permalink to this headline">¶</a></h2>
+<p>Should hold all server related enums</p>
+<dl class="class">
+<dt id="pibronic.server.server.ServerExecutionParameters">
+<em class="property">class </em><code class="descclassname">pibronic.server.server.</code><code class="descname">ServerExecutionParameters</code><a class="reference internal" href="_modules/pibronic/server/server.html#ServerExecutionParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.A">
+<code class="descname">A</code><em class="property"> = 'number_of_states'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.A" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.BlkS">
+<code class="descname">BlkS</code><em class="property"> = 'block_size'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.BlkS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.D">
+<code class="descname">D</code><em class="property"> = 'id_data'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.D" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.N">
+<code class="descname">N</code><em class="property"> = 'number_of_modes'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.N" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.P">
+<code class="descname">P</code><em class="property"> = 'number_of_beads'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.P" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.R">
+<code class="descname">R</code><em class="property"> = 'id_rho'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.R" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.T">
+<code class="descname">T</code><em class="property"> = 'temperature'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.T" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.X">
+<code class="descname">X</code><em class="property"> = 'number_of_samples'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.X" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.beta">
+<code class="descname">beta</code><em class="property"> = 'beta'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.beta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.dB">
+<code class="descname">dB</code><em class="property"> = 'delta_beta'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.dB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.nBlk">
+<code class="descname">nBlk</code><em class="property"> = 'number_of_blocks'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.nBlk" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.server.server.ServerExecutionParameters.tau">
+<code class="descname">tau</code><em class="property"> = 'tau'</em><a class="headerlink" href="#pibronic.server.server.ServerExecutionParameters.tau" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">pibronic.server package</a><ul>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pibronic.server.job_boss">pibronic.server.job_boss module</a></li>
-<li><a class="reference internal" href="#module-pibronic.server.pimc_array_dispatcher">pibronic.server.pimc_array_dispatcher module</a></li>
-<li><a class="reference internal" href="#module-pibronic.server">Module contents</a><ul>
-<li><a class="reference internal" href="#scripts-related-to-communicating-with-server">Scripts related to communicating with server</a></li>
+<h1 class="logo"><a href="index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="pibronic.html">pibronic package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#pibronic">Pibronic</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="pibronic.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pibronic.data.html">pibronic.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.pimc.html">pibronic.pimc package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.plotting.html">pibronic.plotting package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">pibronic.server package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.stats.html">pibronic.stats package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.vibronic.html">pibronic.vibronic package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.constants">pibronic.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.everything">pibronic.everything module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.helper">pibronic.helper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.julia_wrapper">pibronic.julia_wrapper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.log_conf">pibronic.log_conf module</a></li>
 </ul>
 </li>
 </ul>
-</li>
-</ul>
+
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="pibronic.html">pibronic package</a><ul>
       <li>Previous: <a href="pibronic.plotting.html" title="previous chapter">pibronic.plotting package</a></li>
+      <li>Next: <a href="pibronic.stats.html" title="next chapter">pibronic.stats package</a></li>
   </ul></li>
   </ul></li>
 </ul>
 </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/pibronic.server.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <div class="searchformwrapper">
@@ -185,8 +394,8 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/pibronic.server.rst.txt"

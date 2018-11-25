@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.data.file_name &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.data.file_name &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -37,21 +37,21 @@
 <span class="sd">Bookkeeping provided by file_name module</span>
 
 <span class="sd">Store all naming conventions in one place</span>
-<span class="sd">Keeps file naming consistant over the many modules if changes need to be made</span>
+<span class="sd">Keeps file naming consistent over the many modules if changes need to be made</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="c1"># system imports</span>
 <span class="c1"># third party imports</span>
 <span class="c1"># local imports</span>
 
-<span class="c1"># TODO - conside the idea of making the template strings parameterizable as well as including different generating functions - seems like a lot of overhead for little gain?</span>
+<span class="c1"># TODO - consider the idea of making the template strings parameterizable as well as including different generating functions - seems like a lot of overhead for little gain?</span>
 
 
 <span class="sd">&quot;&quot;&quot; the execution output of a pimc run</span>
 <span class="sd">D - refers to the id of the data set</span>
 <span class="sd">R - refers to the id of the sampling set (rho)</span>
 <span class="sd">P - refers the number of beads (int)</span>
-<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
+<span class="sd">T - refers to the temperature in Kelvin (float-2 places)</span>
 <span class="sd"> - number of samples used to obtain results inside file (int)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">_execution_output</span> <span class="o">=</span> <span class="s2">&quot;D</span><span class="si">{:s}</span><span class="s2">_R</span><span class="si">{:s}</span><span class="s2">_P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">.o</span><span class="si">{:s}</span><span class="s2">&quot;</span>
@@ -67,8 +67,8 @@
 
 <span class="sd">&quot;&quot;&quot; the results of a pimc run</span>
 <span class="sd">P - refers the number of beads (int)</span>
-<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
-<span class="sd">J - jobnumber, default is zero (int)</span>
+<span class="sd">T - refers to the temperature in Kelvin (float-2 places)</span>
+<span class="sd">J - job number, default is zero (int)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">_pimc</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_J</span><span class="si">{:s}</span><span class="s2">_data_points.npz&quot;</span>
 
@@ -83,7 +83,7 @@
 
 <span class="sd">&quot;&quot;&quot; output of postprocess + jackknife</span>
 <span class="sd">P - refers the number of beads (int)</span>
-<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
+<span class="sd">T - refers to the temperature in Kelvin (float-2 places)</span>
 <span class="sd">X - number of samples used to obtain results inside file (int)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">_jackknife</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_X</span><span class="si">{:s}</span><span class="s2">_thermo&quot;</span>
@@ -111,10 +111,24 @@
     <span class="k">return</span> <span class="n">_sos</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">B</span><span class="p">)</span></div>
 
 
+<span class="sd">&quot;&quot;&quot; output of Trotter for coupled model</span>
+<span class="sd">B - refers the number of basis functions to obtain results inside file (int)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">_trotter</span> <span class="o">=</span> <span class="s2">&quot;trotter_P</span><span class="si">{:s}</span><span class="s2">_B</span><span class="si">{:s}</span><span class="s2">.json&quot;</span>
+
+
+<div class="viewcode-block" id="trotter"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_name.trotter">[docs]</a><span class="k">def</span> <span class="nf">trotter</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{P:d}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{B:d}</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper function to allow parameterized search for files</span>
+<span class="sd">        can pass in any regular expression</span>
+<span class="sd">        most commonly will just pass in &quot;*&quot; to search for all files of a given argument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_trotter</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></div>
+
+
 <span class="sd">&quot;&quot;&quot; R values used for training ML algorithms</span>
 <span class="sd">P - refers the number of beads (int)</span>
-<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
-<span class="sd">J - jobnumber, default is zero (int)</span>
+<span class="sd">T - refers to the temperature in Kelvin (float-2 places)</span>
+<span class="sd">J - job number, default is zero (int)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">_training_data_input</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_J</span><span class="si">{:s}</span><span class="s2">_training_data_input.npz&quot;</span>
 
@@ -129,8 +143,8 @@
 
 <span class="sd">&quot;&quot;&quot; output of a g(R) run - used for training ML algorithms</span>
 <span class="sd">P - refers the number of beads (int)</span>
-<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
-<span class="sd">J - jobnumber, default is zero (int)</span>
+<span class="sd">T - refers to the temperature in Kelvin (float-2 places)</span>
+<span class="sd">J - job number, default is zero (int)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">_training_data_g_output</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_J</span><span class="si">{:s}</span><span class="s2">_training_data_g_output.npz&quot;</span>
 
@@ -145,8 +159,8 @@
 
 <span class="sd">&quot;&quot;&quot; output of a rho(R) run - used for training ML algorithms</span>
 <span class="sd">P - refers the number of beads (int)</span>
-<span class="sd">T - refers to the tempearture in Kelvin (float-2 places)</span>
-<span class="sd">J - jobnumber, default is zero (int)</span>
+<span class="sd">T - refers to the temperature in Kelvin (float-2 places)</span>
+<span class="sd">J - job number, default is zero (int)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">_training_data_rho_output</span> <span class="o">=</span> <span class="s2">&quot;P</span><span class="si">{:s}</span><span class="s2">_T</span><span class="si">{:s}</span><span class="s2">_J</span><span class="si">{:s}</span><span class="s2">_training_data_rho_output.npz&quot;</span>
 
@@ -159,7 +173,7 @@
     <span class="k">return</span> <span class="n">_training_data_rho_output</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">J</span><span class="p">)</span></div>
 
 
-<span class="c1"># TODO - maybe only need one file name for both rho and sos???</span>
+<span class="c1"># TODO - maybe only need one file name for both rho and SOS???</span>
 <span class="sd">&quot;&quot;&quot; output of SOS for model diagonal in electronic states</span>
 <span class="sd">B - refers the number of basis functions to obtain results inside file (int)</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -169,7 +183,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">coupled_model</span> <span class="o">=</span> <span class="s2">&quot;coupled_model.json&quot;</span>
 
-<span class="sd">&quot;&quot;&quot; contains the original parameters (diagonal) which describe the systems Hamiltonian</span>
+<span class="sd">&quot;&quot;&quot; contains the original parameters (diagonal) which describe the system&#39;s Hamiltonian</span>
 <span class="sd">before we did a unitary transformation</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">original_model</span> <span class="o">=</span> <span class="s2">&quot;original_coupled_model.json&quot;</span>
@@ -185,10 +199,33 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">sampling_model</span> <span class="o">=</span> <span class="s2">&quot;sampling_model.json&quot;</span>
 
+<span class="sd">&quot;&quot;&quot; contains the parameters which describe the sampling model</span>
+<span class="sd">which has been generated using our iterative decomposition method</span>
+<span class="sd">whose weights have been corrected using single-point energy calculations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">iterative_model</span> <span class="o">=</span> <span class="s2">&quot;iterative_model.json&quot;</span>
+
+<span class="sd">&quot;&quot;&quot; contains the transformation matrix</span>
+<span class="sd">which was used in our iterative decomposition method to generate the iterative model</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">iterative_matrix</span> <span class="o">=</span> <span class="s2">&quot;iterative_matrix.txt&quot;</span>
+
 <span class="sd">&quot;&quot;&quot; contains any parameters which can be obtained through analytical methods</span>
 <span class="sd">this commonly stores properties of the sampling model at different temperatures</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">analytic_results</span> <span class="o">=</span> <span class="s2">&quot;analytic_results.json&quot;</span>
+
+<span class="sd">&quot;&quot;&quot; contains any parameters which can be obtained through analytical methods</span>
+<span class="sd">which describe the system&#39;s Hamiltonian before we did a unitary transformation</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">original_analytic_results</span> <span class="o">=</span> <span class="s2">&quot;original_analytic_results.json&quot;</span>
+
+
+<span class="sd">&quot;&quot;&quot; contains the orthonormal matrix</span>
+<span class="sd">which was used to preform the unitary transformation on the original_coupled_model.json</span>
+<span class="sd">to get the coupled_model.json</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">orthogonal_matrix</span> <span class="o">=</span> <span class="s2">&quot;orthogonal_matrix.npy&quot;</span>
 
 <span class="c1"># TODO - maybe include the directories and so forth inside file_name? or maybe in file_structure?</span>
 <span class="c1"># list_sub_dirs = [</span>
@@ -204,7 +241,23 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
@@ -233,7 +286,7 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>

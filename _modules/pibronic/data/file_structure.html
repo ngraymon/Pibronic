@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.data.file_structure &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.data.file_structure &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -40,6 +40,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span>
 <span class="c1"># from pathlib import Path  # should eventually make use of this</span>
@@ -98,14 +99,14 @@
         <span class="c1"># assert type(path_root) is str, &quot;did not provide a path in str format&quot;</span>
 
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        should FileStructure use log or return something to inidicate if the folders already exist?</span>
+<span class="sd">        should FileStructure use log or return something to indicate if the folders already exist?</span>
 <span class="sd">        should it automatically choose a new data set number if the currently provided one is being used? or should it throw an error?</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">id_rho</span> <span class="o">=</span> <span class="n">id_rho</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id_data</span> <span class="o">=</span> <span class="n">id_data</span>
-        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path_root</span><span class="p">),</span> <span class="s2">&quot;the path_root does not exist&quot;</span>
-        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path_root</span><span class="p">),</span> <span class="s2">&quot;the path_root is not a directory&quot;</span>
+        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path_root</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;the path_root (</span><span class="si">{path_root:}</span><span class="s2">) does not exist&quot;</span>
+        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path_root</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;the path_root (</span><span class="si">{path_root:}</span><span class="s2">) is not a directory&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">path_root</span><span class="p">)</span>
         <span class="c1"># main directories</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_data</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_vib</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_data</span><span class="p">))</span>
@@ -131,6 +132,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">template_jackknife</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_results</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">jackknife</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">template_sos_rho</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sos</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">template_sos_vib</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sos</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_trotter_vib</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="n">file_name</span><span class="o">.</span><span class="n">trotter</span><span class="p">()</span>
 
         <span class="c1"># TODO - should we factor this out into the file_name module?</span>
         <span class="c1"># self.template_pimc = file_name.pimc</span>
@@ -150,11 +152,19 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_vib_model</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">coupled_model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_har_model</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">harmonic_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_iter_model</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">iterative_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_iter_mat</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">iterative_matrix</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">path_rho_model</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">sampling_model</span><span class="p">)</span>
 
         <span class="c1"># TODO - maybe these should begin with file_*  instead of path_* ?</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_analytic_rho</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_rho_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">analytic_results</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_analytic_vib</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">analytic_results</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_analytic_orig</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">original_analytic_results</span><span class="p">)</span>
+
+        <span class="c1"># only used for artificial systems</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_orig_model</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">original_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_ortho_mat</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_vib_params</span><span class="p">,</span> <span class="n">file_name</span><span class="o">.</span><span class="n">orthogonal_matrix</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">no_makedir</span><span class="p">:</span>
             <span class="c1"># TODO - possibly check to see if directories exist instead of just blindly creating them? like so? if not self.directories_exist():</span>
@@ -241,12 +251,41 @@
         <span class="n">files</span><span class="o">.</span><span class="n">make_directories</span><span class="p">()</span>
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="FileStructure.generate_model_hashes"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.generate_model_hashes">[docs]</a>    <span class="k">def</span> <span class="nf">generate_model_hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; create two new data attributes which store the hash values (hash_vib, hash_rho)</span>
+    <span class="k">def</span> <span class="nf">_has_vib_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; returns the result of hasattr(self, &#39;hash_vib&#39;) &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;hash_vib&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_has_rho_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; returns the result of hasattr(self, &#39;hash_rho&#39;) &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;hash_rho&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_has_hash_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; returns the result of hasattr(self, &#39;hash_vib&#39;) and hasattr(self, &#39;hash_rho&#39;) &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_vib_hash</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_rho_hash</span><span class="p">()</span>
+
+<div class="viewcode-block" id="FileStructure.generate_model_hashes"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.generate_model_hashes">[docs]</a>    <span class="k">def</span> <span class="nf">generate_model_hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force_flag</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; create two new data attributes (if they don&#39;t already exist) which store the hash values (hash_vib, hash_rho)</span>
 <span class="sd">        created by the functions vIO.create_model_hash() and vIO.create_sampling_hash()&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_hash_values</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force_flag</span><span class="p">:</span>
+            <span class="k">return</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">create_model_hash</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">create_sampling_hash</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">create_diagonal_model_hash</span><span class="p">(</span><span class="n">FS</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="FileStructure.valid_vib_hash"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.valid_vib_hash">[docs]</a>    <span class="k">def</span> <span class="nf">valid_vib_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; takes a dictionary and returns bool if value of &#39;hash_vib&#39; key is same as hash_vib attribute of self&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_vib_hash</span><span class="p">(),</span> <span class="n">f</span><span class="s2">&quot;This {type(self).__name__} object has no vib hash attribute, you should probably call generate_model_hashes() to generate one&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;hash_vib&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash_vib</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FileStructure.valid_rho_hash"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.valid_rho_hash">[docs]</a>    <span class="k">def</span> <span class="nf">valid_rho_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; takes a dictionary and returns bool if value of &#39;hash_rho&#39; key is same as hash_rho attribute of self&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_rho_hash</span><span class="p">(),</span> <span class="n">f</span><span class="s2">&quot;This {type(self).__name__} object has no rho hash attribute, you should probably call generate_model_hashes() to generate one&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;hash_rho&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash_rho</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FileStructure.valid_vib_and_rho_hashes"><a class="viewcode-back" href="../../../pibronic.data.html#pibronic.data.file_structure.FileStructure.valid_vib_and_rho_hashes">[docs]</a>    <span class="k">def</span> <span class="nf">valid_vib_and_rho_hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_rho_hash</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_vib_hash</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -254,7 +293,23 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
@@ -283,7 +338,7 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>

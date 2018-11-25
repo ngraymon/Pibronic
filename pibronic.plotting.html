@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.plotting package &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.plotting package &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="pibronic.server package" href="pibronic.server.html" />
@@ -30,34 +30,533 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
-  <div class="section" id="pibronic-plotting-package">
-<h1>pibronic.plotting package<a class="headerlink" href="#pibronic-plotting-package" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-pibronic.plotting">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pibronic.plotting" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="scripts-that-plot-information">
-<h3>Scripts that plot information<a class="headerlink" href="#scripts-that-plot-information" title="Permalink to this headline">¶</a></h3>
+  <div class="section" id="module-pibronic.plotting">
+<span id="pibronic-plotting-package"></span><h1>pibronic.plotting package<a class="headerlink" href="#module-pibronic.plotting" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="scripts-involved-in-plotting-information">
+<h2>Scripts involved in plotting information<a class="headerlink" href="#scripts-involved-in-plotting-information" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pibronic.plotting.prepare_mpl_rc_file">
+<code class="descclassname">pibronic.plotting.</code><code class="descname">prepare_mpl_rc_file</code><span class="sig-paren">(</span><em>pretty_but_slow=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/prepare.html#prepare_mpl_rc_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.prepare_mpl_rc_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO - this needs to be refactored and cleaned up (it is sufficiently functional for the moment)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.plotting.load_latex_module_on_server">
+<code class="descclassname">pibronic.plotting.</code><code class="descname">load_latex_module_on_server</code><span class="sig-paren">(</span><em>version='2017'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/prepare.html#load_latex_module_on_server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.load_latex_module_on_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>load the texlive module so that we can make plots with latex
+this function will only work on our local server
+TODO - there should be a replacement for local execution and execution on other servers</p>
+</dd></dl>
+
 </div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pibronic.plotting.grid_plots">
+<span id="pibronic-plotting-grid-plots-module"></span><h2>pibronic.plotting.grid_plots module<a class="headerlink" href="#module-pibronic.plotting.grid_plots" title="Permalink to this headline">¶</a></h2>
+<p>analysis plotting - intensity grid of the parameters of a model</p>
+<dl class="class">
+<dt id="pibronic.plotting.grid_plots.plotGrids">
+<em class="property">class </em><code class="descclassname">pibronic.plotting.grid_plots.</code><code class="descname">plotGrids</code><span class="sig-paren">(</span><em>input_FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.annotate_intensity_grid">
+<code class="descname">annotate_intensity_grid</code><span class="sig-paren">(</span><em>fig</em>, <em>ax</em>, <em>data</em>, <em>title</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.annotate_intensity_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.annotate_intensity_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>commonly shared code for plotting</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.generate_sign_array">
+<code class="descname">generate_sign_array</code><span class="sig-paren">(</span><em>array</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.generate_sign_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.generate_sign_array" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.load_coupled_models">
+<code class="descname">load_coupled_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.load_coupled_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.load_coupled_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.load_data">
+<code class="descname">load_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.load_original_models">
+<code class="descname">load_original_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.load_original_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.load_original_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_coupled_energy_grid">
+<code class="descname">plot_coupled_energy_grid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_coupled_energy_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_coupled_energy_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_coupled_linear_grids">
+<code class="descname">plot_coupled_linear_grids</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_coupled_linear_grids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_coupled_linear_grids" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_coupled_quadratic_grids">
+<code class="descname">plot_coupled_quadratic_grids</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_coupled_quadratic_grids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_coupled_quadratic_grids" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_energy">
+<code class="descname">plot_energy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_linear_coupling">
+<code class="descname">plot_linear_coupling</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_linear_coupling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_linear_coupling" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_original_energy_grid">
+<code class="descname">plot_original_energy_grid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_original_energy_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_original_energy_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_original_linear_grids">
+<code class="descname">plot_original_linear_grids</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_original_linear_grids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_original_linear_grids" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_original_quadratic_grids">
+<code class="descname">plot_original_quadratic_grids</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_original_quadratic_grids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_original_quadratic_grids" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_quadratic_coupling">
+<code class="descname">plot_quadratic_coupling</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_quadratic_coupling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_quadratic_coupling" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_single_energy_grid">
+<code class="descname">plot_single_energy_grid</code><span class="sig-paren">(</span><em>energy</em>, <em>filename</em>, <em>title</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_single_energy_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_single_energy_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_single_linear_grid">
+<code class="descname">plot_single_linear_grid</code><span class="sig-paren">(</span><em>energy</em>, <em>filename</em>, <em>title</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_single_linear_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_single_linear_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.plot_single_quadratic_grid">
+<code class="descname">plot_single_quadratic_grid</code><span class="sig-paren">(</span><em>energy</em>, <em>filename</em>, <em>title</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.plot_single_quadratic_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.plot_single_quadratic_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.grid_plots.plotGrids.prepare_data">
+<code class="descname">prepare_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/grid_plots.html#plotGrids.prepare_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.grid_plots.plotGrids.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>optionally - if we want to modify the data before plotting</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.plotting.plotting">
+<span id="pibronic-plotting-plotting-module"></span><h2>pibronic.plotting.plotting module<a class="headerlink" href="#module-pibronic.plotting.plotting" title="Permalink to this headline">¶</a></h2>
+<p>first pass at creating plotting module</p>
+<dl class="function">
+<dt id="pibronic.plotting.plotting.generate_tau_values">
+<code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">generate_tau_values</code><span class="sig-paren">(</span><em>self</em>, <em>temperature</em>, <em>idx_FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#generate_tau_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.generate_tau_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a numpy array of the same length as lst_P
+takes in one temperature and an array of P values</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.plotting.plotting.load_analytical_original">
+<code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">load_analytical_original</code><span class="sig-paren">(</span><em>self</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#load_analytical_original"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.load_analytical_original" title="Permalink to this definition">¶</a></dt>
+<dd><p>generic loading function that can be used by multiple plotting classes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.plotting.plotting.load_analytical_sampling">
+<code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">load_analytical_sampling</code><span class="sig-paren">(</span><em>self</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#load_analytical_sampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.load_analytical_sampling" title="Permalink to this definition">¶</a></dt>
+<dd><p>generic loading function that can be used by multiple plotting classes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.plotting.plotting.load_sos">
+<code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">load_sos</code><span class="sig-paren">(</span><em>self</em>, <em>basis_size=80</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#load_sos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.load_sos" title="Permalink to this definition">¶</a></dt>
+<dd><p>generic loading function that can be used by multiple plotting classes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.plotting.plotting.load_trotter_coupled">
+<code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">load_trotter_coupled</code><span class="sig-paren">(</span><em>self</em>, <em>basis_size=80</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#load_trotter_coupled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.load_trotter_coupled" title="Permalink to this definition">¶</a></dt>
+<dd><p>generic loading function that can be used by multiple plotting classes</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.plotting.plotting.plot_Z_multiple_FS">
+<em class="property">class </em><code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">plot_Z_multiple_FS</code><span class="sig-paren">(</span><em>list_of_FileStructure_objects</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_multiple_FS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_multiple_FS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.plotting.virtual.plotVirtual" title="pibronic.plotting.virtual.plotVirtual"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.plotting.virtual.plotVirtual</span></code></a></p>
+<p>this is just an empty template at the moment, will be completed later</p>
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_multiple_FS.generate_file_lists">
+<code class="descname">generate_file_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_multiple_FS.generate_file_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_multiple_FS.generate_file_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_multiple_FS.generate_parameter_lists">
+<code class="descname">generate_parameter_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_multiple_FS.generate_parameter_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_multiple_FS.generate_parameter_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_multiple_FS.load_data">
+<code class="descname">load_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_multiple_FS.load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_multiple_FS.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_multiple_FS.load_pimc_data">
+<code class="descname">load_pimc_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_multiple_FS.load_pimc_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_multiple_FS.load_pimc_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.plotting.plotting.plot_Z_test">
+<em class="property">class </em><code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">plot_Z_test</code><span class="sig-paren">(</span><em>list_of_FileStructure_objects</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.plotting.virtual.plotVirtual" title="pibronic.plotting.virtual.plotVirtual"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.plotting.virtual.plotVirtual</span></code></a></p>
+<p>plotting when we only provide 1 FS object</p>
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_test.generate_file_lists">
+<code class="descname">generate_file_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_test.generate_file_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_test.generate_file_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>create a list of lists of parameters specific to each FileStructure object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_test.generate_parameter_lists">
+<code class="descname">generate_parameter_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_test.generate_parameter_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_test.generate_parameter_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_test.load_data">
+<code class="descname">load_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_test.load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_test.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_test.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_test.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_test.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_test.plot_Cv">
+<code class="descname">plot_Cv</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_test.plot_Cv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_test.plot_Cv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_test.plot_E">
+<code class="descname">plot_E</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_test.plot_E"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_test.plot_E" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_Z_test.plot_Z">
+<code class="descname">plot_Z</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_Z_test.plot_Z"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_Z_test.plot_Z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test">
+<em class="property">class </em><code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">plot_original_Z_test</code><span class="sig-paren">(</span><em>list_of_FileStructure_objects</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.plotting.virtual.plotVirtual" title="pibronic.plotting.virtual.plotVirtual"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.plotting.virtual.plotVirtual</span></code></a></p>
+<p>plotting pimc results against analytical results of original model
+when we only provide 1 FS object</p>
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.generate_file_lists">
+<code class="descname">generate_file_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.generate_file_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.generate_file_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>create a list of lists of parameters specific to each FileStructure object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.generate_parameter_lists">
+<code class="descname">generate_parameter_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.generate_parameter_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.generate_parameter_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.generate_tau_values">
+<code class="descname">generate_tau_values</code><span class="sig-paren">(</span><em>temperature</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.generate_tau_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.generate_tau_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a numpy array of the same length as lst_P
+takes in one temperature and an array of P values</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.load_analytical_data">
+<code class="descname">load_analytical_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.load_analytical_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.load_analytical_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.load_data">
+<code class="descname">load_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.load_pimc_data">
+<code class="descname">load_pimc_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.load_pimc_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.load_pimc_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.plot_Z">
+<code class="descname">plot_Z</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.plot_Z"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.plot_Z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_test.prepare_data">
+<code class="descname">prepare_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_test.prepare_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_test.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test">
+<em class="property">class </em><code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">plot_original_Z_vs_diagonal_test</code><span class="sig-paren">(</span><em>list_of_FileStructure_objects</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_vs_diagonal_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.plotting.plotting.plot_Z_multiple_FS" title="pibronic.plotting.plotting.plot_Z_multiple_FS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.plotting.plotting.plot_Z_multiple_FS</span></code></a></p>
+<p>plotting pimc results drawn from the original_coupled_model.json vs the pimc results drawn from the diagonal of the coupled_model.json vs analytical results of the original model
+when we provide 2 FS objects</p>
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.generate_tau_values">
+<code class="descname">generate_tau_values</code><span class="sig-paren">(</span><em>temperature</em>, <em>idx_FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_vs_diagonal_test.generate_tau_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.generate_tau_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a numpy array of the same length as lst_P
+takes in one temperature and an array of P values</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.load_analytical_data">
+<code class="descname">load_analytical_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_vs_diagonal_test.load_analytical_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.load_analytical_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.load_data">
+<code class="descname">load_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_vs_diagonal_test.load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_vs_diagonal_test.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.plot_Z">
+<code class="descname">plot_Z</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_vs_diagonal_test.plot_Z"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.plot_Z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.prepare_data">
+<code class="descname">prepare_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_original_Z_vs_diagonal_test.prepare_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_original_Z_vs_diagonal_test.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.plotting.plotting.plot_rectangle">
+<em class="property">class </em><code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">plot_rectangle</code><span class="sig-paren">(</span><em>list_of_FileStructure_objects</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_rectangle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_rectangle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.plotting.plotting.plot_Z_multiple_FS" title="pibronic.plotting.plotting.plot_Z_multiple_FS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.plotting.plotting.plot_Z_multiple_FS</span></code></a></p>
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_rectangle.generate_tau_values">
+<code class="descname">generate_tau_values</code><span class="sig-paren">(</span><em>temperature</em>, <em>idx_FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_rectangle.generate_tau_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_rectangle.generate_tau_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a numpy array of the same length as lst_P
+takes in one temperature and an array of P values</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_rectangle.load_data">
+<code class="descname">load_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_rectangle.load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_rectangle.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_rectangle.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_rectangle.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_rectangle.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_rectangle.plot_Z">
+<code class="descname">plot_Z</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_rectangle.plot_Z"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_rectangle.plot_Z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_rectangle.prepare_data">
+<code class="descname">prepare_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_rectangle.prepare_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_rectangle.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.plotting.plotting.plot_sos_Z_vs_rho_n">
+<em class="property">class </em><code class="descclassname">pibronic.plotting.plotting.</code><code class="descname">plot_sos_Z_vs_rho_n</code><span class="sig-paren">(</span><em>list_of_FileStructure_objects</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_sos_Z_vs_rho_n"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_sos_Z_vs_rho_n" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.plotting.plotting.plot_Z_multiple_FS" title="pibronic.plotting.plotting.plot_Z_multiple_FS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.plotting.plotting.plot_Z_multiple_FS</span></code></a></p>
+<p>plotting pimc results drawn from the coupled_model.json vs the pimc results drawn from a rho vs sos results of the coupled model when we provide 2 FS objects</p>
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_sos_Z_vs_rho_n.load_data">
+<code class="descname">load_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_sos_Z_vs_rho_n.load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_sos_Z_vs_rho_n.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_sos_Z_vs_rho_n.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_sos_Z_vs_rho_n.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_sos_Z_vs_rho_n.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_sos_Z_vs_rho_n.plot_Z">
+<code class="descname">plot_Z</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_sos_Z_vs_rho_n.plot_Z"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_sos_Z_vs_rho_n.plot_Z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.plotting.plot_sos_Z_vs_rho_n.prepare_data">
+<code class="descname">prepare_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/plotting.html#plot_sos_Z_vs_rho_n.prepare_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.plotting.plot_sos_Z_vs_rho_n.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.plotting.prepare">
+<span id="pibronic-plotting-prepare-module"></span><h2>pibronic.plotting.prepare module<a class="headerlink" href="#module-pibronic.plotting.prepare" title="Permalink to this headline">¶</a></h2>
+<p>functions which prepare the environment for executing matplotlib on the server</p>
+<dl class="function">
+<dt id="pibronic.plotting.prepare.load_latex_module_on_server">
+<code class="descclassname">pibronic.plotting.prepare.</code><code class="descname">load_latex_module_on_server</code><span class="sig-paren">(</span><em>version='2017'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/prepare.html#load_latex_module_on_server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.prepare.load_latex_module_on_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>load the texlive module so that we can make plots with latex
+this function will only work on our local server
+TODO - there should be a replacement for local execution and execution on other servers</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.plotting.prepare.prepare_mpl_rc_file">
+<code class="descclassname">pibronic.plotting.prepare.</code><code class="descname">prepare_mpl_rc_file</code><span class="sig-paren">(</span><em>pretty_but_slow=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/prepare.html#prepare_mpl_rc_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.prepare.prepare_mpl_rc_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO - this needs to be refactored and cleaned up (it is sufficiently functional for the moment)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.plotting.virtual">
+<span id="pibronic-plotting-virtual-module"></span><h2>pibronic.plotting.virtual module<a class="headerlink" href="#module-pibronic.plotting.virtual" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pibronic.plotting.virtual.plotVirtual">
+<em class="property">class </em><code class="descclassname">pibronic.plotting.virtual.</code><code class="descname">plotVirtual</code><span class="sig-paren">(</span><em>list_of_FileStructure_objects</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/virtual.html#plotVirtual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.virtual.plotVirtual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>outline the basic flow of plotting
+most members are designed to be overloaded
+actual plotting functions should be added to children classes</p>
+<dl class="method">
+<dt id="pibronic.plotting.virtual.plotVirtual.generate_file_lists">
+<code class="descname">generate_file_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/virtual.html#plotVirtual.generate_file_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.virtual.plotVirtual.generate_file_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>create lists of paths to all data files to be used for plotting</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.virtual.plotVirtual.generate_parameter_lists">
+<code class="descname">generate_parameter_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/virtual.html#plotVirtual.generate_parameter_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.virtual.plotVirtual.generate_parameter_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>create lists of all possible unique valid parameters that are to be plotted
+for example:</p>
+<ul class="simple">
+<li>a list of all possible bead values might be [12, 20, 50],</li>
+<li>a list of all possible temperature values might be [250.00, 275.00, 300.00]</li>
+</ul>
+<p>which could arise from 3 data files with the following parameters:</p>
+<ul class="simple">
+<li>[12, 250.00], [20, 275.00], [50, 300.00]</li>
+</ul>
+<p>or 5 data files with the following parameters:</p>
+<ul class="simple">
+<li>[12, 250.00], [12, 275.00], [12, 300.00], [22, 300.00], [50, 300.00]</li>
+</ul>
+<p>the purposes of this function is to generate lists which allow for modifying the range of each parameter separately using intersections</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.plotting.virtual.plotVirtual.validate_data">
+<code class="descname">validate_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/plotting/virtual.html#plotVirtual.validate_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.plotting.virtual.plotVirtual.validate_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">pibronic.plotting package</a><ul>
-<li><a class="reference internal" href="#module-pibronic.plotting">Module contents</a><ul>
-<li><a class="reference internal" href="#scripts-that-plot-information">Scripts that plot information</a></li>
+<h1 class="logo"><a href="index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="pibronic.html">pibronic package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#pibronic">Pibronic</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="pibronic.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pibronic.data.html">pibronic.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.pimc.html">pibronic.pimc package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">pibronic.plotting package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.server.html">pibronic.server package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.stats.html">pibronic.stats package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.vibronic.html">pibronic.vibronic package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.constants">pibronic.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.everything">pibronic.everything module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.helper">pibronic.helper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.julia_wrapper">pibronic.julia_wrapper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.log_conf">pibronic.log_conf module</a></li>
 </ul>
 </li>
 </ul>
-</li>
-</ul>
+
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
@@ -69,13 +568,6 @@
   </ul></li>
 </ul>
 </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/pibronic.plotting.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <div class="searchformwrapper">
@@ -96,8 +588,8 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/pibronic.plotting.rst.txt"

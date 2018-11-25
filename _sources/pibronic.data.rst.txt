@@ -1,6 +1,11 @@
 pibronic.data package
 =====================
 
+.. automodule:: pibronic.data
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -28,19 +33,4 @@ pibronic.data.postprocessing module
     :undoc-members:
     :show-inheritance:
 
-pibronic.data.vibronic\_model\_io module
-----------------------------------------
 
-.. automodule:: pibronic.data.vibronic_model_io
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: pibronic.data
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -1,0 +1,334 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.vibronic.orthonormal package &#8212; Pibronic 0.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="pibronic.vibronic package" href="pibronic.vibronic.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-pibronic.vibronic.orthonormal">
+<span id="pibronic-vibronic-orthonormal-package"></span><h1>pibronic.vibronic.orthonormal package<a class="headerlink" href="#module-pibronic.vibronic.orthonormal" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="code-involved-in-the-creation-of-orthonormal-matrices">
+<h2>Code involved in the creation of orthonormal matrices<a class="headerlink" href="#code-involved-in-the-creation-of-orthonormal-matrices" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pibronic.vibronic.orthonormal.create">
+<span id="pibronic-vibronic-orthonormal-create-module"></span><h2>pibronic.vibronic.orthonormal.create module<a class="headerlink" href="#module-pibronic.vibronic.orthonormal.create" title="Permalink to this headline">¶</a></h2>
+<p>this module creates an orthonormal matrix used in the creation of ‘artificial’ vibronic models</p>
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.create.create_orthonormal_matrix_lambda_close_to_identity">
+<code class="descclassname">pibronic.vibronic.orthonormal.create.</code><code class="descname">create_orthonormal_matrix_lambda_close_to_identity</code><span class="sig-paren">(</span><em>order</em>, <em>tuning_parameter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/create.html#create_orthonormal_matrix_lambda_close_to_identity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.create.create_orthonormal_matrix_lambda_close_to_identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns an orthonormal matrix U which is parameterized by the tuning_parameter
+If tuning_parameter is 0.0 then it returns Identity.
+For values &gt; 0.0 it returns U’s of increasing ‘distance’ from Identity
+The ‘distance’ is defined as the matrix norm of the difference of U and Identity
+takes: the order of the matrix and tuning_parameter</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.create.main">
+<code class="descclassname">pibronic.vibronic.orthonormal.create.</code><code class="descname">main</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/create.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.create.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pibronic.vibronic.orthonormal.sequences">
+<span id="pibronic-vibronic-orthonormal-sequences-module"></span><h2>pibronic.vibronic.orthonormal.sequences module<a class="headerlink" href="#module-pibronic.vibronic.orthonormal.sequences" title="Permalink to this headline">¶</a></h2>
+<p>this module handles sequences of (y, x) pairs which are used in the creation of orthonormal matrices,</p>
+<p># TODO - this section is out of date and should probably be modified</p>
+<p>The orthonormal matrices are used to create ‘artificial’ vibronic models (S):</p>
+<ul class="simple">
+<li>To begin you choose any real square matrix (E), which we can consider the ‘eigenvalues’ of the desired output matrix (S).</li>
+<li>Next a orthonormal matrix (U) is generated, we can consider these the ‘eigenvectors’ of the desired output matrix (S).</li>
+<li>Finally we preform a unitary transformation on (E) using (U) which gives us (S).</li>
+</ul>
+<p>Of importance is how (U) is generated.
+It would be optimal to have a function g(A, P) which generates an orthonormal matrix (U).
+The parameter (A) would define the order of (U).
+The ‘tuning’ parameter (P) would define the ‘distance’ of (U) from the identity matrix of the same order.
+The function g’s domain, for a fixed (A), would be the reals in [0.0, 1.0] and the range would be a matrix in [Identity, M], where (M) is the ‘farthest’ matrix from Identity.
+Thus as we increase the value of (P), for a fixed (A), the trace of (U) should decrease and the off-diagonal values should increase.
+A challenging problem is defining the meaning of ‘distance’ for an arbitrary square matrix?
+We chose to define the ‘distance’ as the Frobenius norm (AKA matrix norm) of the difference between (U) and Identity:
+‘distance(P)’ = ||U(P) - Identity||</p>
+<p>Our first attempt at solving this problem was:
+*  Generate a random matrix (K) of order A
+*  Create a skew symmetric matrix S = K - K.T
+*  Calculate the orthonormal matrix U(P) = expm(P * S)</p>
+<p>However because we randomly generated the matrix (K) this method suffers from periodicity issues.
+For a matrix of order 2, the ‘distance’ of (U) from Identity is periodic, and the period depends on the matrix (K).
+It behaves as follows:</p>
+<ul class="simple">
+<li>P = 0            : U is Identity</li>
+<li>P = period / 4   : U is maximally diagonal and has a trace of 0</li>
+<li>P = period / 2   : U is -Identity and has a trace of -2</li>
+<li>P = 3 period / 4 : U is maximally diagonal and has a trace of 0</li>
+</ul>
+<p>For a matrix of order 3 or higher it is non trivial to determine the period</p>
+<p>Therefore we have chosen to go with a repeatable solution:
+Instead of randomly generating the matrix (K) we always choose (K) to be a upper unitriangular matrix of order (A).
+This allows us to precalculate an estimate of the period of the ‘distance’ of the matrix (U).
+Our approach to finding the period, for a fixed (A), works as follows:</p>
+<ul class="simple">
+<li>Generate an upper unitriangular matrix (K) of order A</li>
+<li>Create a skew symmetric matrix S = K - K.T</li>
+<li>Calculate the ‘distance(x)’ = ||U(x) - Identity|| for x in [0, 1E6]</li>
+<li>Plot y=’distance(x)’ and visually or algorithmically select a continuous sequence of increasing y values, optimally the sequence begins very close to identity</li>
+<li>This sequence of pairs [(y_{i}, x_{i}) (y_{i+n}, y_{i+n}] is then saved to a file</li>
+</ul>
+<p>For each choice of (A) we can then obtain a sequence which forms the range of the function g(A, P).
+We restrict the domain of (P) values to be [0.0, 1.0] and choose a mapping of any P &gt; 0.0 to a given pair in the sequence (y, x).</p>
+<p>Thus the code for creating an orthonormal matrix which is used to create an ‘artificial’ vibronic models (S) is:</p>
+<ul class="simple">
+<li>Generate an upper unitriangular matrix (K) of order A</li>
+<li>Create a skew symmetric matrix S = K - K.T</li>
+<li>If P = 0.0 then U = Identity, otherwise:<ul>
+<li>Retrieve a pair (y,x) using the tuning parameter (P)</li>
+<li>Calculate the orthonormal matrix U = expm(x * S)</li>
+</ul>
+</li>
+</ul>
+<dl class="attribute">
+<dt id="pibronic.vibronic.orthonormal.sequences.Pair">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">Pair</code><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.Pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.vibronic.orthonormal.sequences.pair</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.build_SKSM_and_identity">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">build_SKSM_and_identity</code><span class="sig-paren">(</span><em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#build_SKSM_and_identity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.build_SKSM_and_identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the skew symmetric matrix and identity matrix for the given matrix order
+this is code that was factored out of other functions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.check_minimum_length_of_sequence">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">check_minimum_length_of_sequence</code><span class="sig-paren">(</span><em>sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#check_minimum_length_of_sequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.check_minimum_length_of_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>asserts that a sequence’s length is &gt; the defined minimum length</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.debugging_matrix_checking_function">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">debugging_matrix_checking_function</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#debugging_matrix_checking_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.debugging_matrix_checking_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>for quick checking of the unitary transformation matrix which is generated using the sequence over a sample of lambda values</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.difference_function">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">difference_function</code><span class="sig-paren">(</span><em>skew_symmetric_matrix</em>, <em>identity</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#difference_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.difference_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a function which calculates the difference between the unitary matrix, parameterized by alpha, and identity</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.find_first_turn_around_point">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">find_first_turn_around_point</code><span class="sig-paren">(</span><em>SKSM</em>, <em>identity</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#find_first_turn_around_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.find_first_turn_around_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a tuple (y, x) which are the values before the first turn around point</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.generate_and_save_x_pairs">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">generate_and_save_x_pairs</code><span class="sig-paren">(</span><em>order</em>, <em>p_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#generate_and_save_x_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.generate_and_save_x_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>generates and saves a list of tuples (containing 2 floats)
+the 2 floats are lower and upper bounds on acceptable x values to use in generating a monotonic sequence
+saves them to a file named using the string x_pair_filename, in the directory that
+this module is located in</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.generate_full_monotonic_sequence">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">generate_full_monotonic_sequence</code><span class="sig-paren">(</span><em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#generate_full_monotonic_sequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.generate_full_monotonic_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>saves two files, sequence_#.data and sequence_#.pairs
+sequence_#.pairs are the x pairs representing sequences where the frobenius norm is monotonic
+sequence_#.data is a list of x, y values
+this sequence is discontinuous and built up of x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.generate_full_monotonic_sequence_for_plotting">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">generate_full_monotonic_sequence_for_plotting</code><span class="sig-paren">(</span><em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#generate_full_monotonic_sequence_for_plotting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.generate_full_monotonic_sequence_for_plotting" title="Permalink to this definition">¶</a></dt>
+<dd><p>generates one data file for plotting with gnuplot</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.generate_monotonic_sequence_to_first_turn_around">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">generate_monotonic_sequence_to_first_turn_around</code><span class="sig-paren">(</span><em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#generate_monotonic_sequence_to_first_turn_around"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.generate_monotonic_sequence_to_first_turn_around" title="Permalink to this definition">¶</a></dt>
+<dd><p>generates a sequence of the frobenius norm to the first turn around point
+which will be used when generating new matrices</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.generate_sequences_for_plotting">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">generate_sequences_for_plotting</code><span class="sig-paren">(</span><em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#generate_sequences_for_plotting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.generate_sequences_for_plotting" title="Permalink to this definition">¶</a></dt>
+<dd><p>this generates sequences of the 1,2 and infinity norm’s of the difference between identity and the skew symmetric matrix
+this provides data that can be plotted to analyze the periodic behaviour of the norm’s for different size of matrices</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.generate_turning_point_sequence_for_plotting">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">generate_turning_point_sequence_for_plotting</code><span class="sig-paren">(</span><em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#generate_turning_point_sequence_for_plotting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.generate_turning_point_sequence_for_plotting" title="Permalink to this definition">¶</a></dt>
+<dd><p>this generates two sequences, the frobenius norm and the ‘turning points’ for plotting to visually confirm that those data points can be used to generate a monotonic sequence of x,y pairs which can be used to generate increasingly coupled matrices</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.list_of_turning_points">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">list_of_turning_points</code><span class="sig-paren">(</span><em>SKSM</em>, <em>identity</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#list_of_turning_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.list_of_turning_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a list of tuples (y, x) which are the values before a turning point
+these are the last points before the function begins decreasing</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.load_sequence">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">load_sequence</code><span class="sig-paren">(</span><em>order</em>, <em>delimiter='</em>, <em>'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#load_sequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.load_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a list of [y, x] pairs (which are length 2 lists)
+throws an assert error if the file does not exist
+takes a integer parameter which specifies which file to load</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.main">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.path_to_sequence_file">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">path_to_sequence_file</code><span class="sig-paren">(</span><em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#path_to_sequence_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.path_to_sequence_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the path to a sequence file associated with the order argument</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.path_to_x_pair_file">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">path_to_x_pair_file</code><span class="sig-paren">(</span><em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#path_to_x_pair_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.path_to_x_pair_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the path to a x_pair file associated with the order argument</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.save_sequence">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">save_sequence</code><span class="sig-paren">(</span><em>order</em>, <em>sequence</em>, <em>fmt='%.18e'</em>, <em>delimiter='</em>, <em>'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#save_sequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.save_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>saves a list of iterables, commonly they are length 2 and contain floats, but the fmt parameter can be changed for flexibility
+pickles them to a file named using the string sequence_filename, in the directory that
+this module is located in</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pibronic.vibronic.orthonormal.sequences.select_pair">
+<code class="descclassname">pibronic.vibronic.orthonormal.sequences.</code><code class="descname">select_pair</code><span class="sig-paren">(</span><em>sequence</em>, <em>tuning_parameter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/vibronic/orthonormal/sequences.html#select_pair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.vibronic.orthonormal.sequences.select_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>holds the logic for selecting a (y, x) pair from the sequence
+that matches the tuning parameter</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="pibronic.html">pibronic package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#pibronic">Pibronic</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="pibronic.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pibronic.data.html">pibronic.data package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.pimc.html">pibronic.pimc package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.plotting.html">pibronic.plotting package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.server.html">pibronic.server package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.stats.html">pibronic.stats package</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="pibronic.vibronic.html">pibronic.vibronic package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.constants">pibronic.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.everything">pibronic.everything module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.helper">pibronic.helper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.julia_wrapper">pibronic.julia_wrapper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.log_conf">pibronic.log_conf module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="pibronic.html">pibronic package</a><ul>
+  <li><a href="pibronic.vibronic.html">pibronic.vibronic package</a><ul>
+      <li>Previous: <a href="pibronic.vibronic.html" title="previous chapter">pibronic.vibronic package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+      |
+      <a href="_sources/pibronic.vibronic.orthonormal.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

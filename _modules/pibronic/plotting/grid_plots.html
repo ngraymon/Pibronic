@@ -1,0 +1,332 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.plotting.grid_plots &#8212; Pibronic 0.3.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.plotting.grid_plots</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; analysis plotting - intensity grid of the parameters of a model&quot;&quot;&quot;</span>
+
+
+<span class="c1"># system imports</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span>
+<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="c1"># import matplotlib as mpl</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">.prepare</span> <span class="k">import</span> <span class="n">prepare_mpl_rc_file</span><span class="p">,</span> <span class="n">load_latex_module_on_server</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_structure</span> <span class="k">as</span> <span class="n">fs</span>
+<span class="kn">from</span> <span class="nn">..vibronic</span> <span class="k">import</span> <span class="n">vIO</span><span class="p">,</span> <span class="n">VMK</span>
+
+<span class="c1"># a useful resource for plotting the heatmaps/grids</span>
+<span class="c1"># https://matplotlib.org/gallery/images_contours_and_fields/image_annotated_heatmap.html#sphx-glr-gallery-images-contours-and-fields-image-annotated-heatmap-py</span>
+
+<span class="c1"># a simple reminder of modifying matplotlib ticks</span>
+<span class="c1"># https://jakevdp.github.io/PythonDataScienceHandbook/04.10-customizing-ticks.html</span>
+
+
+<div class="viewcode-block" id="plotGrids"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids">[docs]</a><span class="k">class</span> <span class="nc">plotGrids</span><span class="p">():</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_FS</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_FS</span><span class="p">,</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">),</span> <span class="s2">&quot;this class only takes 1 FS&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">FS</span> <span class="o">=</span> <span class="n">input_FS</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="plotGrids.load_original_models"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.load_original_models">[docs]</a>    <span class="k">def</span> <span class="nf">load_original_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="o">.</span><span class="n">path_orig_model</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">original_model</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.load_coupled_models"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.load_coupled_models">[docs]</a>    <span class="k">def</span> <span class="nf">load_coupled_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coupled_model</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.prepare_data"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.prepare_data">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; optionally - if we want to modify the data before plotting &quot;&quot;&quot;</span>
+        <span class="c1"># self.original_data = np.array(self.original_model[VMK.E.value])</span>
+        <span class="c1"># self.coupled_data = np.array(self.coupled_model[VMK.E.value])</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.load_data"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.load_data">[docs]</a>    <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_original_models</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_coupled_models</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare_data</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.annotate_intensity_grid"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.annotate_intensity_grid">[docs]</a>    <span class="k">def</span> <span class="nf">annotate_intensity_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; commonly shared code for plotting&quot;&quot;&quot;</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_diagonal_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="p">)</span>
+
+        <span class="c1"># We want 1 tick for each square</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">locator_params</span><span class="p">(</span><span class="n">nbins</span><span class="o">=</span><span class="n">A</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">A</span><span class="o">+</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">A</span><span class="o">+</span><span class="mi">2</span><span class="p">))</span>
+
+        <span class="c1"># Loop over data dimensions and create text annotations.</span>
+        <span class="n">annotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_sign_array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="p">)):</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">annotations</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                           <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
+
+        <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Electronic Surfaces&quot;</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+
+        <span class="c1"># Let the horizontal axes labeling appear on top.</span>
+        <span class="c1"># ax.tick_params(top=False, bottom=False, labeltop=True, labelbottom=False)</span>
+
+        <span class="c1"># Turn spines off and create white grid.</span>
+        <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">spine</span> <span class="ow">in</span> <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">spine</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># plot title</span>
+        <span class="n">plot_title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="n">plot_title</span> <span class="o">+=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Data Set </span><span class="si">{self.FS.id_data:d}</span><span class="s2"> - </span><span class="si">{A:d}</span><span class="s2"> surfaces </span><span class="si">{N:d}</span><span class="s2"> normal modes&quot;</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">plot_title</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.generate_sign_array"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.generate_sign_array">[docs]</a>    <span class="k">def</span> <span class="nf">generate_sign_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">sign_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+        <span class="n">sign_array</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sign</span> <span class="o">==</span> <span class="mf">1.</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span>
+        <span class="n">sign_array</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sign</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+        <span class="n">sign_array</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sign</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span>
+        <span class="k">return</span> <span class="n">sign_array</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_single_energy_grid"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_single_energy_grid">[docs]</a>    <span class="k">def</span> <span class="nf">plot_single_energy_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+        <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;upper&#39;</span><span class="p">)</span>
+        <span class="n">cbar</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+        <span class="n">cbar</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Energy values (eV)&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=-</span><span class="mi">90</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;bottom&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotate_intensity_grid</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+
+        <span class="n">path_out</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_plots</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">path_out</span><span class="p">,</span> <span class="n">transparent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_original_energy_grid"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_original_energy_grid">[docs]</a>    <span class="k">def</span> <span class="nf">plot_original_energy_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Original Energy Grid&#39;</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;original_energy_grid_D</span><span class="si">{:d}</span><span class="s2">.pdf&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="o">.</span><span class="n">id_data</span><span class="p">)</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_model</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_single_energy_grid</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_coupled_energy_grid"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_coupled_energy_grid">[docs]</a>    <span class="k">def</span> <span class="nf">plot_coupled_energy_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Coupled Energy Grid&#39;</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;coupled_energy_grid_D</span><span class="si">{:d}</span><span class="s2">.pdf&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="o">.</span><span class="n">id_data</span><span class="p">)</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coupled_model</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_single_energy_grid</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_energy"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_energy">[docs]</a>    <span class="k">def</span> <span class="nf">plot_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="c1"># necessary for now</span>
+        <span class="n">prepare_mpl_rc_file</span><span class="p">(</span><span class="n">pretty_but_slow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">load_latex_module_on_server</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_original_energy_grid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_coupled_energy_grid</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_single_linear_grid"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_single_linear_grid">[docs]</a>    <span class="k">def</span> <span class="nf">plot_single_linear_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+        <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;upper&#39;</span><span class="p">)</span>
+        <span class="n">cbar</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+        <span class="n">cbar</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Energy values (eV)&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=-</span><span class="mi">90</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;bottom&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotate_intensity_grid</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+
+        <span class="n">path_out</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_plots</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">path_out</span><span class="p">,</span> <span class="n">transparent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_original_linear_grids"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_original_linear_grids">[docs]</a>    <span class="k">def</span> <span class="nf">plot_original_linear_grids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_diagonal_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;Original linear terms Grid (Mode {j+1:d})&quot;</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;original_linear_grid_D</span><span class="si">{self.FS.id_data:d}</span><span class="s2">_N{j+1:d}.pdf&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot_single_linear_grid</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_coupled_linear_grids"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_coupled_linear_grids">[docs]</a>    <span class="k">def</span> <span class="nf">plot_coupled_linear_grids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_diagonal_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;Coupled linear terms Grid (Mode {j+1:d})&quot;</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;coupled_linear_grid_D</span><span class="si">{self.FS.id_data:d}</span><span class="s2">_N{j+1:d}.pdf&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot_single_linear_grid</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_linear_coupling"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_linear_coupling">[docs]</a>    <span class="k">def</span> <span class="nf">plot_linear_coupling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="c1"># necessary for now</span>
+        <span class="n">prepare_mpl_rc_file</span><span class="p">(</span><span class="n">pretty_but_slow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">load_latex_module_on_server</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="o">.</span><span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupled_model</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Linear terms are zero, nothing to plot&quot;</span><span class="p">)</span>
+
+        <span class="n">linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_model</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_original_linear_grids</span><span class="p">(</span><span class="n">linear</span><span class="p">)</span>
+
+        <span class="n">linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coupled_model</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_coupled_linear_grids</span><span class="p">(</span><span class="n">linear</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_single_quadratic_grid"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_single_quadratic_grid">[docs]</a>    <span class="k">def</span> <span class="nf">plot_single_quadratic_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+        <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;upper&#39;</span><span class="p">)</span>
+        <span class="n">cbar</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+        <span class="n">cbar</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Energy values (eV)&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=-</span><span class="mi">90</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;bottom&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotate_intensity_grid</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+
+        <span class="n">path_out</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_plots</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">path_out</span><span class="p">,</span> <span class="n">transparent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_original_quadratic_grids"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_original_quadratic_grids">[docs]</a>    <span class="k">def</span> <span class="nf">plot_original_quadratic_grids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_diagonal_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j1</span><span class="p">,</span>  <span class="n">j2</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)):</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;Original quadratic terms Grid (Modes {j1+1:d}{j2+1:d})&quot;</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;original_quadratic_grid_D</span><span class="si">{self.FS.id_data:d}</span><span class="s2">_N{j1+1:d}_N{j2+1:d}.pdf&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot_single_quadratic_grid</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_coupled_quadratic_grids"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_coupled_quadratic_grids">[docs]</a>    <span class="k">def</span> <span class="nf">plot_coupled_quadratic_grids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_diagonal_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FS</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j1</span><span class="p">,</span>  <span class="n">j2</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)):</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;Coupled quadratic terms Grid (Modes {j1+1:d}{j2+1:d})&quot;</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;coupled_quadratic_grid_D</span><span class="si">{self.FS.id_data:d}</span><span class="s2">_N{j1+1:d}_N{j2+1:d}.pdf&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot_single_quadratic_grid</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">filename</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="plotGrids.plot_quadratic_coupling"><a class="viewcode-back" href="../../../pibronic.plotting.html#pibronic.plotting.grid_plots.plotGrids.plot_quadratic_coupling">[docs]</a>    <span class="k">def</span> <span class="nf">plot_quadratic_coupling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+        <span class="c1"># necessary for now</span>
+        <span class="n">prepare_mpl_rc_file</span><span class="p">(</span><span class="n">pretty_but_slow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">load_latex_module_on_server</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="o">.</span><span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupled_model</span> <span class="ow">or</span> <span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="o">.</span><span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_model</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Linear terms are zero, nothing to plot&quot;</span><span class="p">)</span>
+
+        <span class="n">quadratic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_model</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_original_quadratic_grids</span><span class="p">(</span><span class="n">quadratic</span><span class="p">)</span>
+
+        <span class="n">quadratic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coupled_model</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_coupled_quadratic_grids</span><span class="p">(</span><span class="n">quadratic</span><span class="p">)</span>
+        <span class="k">return</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

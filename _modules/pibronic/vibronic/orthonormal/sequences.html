@@ -1,0 +1,531 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pibronic.vibronic.orthonormal.sequences &#8212; Pibronic 0.3.0 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pibronic.vibronic.orthonormal.sequences</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; this module handles sequences of (y, x) pairs which are used in the creation of orthonormal matrices,</span>
+
+<span class="sd"># TODO - this section is out of date and should probably be modified</span>
+
+<span class="sd">The orthonormal matrices are used to create &#39;artificial&#39; vibronic models (S):</span>
+
+<span class="sd">*  To begin you choose any real square matrix (E), which we can consider the &#39;eigenvalues&#39; of the desired output matrix (S).</span>
+<span class="sd">*  Next a orthonormal matrix (U) is generated, we can consider these the &#39;eigenvectors&#39; of the desired output matrix (S).</span>
+<span class="sd">*  Finally we preform a unitary transformation on (E) using (U) which gives us (S).</span>
+
+<span class="sd">Of importance is how (U) is generated.</span>
+<span class="sd">It would be optimal to have a function g(A, P) which generates an orthonormal matrix (U).</span>
+<span class="sd">The parameter (A) would define the order of (U).</span>
+<span class="sd">The &#39;tuning&#39; parameter (P) would define the &#39;distance&#39; of (U) from the identity matrix of the same order.</span>
+<span class="sd">The function g&#39;s domain, for a fixed (A), would be the reals in [0.0, 1.0] and the range would be a matrix in [Identity, M], where (M) is the &#39;farthest&#39; matrix from Identity.</span>
+<span class="sd">Thus as we increase the value of (P), for a fixed (A), the trace of (U) should decrease and the off-diagonal values should increase.</span>
+<span class="sd">A challenging problem is defining the meaning of &#39;distance&#39; for an arbitrary square matrix?</span>
+<span class="sd">We chose to define the &#39;distance&#39; as the Frobenius norm (AKA matrix norm) of the difference between (U) and Identity:</span>
+<span class="sd">&#39;distance(P)&#39; = ||U(P) - Identity||</span>
+
+<span class="sd">Our first attempt at solving this problem was:</span>
+<span class="sd">*  Generate a random matrix (K) of order A</span>
+<span class="sd">*  Create a skew symmetric matrix S = K - K.T</span>
+<span class="sd">*  Calculate the orthonormal matrix U(P) = expm(P * S)</span>
+
+<span class="sd">However because we randomly generated the matrix (K) this method suffers from periodicity issues.</span>
+<span class="sd">For a matrix of order 2, the &#39;distance&#39; of (U) from Identity is periodic, and the period depends on the matrix (K).</span>
+<span class="sd">It behaves as follows:</span>
+
+<span class="sd">*  P = 0            : U is Identity</span>
+<span class="sd">*  P = period / 4   : U is maximally diagonal and has a trace of 0</span>
+<span class="sd">*  P = period / 2   : U is -Identity and has a trace of -2</span>
+<span class="sd">*  P = 3 period / 4 : U is maximally diagonal and has a trace of 0</span>
+
+<span class="sd">For a matrix of order 3 or higher it is non trivial to determine the period</span>
+
+
+
+<span class="sd">Therefore we have chosen to go with a repeatable solution:</span>
+<span class="sd">Instead of randomly generating the matrix (K) we always choose (K) to be a upper unitriangular matrix of order (A).</span>
+<span class="sd">This allows us to precalculate an estimate of the period of the &#39;distance&#39; of the matrix (U).</span>
+<span class="sd">Our approach to finding the period, for a fixed (A), works as follows:</span>
+
+<span class="sd">*  Generate an upper unitriangular matrix (K) of order A</span>
+<span class="sd">*  Create a skew symmetric matrix S = K - K.T</span>
+<span class="sd">*  Calculate the &#39;distance(x)&#39; = ||U(x) - Identity|| for x in [0, 1E6]</span>
+<span class="sd">*  Plot y=&#39;distance(x)&#39; and visually or algorithmically select a continuous sequence of increasing y values, optimally the sequence begins very close to identity</span>
+<span class="sd">*  This sequence of pairs [(y_{i}, x_{i}) (y_{i+n}, y_{i+n}] is then saved to a file</span>
+
+<span class="sd">For each choice of (A) we can then obtain a sequence which forms the range of the function g(A, P).</span>
+<span class="sd">We restrict the domain of (P) values to be [0.0, 1.0] and choose a mapping of any P &gt; 0.0 to a given pair in the sequence (y, x).</span>
+
+<span class="sd">Thus the code for creating an orthonormal matrix which is used to create an &#39;artificial&#39; vibronic models (S) is:</span>
+
+<span class="sd">*  Generate an upper unitriangular matrix (K) of order A</span>
+<span class="sd">*  Create a skew symmetric matrix S = K - K.T</span>
+<span class="sd">*  If P = 0.0 then U = Identity, otherwise:</span>
+
+<span class="sd">   *  Retrieve a pair (y,x) using the tuning parameter (P)</span>
+<span class="sd">   *  Calculate the orthonormal matrix U = expm(x * S)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># system imports</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">join</span><span class="p">,</span> <span class="n">realpath</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">exists</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">norm</span>
+<span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="k">import</span> <span class="n">expm</span>
+
+<span class="c1"># local imports</span>
+
+
+<span class="n">sequence_filename</span> <span class="o">=</span> <span class="s2">&quot;sequence_</span><span class="si">{:d}</span><span class="s2">.data&quot;</span>
+<span class="n">x_pair_filename</span> <span class="o">=</span> <span class="s2">&quot;sequence_</span><span class="si">{:d}</span><span class="s2">.pairs&quot;</span>
+<span class="n">minimum_length_of_sequence</span> <span class="o">=</span> <span class="mi">50</span>  <span class="c1"># this is a guess at the moment</span>
+
+<span class="c1"># all functions share the same constants and therefore we can load sequences reliably</span>
+<span class="n">n_bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="n">max_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e2</span><span class="p">)</span>
+<span class="n">linspace_dims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_value</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">)</span>
+
+<span class="c1"># use this for passing around x,y pairs</span>
+<span class="n">Pair</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;pair&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="difference_function"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.difference_function">[docs]</a><span class="k">def</span> <span class="nf">difference_function</span><span class="p">(</span><span class="n">skew_symmetric_matrix</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a function which calculates the difference between the unitary matrix, parameterized by alpha, and identity &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">expm</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">skew_symmetric_matrix</span><span class="p">)</span> <span class="o">-</span> <span class="n">identity</span></div>
+
+
+<div class="viewcode-block" id="check_minimum_length_of_sequence"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.check_minimum_length_of_sequence">[docs]</a><span class="k">def</span> <span class="nf">check_minimum_length_of_sequence</span><span class="p">(</span><span class="n">sequence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; asserts that a sequence&#39;s length is &gt; the defined minimum length&quot;&quot;&quot;</span>
+    <span class="n">error_string</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;There are less than </span><span class="si">{minimum_length_of_sequence:}</span><span class="s2"> items in the sequence&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">minimum_length_of_sequence</span><span class="p">,</span> <span class="n">error_string</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="path_to_x_pair_file"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.path_to_x_pair_file">[docs]</a><span class="k">def</span> <span class="nf">path_to_x_pair_file</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns the path to a x_pair file associated with the order argument&quot;&quot;&quot;</span>
+    <span class="n">dir_root</span> <span class="o">=</span> <span class="n">dirname</span><span class="p">(</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">exists</span><span class="p">(</span><span class="n">dir_root</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;module path </span><span class="si">{dir_root:s}</span><span class="s2"> does not exist!?!?&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">dir_root</span><span class="p">,</span> <span class="n">x_pair_filename</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">order</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">path</span></div>
+
+
+<div class="viewcode-block" id="path_to_sequence_file"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.path_to_sequence_file">[docs]</a><span class="k">def</span> <span class="nf">path_to_sequence_file</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns the path to a sequence file associated with the order argument&quot;&quot;&quot;</span>
+    <span class="n">dir_root</span> <span class="o">=</span> <span class="n">dirname</span><span class="p">(</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">exists</span><span class="p">(</span><span class="n">dir_root</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;module path </span><span class="si">{dir_root:s}</span><span class="s2"> does not exist!?!?&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">dir_root</span><span class="p">,</span> <span class="n">sequence_filename</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">order</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">path</span></div>
+
+
+<div class="viewcode-block" id="load_sequence"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.load_sequence">[docs]</a><span class="k">def</span> <span class="nf">load_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a list of [y, x] pairs (which are length 2 lists)</span>
+<span class="sd">    throws an assert error if the file does not exist</span>
+<span class="sd">    takes a integer parameter which specifies which file to load&quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">path_to_sequence_file</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;Sequence </span><span class="si">{path:s}</span><span class="s2"> is not a valid file!?&quot;</span>
+    <span class="n">sequence</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sequence</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="save_sequence"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.save_sequence">[docs]</a><span class="k">def</span> <span class="nf">save_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.18e</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; saves a list of iterables, commonly they are length 2 and contain floats, but the fmt parameter can be changed for flexibility</span>
+<span class="sd">    pickles them to a file named using the string sequence_filename, in the directory that</span>
+<span class="sd">    this module is located in&quot;&quot;&quot;</span>
+    <span class="n">check_minimum_length_of_sequence</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">path_to_sequence_file</span><span class="p">(</span><span class="n">order</span><span class="p">),</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="n">fmt</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="select_pair"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.select_pair">[docs]</a><span class="k">def</span> <span class="nf">select_pair</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">tuning_parameter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; holds the logic for selecting a (y, x) pair from the sequence</span>
+<span class="sd">    that matches the tuning parameter&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">tuning_parameter</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;The tuning parameter is restricted to [0.0, 1.0]&quot;</span>
+
+    <span class="n">max_y_value</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">desired_y_value</span> <span class="o">=</span> <span class="n">max_y_value</span> <span class="o">*</span> <span class="n">tuning_parameter</span>
+
+    <span class="k">if</span> <span class="n">tuning_parameter</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Pair</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">tuning_parameter</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Pair</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sequence</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">desired_y_value</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Pair</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c1"># if the current &#39;pair&#39; has a larger y value, select the last pair</span>
+        <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">desired_y_value</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Pair</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">sequence</span><span class="p">[</span><span class="n">idx</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">sequence</span><span class="p">[</span><span class="n">idx</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;We couldn&#39;t find an appropriate pair!!&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="build_SKSM_and_identity"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.build_SKSM_and_identity">[docs]</a><span class="k">def</span> <span class="nf">build_SKSM_and_identity</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns the skew symmetric matrix and identity matrix for the given matrix order</span>
+<span class="sd">    this is code that was factored out of other functions &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">order</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;order must be integer value greater than 0&quot;</span>
+
+    <span class="c1"># we choose to always use an upper unitriangular matrix</span>
+    <span class="n">upper_tri</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tri</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">skew_symmetric_matrix</span> <span class="o">=</span> <span class="n">upper_tri</span> <span class="o">-</span> <span class="n">upper_tri</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">identity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">skew_symmetric_matrix</span><span class="p">,</span> <span class="n">identity</span></div>
+
+
+<div class="viewcode-block" id="find_first_turn_around_point"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.find_first_turn_around_point">[docs]</a><span class="k">def</span> <span class="nf">find_first_turn_around_point</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; return a tuple (y, x) which are the values before the first turn around point &quot;&quot;&quot;</span>
+
+    <span class="n">old_distance</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">old_x</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">*</span><span class="n">linspace_dims</span><span class="p">):</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">expm</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">SKSM</span><span class="p">)</span> <span class="o">-</span> <span class="n">identity</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">old_distance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">old_distance</span> <span class="o">&gt;</span> <span class="n">distance</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;we found the turn around point from values</span><span class="se">\n</span><span class="s2">&quot;</span>
+                  <span class="n">f</span><span class="s2">&quot;(</span><span class="si">{old_distance:}</span><span class="s2">,</span><span class="si">{old_x}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">to</span><span class="se">\n</span><span class="s2">(</span><span class="si">{distance}</span><span class="s2">,</span><span class="si">{x}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">break</span>
+        <span class="n">old_distance</span> <span class="o">=</span> <span class="n">distance</span>
+        <span class="n">old_x</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;oh no things went wrong, everything is on fire!!!!&quot;</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">old_distance</span><span class="p">,</span> <span class="n">old_x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_monotonic_sequence_to_first_turn_around"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.generate_monotonic_sequence_to_first_turn_around">[docs]</a><span class="k">def</span> <span class="nf">generate_monotonic_sequence_to_first_turn_around</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; generates a sequence of the frobenius norm to the first turn around point</span>
+<span class="sd">    which will be used when generating new matrices&quot;&quot;&quot;</span>
+    <span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span> <span class="o">=</span> <span class="n">build_SKSM_and_identity</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+    <span class="n">max_distance</span><span class="p">,</span> <span class="n">max_x</span> <span class="o">=</span> <span class="n">find_first_turn_around_point</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+    <span class="c1"># the first turn around point is when the matrix wraps back around to -Identity so we want half that distance</span>
+
+    <span class="n">end_point</span> <span class="o">=</span> <span class="n">max_x</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">difference_function</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+    <span class="n">frobenius_norm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+    <span class="n">sequence</span> <span class="o">=</span> <span class="p">[(</span><span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">)]</span>
+
+    <span class="n">save_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">sequence</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="generate_and_save_x_pairs"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.generate_and_save_x_pairs">[docs]</a><span class="k">def</span> <span class="nf">generate_and_save_x_pairs</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">p_list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; generates and saves a list of tuples (containing 2 floats)</span>
+<span class="sd">    the 2 floats are lower and upper bounds on acceptable x values to use in generating a monotonic sequence</span>
+<span class="sd">    saves them to a file named using the string x_pair_filename, in the directory that</span>
+<span class="sd">    this module is located in&quot;&quot;&quot;</span>
+    <span class="n">x_pairs</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">p_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="p">]</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_list</span><span class="p">),</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">x_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">p_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">p_list</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+
+    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">path_to_x_pair_file</span><span class="p">(</span><span class="n">order</span><span class="p">),</span> <span class="n">x_pairs</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.18e</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x_pairs</span></div>
+
+
+<div class="viewcode-block" id="list_of_turning_points"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.list_of_turning_points">[docs]</a><span class="k">def</span> <span class="nf">list_of_turning_points</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; return a list of tuples (y, x) which are the values before a turning point</span>
+<span class="sd">    these are the last points before the function begins decreasing &quot;&quot;&quot;</span>
+
+    <span class="n">descending</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">previous_turn_around</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">old_distance</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">old_x</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="n">xy_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">difference_function</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+    <span class="n">frobenius_norm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">*</span><span class="n">linspace_dims</span><span class="p">):</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">descending</span> <span class="ow">and</span> <span class="n">old_distance</span> <span class="o">&gt;</span> <span class="n">distance</span><span class="p">:</span>
+            <span class="n">xy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pair</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">old_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">old_distance</span><span class="p">))</span>
+            <span class="n">previous_turn_around</span> <span class="o">=</span> <span class="n">old_distance</span>
+            <span class="n">descending</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">elif</span> <span class="n">descending</span> <span class="ow">and</span> <span class="n">previous_turn_around</span> <span class="o">&lt;=</span> <span class="n">distance</span><span class="p">:</span>
+            <span class="n">xy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pair</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">distance</span><span class="p">))</span>
+            <span class="n">descending</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">old_distance</span> <span class="o">=</span> <span class="n">distance</span>
+        <span class="n">old_x</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">return</span> <span class="n">xy_list</span></div>
+
+
+<div class="viewcode-block" id="generate_full_monotonic_sequence"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.generate_full_monotonic_sequence">[docs]</a><span class="k">def</span> <span class="nf">generate_full_monotonic_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; saves two files, sequence_#.data and sequence_#.pairs</span>
+<span class="sd">    sequence_#.pairs are the x pairs representing sequences where the frobenius norm is monotonic</span>
+<span class="sd">    sequence_#.data is a list of x, y values</span>
+<span class="sd">    this sequence is discontinuous and built up of x&quot;&quot;&quot;</span>
+    <span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span> <span class="o">=</span> <span class="n">build_SKSM_and_identity</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+    <span class="c1"># the list of turning points allows us to select increasing x,y pairs</span>
+    <span class="n">p_list</span> <span class="o">=</span> <span class="n">list_of_turning_points</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+
+    <span class="c1"># we generate the x pairs and save them to a file</span>
+    <span class="n">x_pairs</span> <span class="o">=</span> <span class="n">generate_and_save_x_pairs</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">p_list</span><span class="p">)</span>
+
+    <span class="c1"># the period is from (0, max_x) and (0, max_y)</span>
+    <span class="n">numerical_max_y</span> <span class="o">=</span> <span class="n">p_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span>
+    <span class="n">numerical_max_x</span> <span class="o">=</span> <span class="n">p_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="c1"># the analytical value for the maximum y is 2 * sqrt(order)</span>
+    <span class="n">analytical_max_y</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+    <span class="n">analytical_max_x</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># we can&#39;t know this value ahead of time!</span>
+
+    <span class="c1"># we choose to use the analytical option as our maximum y value</span>
+    <span class="n">analytical</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">max_y</span> <span class="o">=</span> <span class="n">analytical_max_y</span> <span class="k">if</span> <span class="n">analytical</span> <span class="k">else</span> <span class="n">p_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span>
+
+    <span class="c1"># the tuning parameter which gives the &#39;maximally entangling&#39; U matrix is 1/4 of the period</span>
+    <span class="n">best_y</span> <span class="o">=</span> <span class="n">max_y</span> <span class="o">/</span> <span class="mf">4.</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">difference_function</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+    <span class="n">frobenius_norm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+
+    <span class="c1"># we find the closest x value to get us that 1/4 of the period</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">numerical_max_x</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">best_y</span><span class="p">:</span>
+            <span class="n">best_x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">step</span>  <span class="c1"># just to make sure we don&#39;t overshoot</span>
+            <span class="n">new_best_y</span> <span class="o">=</span> <span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">best_x</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="n">new_best_y</span> <span class="o">&lt;=</span> <span class="n">best_y</span><span class="p">,</span> <span class="s2">&quot;Our new y is larger than the y we wanted to find?!&quot;</span>
+            <span class="k">break</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;All of the y values were less than 1/4 the largest y value?!?&quot;</span><span class="p">)</span>
+
+    <span class="c1"># first we calculate the full sequence</span>
+    <span class="n">full_sequence</span> <span class="o">=</span> <span class="p">[(</span><span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">best_x</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">)]</span>
+
+    <span class="c1"># then we prune off the data points that are between the discontinuities in our sequence</span>
+    <span class="n">pruned_sequence</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x_pair</span> <span class="ow">in</span> <span class="n">x_pairs</span><span class="p">:</span>
+        <span class="n">pruned_sequence</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">x_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">full_sequence</span><span class="p">))</span>
+
+    <span class="sd">&quot;&quot;&quot; testing has shown that the sequences are always inside the first monotonic sequence of the matrix&#39;s period as indicated by the pruned sequence having the same length as the full_sequence, none of the elements in the full_sequence are in a region of decreasing value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">full_sequence</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">pruned_sequence</span><span class="p">))</span>
+
+    <span class="n">save_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">pruned_sequence</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="generate_full_monotonic_sequence_for_plotting"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.generate_full_monotonic_sequence_for_plotting">[docs]</a><span class="k">def</span> <span class="nf">generate_full_monotonic_sequence_for_plotting</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; generates one data file for plotting with gnuplot &quot;&quot;&quot;</span>
+
+    <span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span> <span class="o">=</span> <span class="n">build_SKSM_and_identity</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+    <span class="n">p_list</span> <span class="o">=</span> <span class="n">list_of_turning_points</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+
+    <span class="c1"># first we generate the x pairs and save them to a file</span>
+    <span class="n">x_pairs</span> <span class="o">=</span> <span class="n">generate_and_save_x_pairs</span><span class="p">(</span><span class="n">p_list</span><span class="p">)</span>
+    <span class="n">max_x</span> <span class="o">=</span> <span class="n">p_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">difference_function</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+    <span class="n">frobenius_norm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+
+    <span class="c1"># first we calculate the full sequence</span>
+    <span class="n">full_sequence</span> <span class="o">=</span> <span class="p">[(</span><span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">)]</span>
+
+    <span class="c1"># then we prune off the data points that are between the discontinuities in our sequence</span>
+    <span class="n">pruned_sequence</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x_pair</span> <span class="ow">in</span> <span class="n">x_pairs</span><span class="p">:</span>
+        <span class="n">pruned_sequence</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">x_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">full_sequence</span><span class="p">))</span>
+
+    <span class="c1"># we create a sequence with None&#39;s where we don&#39;t want to plot points</span>
+    <span class="n">pruned_y_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">full_sequence</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pruned_sequence</span><span class="p">:</span>
+            <span class="n">pruned_y_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pruned_y_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">sequence</span> <span class="o">=</span> <span class="p">[(</span>
+                <span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+                <span class="n">pruned_y_values</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">))]</span>
+
+    <span class="n">save_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.18e</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%.18e</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="generate_turning_point_sequence_for_plotting"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.generate_turning_point_sequence_for_plotting">[docs]</a><span class="k">def</span> <span class="nf">generate_turning_point_sequence_for_plotting</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this generates two sequences, the frobenius norm and the &#39;turning points&#39; for plotting to visually confirm that those data points can be used to generate a monotonic sequence of x,y pairs which can be used to generate increasingly coupled matrices&quot;&quot;&quot;</span>
+
+    <span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span> <span class="o">=</span> <span class="n">build_SKSM_and_identity</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+    <span class="n">p_list</span> <span class="o">=</span> <span class="n">list_of_turning_points</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+    <span class="n">turning_points</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">*</span><span class="n">linspace_dims</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">):</span>
+            <span class="n">turning_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">p_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">turning_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">difference_function</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+    <span class="n">frobenius_norm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+
+    <span class="n">sequence</span> <span class="o">=</span> <span class="p">[(</span>
+                <span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+                <span class="n">turning_points</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">*</span><span class="n">linspace_dims</span><span class="p">))]</span>
+
+    <span class="n">save_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.18e</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%.18e</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="generate_sequences_for_plotting"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.generate_sequences_for_plotting">[docs]</a><span class="k">def</span> <span class="nf">generate_sequences_for_plotting</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this generates sequences of the 1,2 and infinity norm&#39;s of the difference between identity and the skew symmetric matrix</span>
+<span class="sd">    this provides data that can be plotted to analyze the periodic behaviour of the norm&#39;s for different size of matrices&quot;&quot;&quot;</span>
+
+    <span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span> <span class="o">=</span> <span class="n">build_SKSM_and_identity</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+    <span class="c1"># if we diagonalize the skew_symmetric_matrix can we re-calculate the matrix exponential easily?</span>
+    <span class="c1"># it seems we can&#39;t treat it as a symmetric matrix? they numpy methods use either the upper or lower triangle, which would be incorrect</span>
+
+    <span class="c1"># the three types of norms that we calculate</span>
+    <span class="n">one_norm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">frobenius_norm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+    <span class="n">infinity_norm</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">difference_function</span><span class="p">(</span><span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+
+    <span class="n">sequence</span> <span class="o">=</span> <span class="p">[(</span>
+                <span class="n">one_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+                <span class="n">frobenius_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+                <span class="n">infinity_norm</span><span class="p">(</span><span class="n">diff</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">*</span><span class="n">linspace_dims</span><span class="p">)]</span>
+
+    <span class="n">save_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.18e</span><span class="s2">, </span><span class="si">%.18e</span><span class="s2">, </span><span class="si">%.18e</span><span class="s2">, </span><span class="si">%.18e</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="debugging_matrix_checking_function"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.debugging_matrix_checking_function">[docs]</a><span class="k">def</span> <span class="nf">debugging_matrix_checking_function</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; for quick checking of the unitary transformation matrix which is generated using the sequence over a sample of lambda values&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">SKSM</span><span class="p">,</span> <span class="n">identity</span> <span class="o">=</span> <span class="n">build_SKSM_and_identity</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+    <span class="n">sequence</span> <span class="o">=</span> <span class="n">load_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]:</span>
+        <span class="n">pair</span> <span class="o">=</span> <span class="n">select_pair</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">expm</span><span class="p">(</span><span class="n">pair</span><span class="o">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">SKSM</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;The tuning parameter (</span><span class="si">{x:}</span><span class="s2">) gives &quot;</span><span class="p">,</span> <span class="n">pair</span><span class="p">,</span> <span class="s2">&quot;and mat</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mat</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../../pibronic.vibronic.orthonormal.html#pibronic.vibronic.orthonormal.sequences.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">generate_full_monotonic_sequence</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Finished generating a sequence of order </span><span class="si">{order:}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="p">(</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">):</span>
+    <span class="n">main</span><span class="p">()</span>
+    <span class="c1"># debugging_matrix_checking_function()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Neil Raymond.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

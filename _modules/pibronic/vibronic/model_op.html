@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.vibronic.model_op &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.vibronic.model_op &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -54,14 +54,14 @@
 
 <div class="viewcode-block" id="extract_energies"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_energies">[docs]</a><span class="k">def</span> <span class="nf">extract_energies</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="c1"># find the begining and ending of the important region</span>
-    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
-    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Electronic Hamitonian&#39;</span>
+    <span class="c1"># find the beginning and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the beginning of the file</span>
+    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Electronic Hamitonian&#39;</span>  <span class="c1"># NOTE - THIS IS NOT A SPELLING ERROR (Hamitonian)</span>
     <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
     <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Electronic transition moments&#39;</span>
     <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
 
-    <span class="c1"># go to the begining of that region</span>
+    <span class="c1"># go to the beginning of that region</span>
     <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
 
     <span class="c1"># skip the header</span>
@@ -78,7 +78,7 @@
     <span class="n">numStates</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
     <span class="n">States</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">numStates</span><span class="p">)</span>
 
-    <span class="c1"># save the reference hamiltonian into the energies array</span>
+    <span class="c1"># save the reference Hamiltonian into the energies array</span>
     <span class="n">energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">numStates</span><span class="p">,</span> <span class="n">numStates</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">States</span><span class="p">:</span>
         <span class="n">list_of_words</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
@@ -91,14 +91,14 @@
 
 <div class="viewcode-block" id="extract_normal_mode_frequencies"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_normal_mode_frequencies">[docs]</a><span class="k">def</span> <span class="nf">extract_normal_mode_frequencies</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;store output in frequency_array&quot;&quot;&quot;</span>
-    <span class="c1"># find the begining and ending of the important region</span>
-    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="c1"># find the beginning and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the beginning of the file</span>
     <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Frequencies&#39;</span>
     <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
     <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Zeropoint energy&#39;</span>
     <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
 
-    <span class="c1"># go to the begining of that region</span>
+    <span class="c1"># go to the beginning of that region</span>
     <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
 
     <span class="c1"># skip headers</span>
@@ -128,14 +128,14 @@
 
 <div class="viewcode-block" id="extract_linear_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_linear_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_linear_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="c1"># find the begining and ending of the important region</span>
-    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
+    <span class="c1"># find the beginning and ending of the important region</span>
+    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the beginning of the file</span>
     <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Linear Coupling Constants&#39;</span>
     <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
     <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Diagonal Quadratic Coupling Constants&#39;</span>
     <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
 
-    <span class="c1"># go to the begining of that region</span>
+    <span class="c1"># go to the beginning of that region</span>
     <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
 
     <span class="c1"># skip headers</span>
@@ -159,14 +159,18 @@
 
 <div class="viewcode-block" id="extract_quadratic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_quadratic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_quadratic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="c1"># find the begining and ending of the important region</span>
-    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
-    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Diagonal Quadratic Coupling Constants&#39;</span>
-    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
-    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Cubic Coupling Constants&#39;</span>
-    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># find the beginning and ending of the important region</span>
+        <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the beginning of the file</span>
+        <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Diagonal Quadratic Coupling Constants&#39;</span>
+        <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+        <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Cubic Coupling Constants&#39;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t find Quadratic couplings&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
 
-    <span class="c1"># go to the begining of that region</span>
+    <span class="c1"># go to the beginning of that region</span>
     <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
 
     <span class="c1"># skip headers</span>
@@ -190,14 +194,18 @@
 
 <div class="viewcode-block" id="extract_cubic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_cubic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_cubic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="c1"># find the begining and ending of the important region</span>
-    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
-    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Cubic Coupling Constants&#39;</span>
-    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
-    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Quartic Coupling Constants&#39;</span>
-    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># find the beginning and ending of the important region</span>
+        <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the beginning of the file</span>
+        <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Cubic Coupling Constants&#39;</span>
+        <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+        <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Quartic Coupling Constants&#39;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t find Cubic couplings&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
 
-    <span class="c1"># go to the begining of that region</span>
+    <span class="c1"># go to the beginning of that region</span>
     <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
 
     <span class="c1"># skip headers</span>
@@ -221,14 +229,18 @@
 
 <div class="viewcode-block" id="extract_bicubic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_bicubic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_bicubic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="c1"># find the begining and ending of the important region</span>
-    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
-    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Cubic Constants&#39;</span>
-    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
-    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Quartic Constants&#39;</span>
-    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># find the beginning and ending of the important region</span>
+        <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the beginning of the file</span>
+        <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Cubic Constants&#39;</span>
+        <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+        <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Quartic Constants&#39;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t find biCubic couplings&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
 
-    <span class="c1"># go to the begining of that region</span>
+    <span class="c1"># go to the beginning of that region</span>
     <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
 
     <span class="c1"># skip headers</span>
@@ -253,14 +265,20 @@
 
 <div class="viewcode-block" id="extract_quartic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_quartic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_quartic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="c1"># find the begining and ending of the important region</span>
-    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
-    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Quartic Coupling Constants&#39;</span>
-    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
-    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Cubic Constants&#39;</span>
-    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># find the beginning and ending of the important region</span>
+        <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the beginning of the file</span>
+        <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Quartic Coupling Constants&#39;</span>
+        <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+        <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Cubic Constants&#39;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t find Quartic couplings&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
 
-    <span class="c1"># go to the begining of that region</span>
+
+
+    <span class="c1"># go to the beginning of that region</span>
     <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
 
     <span class="c1"># skip headers</span>
@@ -284,14 +302,18 @@
 
 <div class="viewcode-block" id="extract_biquartic_couplings"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.extract_biquartic_couplings">[docs]</a><span class="k">def</span> <span class="nf">extract_biquartic_couplings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">memmap</span><span class="p">,</span> <span class="n">coupling_terms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="c1"># find the begining and ending of the important region</span>
-    <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the begining of the file</span>
-    <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Quartic Constants&#39;</span>
-    <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
-    <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;end-parameter-section&#39;</span>
-    <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># find the beginning and ending of the important region</span>
+        <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># start looking from the beginning of the file</span>
+        <span class="n">beginString</span> <span class="o">=</span> <span class="s1">&#39;Bi-Quartic Constants&#39;</span>
+        <span class="n">begin</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">beginString</span><span class="p">)</span>
+        <span class="n">endString</span> <span class="o">=</span> <span class="s1">&#39;end-parameter-section&#39;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">helper</span><span class="o">.</span><span class="n">find_string_in_file</span><span class="p">(</span><span class="n">memmap</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">endString</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t find biQuadratic couplings&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
 
-    <span class="c1"># go to the begining of that region</span>
+    <span class="c1"># go to the beginning of that region</span>
     <span class="n">memmap</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
 
     <span class="c1"># skip headers</span>
@@ -325,7 +347,7 @@
 <div class="viewcode-block" id="read_model_op_file"><a class="viewcode-back" href="../../../pibronic.vibronic.html#pibronic.vibronic.model_op.read_model_op_file">[docs]</a><span class="k">def</span> <span class="nf">read_model_op_file</span><span class="p">(</span><span class="n">path_file_op</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;reads/parses molecule_vibron.op file&quot;&quot;&quot;</span>
 
-    <span class="c1"># declare the arrays used to store the model&#39;s paramters</span>
+    <span class="c1"># declare the arrays used to store the model&#39;s parameters</span>
     <span class="c1"># all numbers have units of electron volts</span>
     <span class="n">excitation_energies</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">frequencies</span> <span class="o">=</span> <span class="kc">None</span>
@@ -396,7 +418,7 @@
         <span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         <span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">quartic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
 
-    <span class="c1"># don&#39;t overcount the diagonals</span>
+    <span class="c1"># don&#39;t over count the diagonals</span>
     <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">States</span><span class="p">:</span>
         <span class="n">linear_couplings</span><span class="p">[:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span> <span class="o">/=</span> <span class="mf">2.</span>
         <span class="n">quadratic_couplings</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span> <span class="o">/=</span> <span class="mf">2.</span>
@@ -439,7 +461,23 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
@@ -468,7 +506,7 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>

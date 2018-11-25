@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Pibronic &#8212; Pibronic 0.1.2 documentation</title>
+    <title>Pibronic &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
    
@@ -50,25 +50,24 @@
 <li class="toctree-l3"><a class="reference internal" href="pibronic.pimc.html">pibronic.pimc package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.pimc.html#scripts-that-run-the-pimc-code">Scripts that run the PIMC code</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.pimc.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pibronic.pimc.html#module-pibronic.pimc.pigsmc">pibronic.pimc.pigsmc module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.pimc.html#module-pibronic.pimc.pimc">pibronic.pimc.pimc module</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pibronic.plotting.html">pibronic.plotting package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.plotting.html#scripts-involved-in-plotting-information">Scripts involved in plotting information</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.plotting.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pibronic.plotting.html#module-pibronic.plotting.grid_plots">pibronic.plotting.grid_plots module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.plotting.html#module-pibronic.plotting.plotting">pibronic.plotting.plotting module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pibronic.plotting.html#module-pibronic.plotting.prepare">pibronic.plotting.prepare module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pibronic.plotting.html#module-pibronic.plotting.virtual">pibronic.plotting.virtual module</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pibronic.server.html">pibronic.server package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#scripts-related-to-communicating-with-server">Scripts related to communicating with server</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#module-pibronic.server.job_boss">pibronic.server.job_boss module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#module-pibronic.server.pimc">pibronic.server.pimc module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#module-pibronic.server.pimc_array_dispatcher">pibronic.server.pimc_array_dispatcher module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#module-pibronic.server.pimc_job_dispatcher">pibronic.server.pimc_job_dispatcher module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#module-pibronic.server.rho_job_dispatcher">pibronic.server.rho_job_dispatcher module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#module-pibronic.server.server">pibronic.server.server module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pibronic.server.html#module-pibronic.server.trotter_job_dispatcher">pibronic.server.trotter_job_dispatcher module</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pibronic.stats.html">pibronic.stats package</a><ul>
@@ -80,6 +79,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pibronic.vibronic.html">pibronic.vibronic package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.vibronic.html#scripts-that-handle-data">Scripts that handle data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pibronic.vibronic.html#subpackages">Subpackages</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.vibronic.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.vibronic.html#module-pibronic.vibronic.electronic_structure">pibronic.vibronic.electronic_structure module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pibronic.vibronic.html#module-pibronic.vibronic.model_auto">pibronic.vibronic.model_auto module</a></li>
@@ -109,20 +109,29 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   </ul></li>
 </ul>
 </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/modules.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <div class="searchformwrapper">
@@ -143,7 +152,7 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |

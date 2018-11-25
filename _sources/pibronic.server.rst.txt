@@ -1,6 +1,11 @@
 pibronic.server package
 =======================
 
+.. automodule:: pibronic.server
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -12,19 +17,12 @@ pibronic.server.job\_boss module
     :undoc-members:
     :show-inheritance:
 
-pibronic.server.pimc\_array\_dispatcher module
-----------------------------------------------
+pibronic.server.server module
+-----------------------------
 
-.. automodule:: pibronic.server.pimc_array_dispatcher
+.. automodule:: pibronic.server.server
     :members:
     :undoc-members:
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: pibronic.server
-    :members:
-    :undoc-members:
-    :show-inheritance:

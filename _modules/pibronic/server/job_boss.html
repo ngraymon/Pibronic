@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.server.job_boss &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.server.job_boss &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -38,8 +38,6 @@
 
 <span class="c1"># system imports</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
-<span class="kn">from</span> <span class="nn">subprocess</span> <span class="k">import</span> <span class="n">Popen</span>
-<span class="c1"># from subprocess import TimeoutExpired</span>
 <span class="kn">import</span> <span class="nn">threading</span>
 <span class="kn">import</span> <span class="nn">socket</span>
 <span class="kn">import</span> <span class="nn">signal</span>
@@ -61,10 +59,48 @@
 <span class="n">job_state_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
 <span class="n">job_almost_done_flag</span> <span class="o">=</span> <span class="kc">False</span>
 
-<span class="c1"># this should go in the param_dict</span>
-<span class="n">hostname</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span>
 <span class="c1"># this should be redone</span>
-<span class="n">partition</span> <span class="o">=</span> <span class="s1">&#39;highmem&#39;</span> <span class="k">if</span> <span class="n">hostname</span> <span class="o">==</span> <span class="s1">&#39;feynman&#39;</span> <span class="k">else</span> <span class="s1">&#39;serial&#39;</span>
+<span class="c1"># partition = &#39;highmem&#39; if hostname == &#39;feynman&#39; else &#39;serial&#39;</span>
+
+
+<div class="viewcode-block" id="get_path_to_python_executable"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.get_path_to_python_executable">[docs]</a><span class="k">def</span> <span class="nf">get_path_to_python_executable</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;returns the absolute path to the python executable currently executing this script&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_path_of_job_boss_directory"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.get_path_of_job_boss_directory">[docs]</a><span class="k">def</span> <span class="nf">get_path_of_job_boss_directory</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;returns the absolute path to the directory holding job_boss.py &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="subprocess_submit_asynch_wrapper"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.subprocess_submit_asynch_wrapper">[docs]</a><span class="k">def</span> <span class="nf">subprocess_submit_asynch_wrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper for subprocess.Popen function to allow for different implementation for different python versions&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="subprocess_run_wrapper"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.subprocess_run_wrapper">[docs]</a><span class="k">def</span> <span class="nf">subprocess_run_wrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper for subprocess.run function to allow for different implementation for different python versions&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_hostname"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.get_hostname">[docs]</a><span class="k">def</span> <span class="nf">get_hostname</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;returns the hostname of the cluster of the server (from SLURM) as a string&quot;&quot;&quot;</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;scontrol&#39;</span><span class="p">,</span> <span class="s1">&#39;show&#39;</span><span class="p">,</span> <span class="s1">&#39;config&#39;</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_run_wrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">&quot;ClusterName&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Did not find ClusterName in the config data from scontrol!?&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SIGUSR1_handle"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.SIGUSR1_handle">[docs]</a><span class="k">def</span> <span class="nf">SIGUSR1_handle</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
@@ -72,7 +108,7 @@
     <span class="k">global</span> <span class="n">job_almost_done_flag</span>
     <span class="n">log</span><span class="o">.</span><span class="n">lock</span><span class="p">(</span><span class="s2">&quot;I got the signal&quot;</span><span class="p">)</span>
 
-    <span class="c1"># attempt to aquire the lock</span>
+    <span class="c1"># attempt to acquire the lock</span>
     <span class="k">if</span> <span class="n">job_state_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">log</span><span class="o">.</span><span class="n">lock</span><span class="p">(</span><span class="s2">&quot;I was able to acquire the lock&quot;</span><span class="p">)</span>
         <span class="n">job_almost_done_flag</span> <span class="o">=</span> <span class="p">(</span><span class="n">signum</span> <span class="o">==</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">)</span>
@@ -87,21 +123,21 @@
 
 <div class="viewcode-block" id="check_acct_state"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.check_acct_state">[docs]</a><span class="k">def</span> <span class="nf">check_acct_state</span><span class="p">(</span><span class="n">id_job</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;returns the recorded state of the job (from SLURM) as a string&quot;&quot;&quot;</span>
-    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;/usr/bin/sacct&#39;</span><span class="p">,</span> <span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;state&#39;</span><span class="p">,</span> <span class="s1">&#39;-j&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">id_job</span><span class="p">)]</span>
-    <span class="n">capture_object</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">capture_object</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span></div>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sacct&#39;</span><span class="p">,</span> <span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;state&#39;</span><span class="p">,</span> <span class="s1">&#39;-j&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">id_job</span><span class="p">)]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_run_wrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span></div>
 
 
 <div class="viewcode-block" id="check_running_state"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.check_running_state">[docs]</a><span class="k">def</span> <span class="nf">check_running_state</span><span class="p">(</span><span class="n">id_job</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;returns the running state of the job (from SLURM) as a string&quot;&quot;&quot;</span>
-    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;/usr/bin/scontrol&#39;</span><span class="p">,</span> <span class="s1">&#39;show&#39;</span><span class="p">,</span> <span class="s1">&#39;job&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">id_job</span><span class="p">)]</span>
-    <span class="n">capture_object</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">capture_object</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span> <span class="n">capture_object</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span></div>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;scontrol&#39;</span><span class="p">,</span> <span class="s1">&#39;show&#39;</span><span class="p">,</span> <span class="s1">&#39;job&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">id_job</span><span class="p">)]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_run_wrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">stderr</span></div>
 
 
 <div class="viewcode-block" id="synchronize_with_job"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.synchronize_with_job">[docs]</a><span class="k">def</span> <span class="nf">synchronize_with_job</span><span class="p">(</span><span class="n">id_job</span><span class="p">,</span> <span class="n">job_type</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;synchronizes with a submitted job &quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">lock</span><span class="p">(</span><span class="s2">&quot;Synchronizing with job (id=</span><span class="si">{:}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_job</span><span class="p">))</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">lock</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Synchronizing with job (id=</span><span class="si">{id_job:}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
     <span class="c1"># if the job is in the queue wait for the signal</span>
     <span class="n">out</span><span class="p">,</span> <span class="n">error_state</span> <span class="o">=</span> <span class="n">check_running_state</span><span class="p">(</span><span class="n">id_job</span><span class="p">)</span>
@@ -110,14 +146,13 @@
         <span class="k">with</span> <span class="n">job_state_lock</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">job_almost_done_flag</span><span class="p">:</span>
                 <span class="c1"># wait for the signal or the alarm</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">lock</span><span class="p">(</span><span class="s2">&quot;Waiting on </span><span class="se">\&#39;</span><span class="si">{:s}</span><span class="se">\&#39;</span><span class="s2"> job (id=</span><span class="si">{:}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">job_type</span><span class="p">,</span> <span class="n">id_job</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">lock</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Waiting on </span><span class="se">\&#39;</span><span class="si">{job_type:s}</span><span class="se">\&#39;</span><span class="s2"> job (id=</span><span class="si">{id_job:}</span><span class="s2">)&quot;</span><span class="p">)</span>
                 <span class="n">signal</span><span class="o">.</span><span class="n">sigwait</span><span class="p">([</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGALRM</span><span class="p">])</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">lock</span><span class="p">(</span><span class="s2">&quot;Woke up&quot;</span><span class="p">)</span>
 
             <span class="n">log</span><span class="o">.</span><span class="n">lock</span><span class="p">(</span><span class="s2">&quot;About to leave the critical section&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Undefined behaviour, the job state was:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{:s}</span><span class="s2">&quot;</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_state</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Undefined behaviour, the job state was:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{error_state:s}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Wait until the job&#39;s state file reflects a successful execution, or an error with execution</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
@@ -133,10 +168,9 @@
         <span class="k">elif</span> <span class="n">error_state</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 
-        <span class="c1"># if the error_state from scontrol is not empty then some undefined behaviour occured</span>
+        <span class="c1"># if the error_state from scontrol is not empty then some undefined behaviour occurred</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Undefined behaviour, the job state was:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{:s}</span><span class="s2">&quot;</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_state</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Undefined behaviour, the job state was:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{error_state:s}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span></div>
 
 
@@ -146,29 +180,37 @@
     <span class="c1"># sanity check - sleep so that we are sure slurm has finished writing the output file</span>
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 
-    <span class="n">slurm_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="s2">&quot;slurm-</span><span class="si">{:d}</span><span class="s2">.out&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_job</span><span class="p">))</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Checking slurm &quot;</span> <span class="o">+</span> <span class="n">slurm_path</span><span class="p">)</span>
+    <span class="n">slurm_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;slurm-</span><span class="si">{id_job:d}</span><span class="s2">.out&quot;</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Checking slurm output:</span><span class="se">\n</span><span class="si">{slurm_path:}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">slurm_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">source_file</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;Finished&quot;</span> <span class="ow">in</span> <span class="n">source_file</span><span class="p">):</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;We got here too early?&quot;</span><span class="p">)</span>  <span class="c1"># should this be an exception?</span>
 
         <span class="k">elif</span> <span class="s2">&quot;SIGSEGV&quot;</span> <span class="ow">in</span> <span class="n">source_file</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Job </span><span class="si">{:d}</span><span class="s2"> had a Segmentation fault, see file </span><span class="si">{:s}</span><span class="s2">&quot;</span>
-            <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_job</span><span class="p">,</span> <span class="n">slurm_path</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Job </span><span class="si">{id_job:d}</span><span class="s2"> had a Segmentation fault, see file </span><span class="si">{slurm_path:s}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="s2">&quot;Killed&quot;</span> <span class="ow">in</span> <span class="n">source_file</span><span class="p">:</span>
             <span class="c1"># most likely cause is that it ran out of memory</span>
             <span class="k">if</span> <span class="s2">&quot;Exceeded step memory limit&quot;</span> <span class="ow">in</span> <span class="n">source_file</span><span class="p">:</span>
-                <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Job </span><span class="si">{:d}</span><span class="s2"> ran out of memory, see file </span><span class="si">{:s}</span><span class="s2">&quot;</span>
-                <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_job</span><span class="p">,</span> <span class="n">slurm_path</span><span class="p">))</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Job </span><span class="si">{:d}</span><span class="s2"> failed for an unknown reason, see file </span><span class="si">{:s}</span><span class="s2">&quot;</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_job</span><span class="p">,</span> <span class="n">slurm_path</span><span class="p">))</span>
-
+                <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Job </span><span class="si">{id_job:d}</span><span class="s2"> ran out of memory, see file </span><span class="si">{slurm_path:s}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Job </span><span class="si">{id_job:d}</span><span class="s2"> failed for an unknown reason, see file </span><span class="si">{slurm_path:s}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Undefined execution, check file </span><span class="si">{:s}</span><span class="s2"> for issues&quot;</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">slurm_path</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Undefined execution, check file </span><span class="si">{slurm_path:s}</span><span class="s2"> for issues&quot;</span><span class="p">)</span>
     <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="extract_id_job_from_output"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.extract_id_job_from_output">[docs]</a><span class="k">def</span> <span class="nf">extract_id_job_from_output</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns the job id inside the str argument &#39;out&#39; or None if the job id is not present</span>
+<span class="sd">    if no job id can be found then a warning is raised&quot;&quot;&quot;</span>
+
+    <span class="n">id_job</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">21</span><span class="p">:</span>  <span class="c1"># this is hardcoded - possibly should be changed</span>
+        <span class="n">id_job</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="mi">20</span><span class="p">:])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Not sure how to extract job id from</span><span class="se">\n</span><span class="si">{out}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">id_job</span></div>
 
 
 <div class="viewcode-block" id="submit_job"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.submit_job">[docs]</a><span class="k">def</span> <span class="nf">submit_job</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">parameter_dictionary</span><span class="p">):</span>
@@ -178,35 +220,230 @@
     <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">parameter_dictionary</span><span class="p">)</span>
 
     <span class="sd">&quot;&quot;&quot; submits the job to the slurm server&quot;&quot;&quot;</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">out</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_run_wrapper</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">check_returncode</span><span class="p">()</span>
 
-    <span class="c1"># extract the id_job</span>
-    <span class="n">id_job</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span> <span class="o">&gt;=</span> <span class="mi">21</span><span class="p">:</span>  <span class="c1"># this is hardcoded - possibly should be changed</span>
-        <span class="n">id_job</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">()[</span><span class="mi">20</span><span class="p">:])</span>
+    <span class="n">id_job</span> <span class="o">=</span> <span class="n">extract_id_job_from_output</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">id_job</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">error</span></div>
+    <span class="k">return</span> <span class="n">id_job</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">stderr</span></div>
 
 
 <div class="viewcode-block" id="assert_partition_exists"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.assert_partition_exists">[docs]</a><span class="k">def</span> <span class="nf">assert_partition_exists</span><span class="p">(</span><span class="n">partition_name</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;only checks that the given string is listed as a partition by sinfo&quot;&quot;&quot;</span>
-    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;/usr/bin/sinfo&#39;</span><span class="p">,</span> <span class="s1">&#39;-O&#39;</span><span class="p">,</span> <span class="s1">&#39;partition&#39;</span><span class="p">]</span>
-    <span class="n">capture_object</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">capture_object</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sinfo&#39;</span><span class="p">,</span> <span class="s1">&#39;-O&#39;</span><span class="p">,</span> <span class="s1">&#39;partition&#39;</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_run_wrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">partition_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;The partition string is None?&quot;</span>
-    <span class="k">assert</span> <span class="n">partition_name</span> <span class="ow">in</span> <span class="n">out</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;Partition </span><span class="si">{partition_name}</span><span class="s2"> is not present in </span><span class="si">{out}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="n">partition_name</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;Partition </span><span class="si">{partition_name}</span><span class="s2"> is not present in </span><span class="si">{result.stdout}</span><span class="s2">&quot;</span>
     <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="PimcSubmissionClass"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.PimcSubmissionClass">[docs]</a><span class="k">class</span> <span class="nc">PimcSubmissionClass</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot; Class to store all the logic involved with submitting 1 or more jobs to a server running SLURM - should be self consistent &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="serialize_BoxData_dictionary"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.serialize_BoxData_dictionary">[docs]</a><span class="k">def</span> <span class="nf">serialize_BoxData_dictionary</span><span class="p">(</span><span class="n">parameter_dictionary</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper for the call to BoxData&#39;s json_serialize()</span>
+<span class="sd">    takes a dictionary of parameters and returns a string which is a &#39;serialized&#39; version of those parameters</span>
+<span class="sd">    when the submitted job eventually executes it initializes a BoxData (or child) object using that &#39;serialized&#39; string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pimc</span><span class="o">.</span><span class="n">BoxData</span><span class="o">.</span><span class="n">json_serialize</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">parameter_dictionary</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="prepare_job_feynman"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.prepare_job_feynman">[docs]</a><span class="k">def</span> <span class="nf">prepare_job_feynman</span><span class="p">(</span><span class="n">param_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper for job_boss job submission&quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;feynman job&quot;</span><span class="p">)</span>
+
+    <span class="c1"># for safety</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;feynman&quot;</span>
+
+    <span class="n">template_name</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;D</span><span class="si">{id_data:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;R</span><span class="si">{id_rho:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;P</span><span class="si">{number_of_beads:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;T</span><span class="si">{temperature:.2f}</span><span class="s2">&quot;</span>
+                     <span class="p">)</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;job_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_name</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">template_from</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{param_dict[&#39;path_scratch&#39;]:}</span><span class="s2">results/</span><span class="si">{param_dict[&#39;job_name&#39;]:}</span><span class="s2">_J</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+    <span class="n">template_to</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{param_dict[&#39;path_rho&#39;]:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_from&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_from</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_to&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_to</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serialize_BoxData_dictionary</span><span class="p">(</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">job_boss_directory</span> <span class="o">=</span> <span class="n">get_path_of_job_boss_directory</span><span class="p">()</span>
+
+    <span class="n">export_options</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span>
+                      <span class="s2">&quot; --export=&quot;</span>
+                      <span class="s2">&quot;ROOT_DIR=</span><span class="si">{path_rho:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,SCRATCH_DIR=</span><span class="si">{path_scratch:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,COPY_FROM=</span><span class="si">{copy_from:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,COPY_TO=</span><span class="si">{copy_to:s}</span><span class="s2">&quot;</span>
+                      <span class="n">f</span><span class="s2">&quot;,PYTHON3_PATH={get_path_to_python_executable()}&quot;</span>
+                      <span class="n">f</span><span class="s2">&quot;,SAMPLING_SCRIPT=</span><span class="si">{job_boss_directory:}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;/nlogn_feynman/</span><span class="si">{script_name}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,EXECUTION_PARAMETERS=</span><span class="se">\&#39;</span><span class="si">{execution_parameters:s}</span><span class="se">\&#39;</span><span class="s2">&quot;</span>
+                      <span class="p">)</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;export_options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">export_options</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">sbatch</span> <span class="o">=</span> <span class="s2">&quot;sbatch&quot;</span>
+    <span class="n">sbatch</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="s2">&quot; -m n&quot;</span>  <span class="c1"># this stops all mail from being sent</span>
+                <span class="c1"># &quot; --priority 0&quot;  # this defines the priority of the job, default is 0</span>
+                <span class="s2">&quot; --ntasks=1&quot;</span>
+                <span class="s2">&quot; --job-name=</span><span class="si">{job_name:s}</span><span class="s2">&quot;</span>
+                <span class="s2">&quot; --partition=</span><span class="si">{partition:s}</span><span class="s2">&quot;</span>
+                <span class="s2">&quot; -D </span><span class="si">{path_rho:}</span><span class="s2">execution_output/&quot;</span>
+                <span class="s2">&quot; --output=</span><span class="si">{path_rho:}</span><span class="s2">execution_output/</span><span class="si">{job_name:s}</span><span class="s2">.o%A&quot;</span>
+                <span class="c1"># &quot; --ntask={number_of_tasks:d}&quot;</span>
+                <span class="s2">&quot; --cpus-per-task=</span><span class="si">{cpus_per_task:d}</span><span class="s2">&quot;</span>
+                <span class="s2">&quot; --cores-per-socket=</span><span class="si">{cores_per_socket:d}</span><span class="s2">&quot;</span>
+                <span class="s2">&quot; --mem=</span><span class="si">{memory_per_node:}</span><span class="s2">G&quot;</span>
+                <span class="c1"># &quot; --mem-per-cpu={memory_per_cpu:}G&quot; # mutually exclusive with --mem</span>
+                <span class="s2">&quot; </span><span class="si">{wait_param:s}</span><span class="s2">&quot;</span>  <span class="c1"># optional wait parameter</span>
+                <span class="s2">&quot; </span><span class="si">{export_options:s}</span><span class="s2">&quot;</span>
+                <span class="n">f</span><span class="s2">&quot; </span><span class="si">{job_boss_directory}</span><span class="s2">/nlogn_feynman/pimc_job.sh&quot;</span>
+                <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sbatch</span></div>
+
+
+<div class="viewcode-block" id="prepare_job_nlogn"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.prepare_job_nlogn">[docs]</a><span class="k">def</span> <span class="nf">prepare_job_nlogn</span><span class="p">(</span><span class="n">param_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper for job_boss job submission&quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;nlogn job&quot;</span><span class="p">)</span>
+
+    <span class="c1"># for safety</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;nlogn&quot;</span>
+
+    <span class="n">template_name</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;D</span><span class="si">{id_data:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;R</span><span class="si">{id_rho:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;P</span><span class="si">{number_of_beads:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;T</span><span class="si">{temperature:.2f}</span><span class="s2">&quot;</span>
+                     <span class="p">)</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;job_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_name</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">template_from</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{param_dict[&#39;path_scratch&#39;]:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+    <span class="n">template_to</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{param_dict[&#39;path_rho&#39;]:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_from&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_from</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_to&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_to</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serialize_BoxData_dictionary</span><span class="p">(</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">job_boss_directory</span> <span class="o">=</span> <span class="n">get_path_of_job_boss_directory</span><span class="p">()</span>
+
+    <span class="n">export_options</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span>
+                      <span class="s2">&quot; --export=&quot;</span>
+                      <span class="s2">&quot;ROOT_DIR=</span><span class="si">{path_rho:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,SCRATCH_DIR=</span><span class="si">{path_scratch:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,COPY_FROM=</span><span class="si">{copy_from:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,COPY_TO=</span><span class="si">{copy_to:s}</span><span class="s2">&quot;</span>
+                      <span class="n">f</span><span class="s2">&quot;,PYTHON3_PATH={get_path_to_python_executable()}&quot;</span>
+                      <span class="n">f</span><span class="s2">&quot;,SAMPLING_SCRIPT=</span><span class="si">{job_boss_directory:}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;/nlogn_feynman/</span><span class="si">{script_name}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,EXECUTION_PARAMETERS=</span><span class="se">\&#39;</span><span class="si">{execution_parameters:s}</span><span class="se">\&#39;</span><span class="s2">&quot;</span>
+                      <span class="p">)</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;export_options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">export_options</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">sbatch</span> <span class="o">=</span> <span class="s2">&quot;sbatch&quot;</span>
+    <span class="n">sbatch</span> <span class="o">+=</span> <span class="p">(</span>
+               <span class="s2">&quot; -m n&quot;</span>  <span class="c1"># this stops all mail from being sent</span>
+               <span class="c1"># &quot; --priority 0&quot;  # this defines the priority of the job, default is 0</span>
+               <span class="s2">&quot; --ntasks=1&quot;</span>
+               <span class="c1"># &quot; --ntask={number_of_tasks:d}&quot;</span>
+               <span class="s2">&quot; --job-name=</span><span class="si">{job_name:s}</span><span class="s2">&quot;</span>
+               <span class="s2">&quot; --partition=</span><span class="si">{partition:s}</span><span class="s2">&quot;</span>
+               <span class="s2">&quot; -D </span><span class="si">{path_rho:}</span><span class="s2">execution_output/&quot;</span>
+               <span class="s2">&quot; --output=</span><span class="si">{path_rho:}</span><span class="s2">execution_output/</span><span class="si">{job_name:s}</span><span class="s2">.o%A&quot;</span>
+               <span class="s2">&quot; --cpus-per-task=</span><span class="si">{cpus_per_task:d}</span><span class="s2">&quot;</span>
+               <span class="s2">&quot; --cores-per-socket=</span><span class="si">{cores_per_socket:d}</span><span class="s2">&quot;</span>
+               <span class="s2">&quot; --mem=</span><span class="si">{memory_per_node:}</span><span class="s2">G&quot;</span>
+               <span class="c1"># &quot; --mem-per-cpu={memory_per_cpu:}G&quot; # mutually exclusive with --mem</span>
+               <span class="s2">&quot; </span><span class="si">{wait_param:s}</span><span class="s2">&quot;</span>  <span class="c1"># optional wait parameter</span>
+               <span class="s2">&quot; </span><span class="si">{export_options:s}</span><span class="s2">&quot;</span>
+               <span class="n">f</span><span class="s2">&quot; </span><span class="si">{job_boss_directory}</span><span class="s2">/nlogn_feynman/pimc_job.sh&quot;</span>
+               <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sbatch</span></div>
+
+
+<div class="viewcode-block" id="prepare_job_compute_canada"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.prepare_job_compute_canada">[docs]</a><span class="k">def</span> <span class="nf">prepare_job_compute_canada</span><span class="p">(</span><span class="n">param_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; wrapper for jobs on compute canada servers &quot;&quot;&quot;</span>
+    <span class="n">template_name</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;D</span><span class="si">{id_data:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;R</span><span class="si">{id_rho:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;P</span><span class="si">{number_of_beads:d}</span><span class="s2">_&quot;</span>
+                     <span class="s2">&quot;T</span><span class="si">{temperature:.2f}</span><span class="s2">&quot;</span>
+                     <span class="p">)</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;job_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_name</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">template_from</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{param_dict[&#39;path_scratch&#39;]:}</span><span class="s2">results/</span><span class="si">{param_dict[&#39;job_name&#39;]:}</span><span class="s2">_J</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+    <span class="n">template_to</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{param_dict[&#39;path_rho&#39;]:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_from&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_from</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_to&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_to</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serialize_BoxData_dictionary</span><span class="p">(</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">job_boss_directory</span> <span class="o">=</span> <span class="n">get_path_of_job_boss_directory</span><span class="p">()</span>
+
+    <span class="n">export_options</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span>
+                      <span class="s2">&quot; --export=&quot;</span>
+                      <span class="s2">&quot;ROOT_DIR=</span><span class="si">{path_rho:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,SCRATCH_DIR=</span><span class="si">{path_scratch:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,COPY_FROM=</span><span class="si">{copy_from:s}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,COPY_TO=</span><span class="si">{copy_to:s}</span><span class="s2">&quot;</span>
+                      <span class="n">f</span><span class="s2">&quot;,PYTHON3_PATH={get_path_to_python_executable()}&quot;</span>
+                      <span class="n">f</span><span class="s2">&quot;,SAMPLING_SCRIPT=</span><span class="si">{job_boss_directory:}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;/compute_canada/</span><span class="si">{script_name}</span><span class="s2">&quot;</span>
+                      <span class="s2">&quot;,EXECUTION_PARAMETERS=</span><span class="se">\&#39;</span><span class="si">{execution_parameters:s}</span><span class="se">\&#39;</span><span class="s2">&quot;</span>
+                      <span class="p">)</span>
+
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;export_options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">export_options</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
+
+    <span class="n">sbatch</span> <span class="o">=</span> <span class="s2">&quot;sbatch&quot;</span>
+    <span class="n">sbatch</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="s2">&quot; -m n&quot;</span>  <span class="c1"># this stops all mail from being sent</span>
+                <span class="c1"># &quot; --priority 0&quot;  # this defines the priority of the job, default is 0</span>
+                <span class="s2">&quot; --ntasks=1&quot;</span>
+                <span class="c1"># &quot; --ntask={number_of_tasks:d}&quot;</span>
+                <span class="s2">&quot; --job-name=</span><span class="si">{job_name:s}</span><span class="s2">&quot;</span>
+                <span class="c1"># &quot; --partition={partition:s}&quot;  #  don&#39;t use partition!!</span>
+                <span class="s2">&quot; -D </span><span class="si">{path_rho:}</span><span class="s2">execution_output/&quot;</span>
+                <span class="s2">&quot; --output=</span><span class="si">{path_rho:}</span><span class="s2">execution_output/</span><span class="si">{job_name:s}</span><span class="s2">.o%A&quot;</span>
+                <span class="s2">&quot; --cpus-per-task=</span><span class="si">{cpus_per_task:d}</span><span class="s2">&quot;</span>
+                <span class="s2">&quot; --cores-per-socket=</span><span class="si">{cores_per_socket:d}</span><span class="s2">&quot;</span>
+                <span class="s2">&quot; --mem=</span><span class="si">{memory_per_node:}</span><span class="s2">G&quot;</span>
+                <span class="s2">&quot; --account=rrg-pnroy&quot;</span>
+                <span class="c1"># &quot; --mem-per-cpu={memory_per_cpu:}G&quot; # mutually exclusive with --mem</span>
+                <span class="s2">&quot; </span><span class="si">{wait_param:s}</span><span class="s2">&quot;</span>  <span class="c1"># optional wait parameter</span>
+                <span class="s2">&quot; </span><span class="si">{export_options:s}</span><span class="s2">&quot;</span>
+                <span class="n">f</span><span class="s2">&quot; </span><span class="si">{job_boss_directory}</span><span class="s2">/compute_canada/pimc_job.sh&quot;</span>
+                <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sbatch</span></div>
+
+
+<div class="viewcode-block" id="prepare_job_orca"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.prepare_job_orca">[docs]</a><span class="k">def</span> <span class="nf">prepare_job_orca</span><span class="p">(</span><span class="n">param_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper for job_boss job submission&quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;orca job&quot;</span><span class="p">)</span>
+
+    <span class="c1"># for safety</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;orca&quot;</span>
+    <span class="k">return</span> <span class="n">prepare_job_compute_canada</span><span class="p">(</span><span class="n">param_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="prepare_job_graham"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.prepare_job_graham">[docs]</a><span class="k">def</span> <span class="nf">prepare_job_graham</span><span class="p">(</span><span class="n">param_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper for job_boss job submission&quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;graham job&quot;</span><span class="p">)</span>
+
+    <span class="c1"># for safety</span>
+    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;graham&quot;</span>
+    <span class="k">return</span> <span class="n">prepare_job_compute_canada</span><span class="p">(</span><span class="n">param_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SubmissionClass"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.SubmissionClass">[docs]</a><span class="k">class</span> <span class="nc">SubmissionClass</span><span class="p">():</span>
 
     <span class="c1"># the largest number of samples to be drawn for an individual job submitted to the server</span>
     <span class="c1"># any job that requires more samples is split into multiple job submissions</span>
-    <span class="n">MAX_SAMPLES_PER_JOB</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1E5</span><span class="p">)</span>
+    <span class="n">MAX_SAMPLES_PER_JOB</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1E4</span><span class="p">)</span>
 
-    <span class="c1"># TODO - this method could most likely be improved upon</span>
     <span class="c1"># default values</span>
     <span class="n">param_dict</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;delta_beta&quot;</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">delta_beta</span><span class="p">,</span>
@@ -219,25 +456,32 @@
         <span class="s2">&quot;number_of_states&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
         <span class="s2">&quot;number_of_modes&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
         <span class="s2">&quot;number_of_beads&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_links&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
         <span class="s2">&quot;path_scratch&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
         <span class="s2">&quot;path_root&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
         <span class="s2">&quot;path_data&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
         <span class="s2">&quot;path_rho&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
         <span class="s2">&quot;id_data&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
         <span class="s2">&quot;id_rho&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;partition&quot;</span><span class="p">:</span> <span class="s2">&quot;serial&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;hostname&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="c1"># &quot;partition&quot;: None,</span>
-        <span class="c1"># &quot;partition&quot;: &quot;serial,highmem&quot;,</span>
-        <span class="s2">&quot;block_size&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e2</span><span class="p">),</span>
-        <span class="s2">&quot;memory_per_node&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
-        <span class="s2">&quot;total_memory&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
-        <span class="s2">&quot;cpus_per_task&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-        <span class="s2">&quot;cores_per_socket&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="s2">&quot;partition&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;hostname&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;block_size&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;memory_per_node&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;total_memory&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;cpus_per_task&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;cores_per_socket&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
         <span class="s2">&quot;wait_param&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;script_name&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="PimcSubmissionClass.prepare_paths"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.PimcSubmissionClass.prepare_paths">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">node_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;feynman&quot;</span><span class="p">:</span> <span class="n">prepare_job_nlogn</span><span class="p">,</span>
+        <span class="s2">&quot;nlogn&quot;</span><span class="p">:</span> <span class="n">prepare_job_nlogn</span><span class="p">,</span>
+        <span class="s2">&quot;graham&quot;</span><span class="p">:</span> <span class="n">prepare_job_graham</span><span class="p">,</span>
+        <span class="s2">&quot;orca&quot;</span><span class="p">:</span> <span class="n">prepare_job_orca</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="SubmissionClass.prepare_paths"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.SubmissionClass.prepare_paths">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; fill the param_dict with values from the give FileStructure &quot;&quot;&quot;</span>
 
         <span class="c1"># this function may not be needed in the future?</span>
@@ -255,6 +499,9 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_FS</span><span class="p">,</span> <span class="n">input_param_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; takes a FileStructure object and an optional parameter dictionary - no error checking at the moment &quot;&quot;&quot;</span>
 
+        <span class="c1"># set the default hostname when initialized</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_hostname</span><span class="p">()</span>
+
         <span class="k">if</span> <span class="n">input_param_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_param_dict</span><span class="p">)</span>
 
@@ -262,17 +509,66 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_paths</span><span class="p">()</span>
         <span class="k">return</span>
 
-<div class="viewcode-block" id="PimcSubmissionClass.construct_job_command"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.PimcSubmissionClass.construct_job_command">[docs]</a>    <span class="k">def</span> <span class="nf">construct_job_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
-        <span class="n">node_dict</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;feynman&quot;</span><span class="p">:</span> <span class="n">prepare_job_nlogn</span><span class="p">,</span>
-            <span class="s2">&quot;nlogn&quot;</span><span class="p">:</span> <span class="n">prepare_job_nlogn</span><span class="p">,</span>
-        <span class="p">}</span>
+<div class="viewcode-block" id="SubmissionClass.verify_hostname_is_valid"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.SubmissionClass.verify_hostname_is_valid">[docs]</a>    <span class="k">def</span> <span class="nf">verify_hostname_is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; this checks the hostname against a pre-defined dictionary</span>
+<span class="sd">        this should alert the user if they are trying to submit jobs on a server</span>
+<span class="sd">        without first preparing a job submission wrapper</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">hostname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">node_dict</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">node_dict</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]](</span><span class="n">params</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Hostname </span><span class="si">{hostname}</span><span class="s2"> is undefined - please check job_boss to see</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Hostname </span><span class="si">{hostname}</span><span class="s2"> is undefined - please confirm that a prepare_job_$HOSTNAME function has been defined in job_boss.py and that the respective hostname is present in the dictionary node_dict defined in job_boss.py</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SubmissionClass.construct_job_command"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.SubmissionClass.construct_job_command">[docs]</a>    <span class="k">def</span> <span class="nf">construct_job_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; this &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">verify_hostname_is_valid</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]),</span> <span class="s2">&quot;You shouldn&#39;t see this!&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_dict</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]](</span><span class="n">params</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="PimcSubmissionClass"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.PimcSubmissionClass">[docs]</a><span class="k">class</span> <span class="nc">PimcSubmissionClass</span><span class="p">(</span><span class="n">SubmissionClass</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Class to store all the logic involved with submitting 1 or more jobs to a server running SLURM - should be self consistent &quot;&quot;&quot;</span>
+
+    <span class="c1"># the largest number of samples to be drawn for an individual job submitted to the server</span>
+    <span class="c1"># any job that requires more samples is split into multiple job submissions</span>
+    <span class="n">MAX_SAMPLES_PER_JOB</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1E5</span><span class="p">)</span>
+
+    <span class="c1"># TODO - this method could most likely be improved upon</span>
+    <span class="c1"># default values</span>
+    <span class="n">param_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1"># &quot;delta_beta&quot;: constants.delta_beta,</span>
+        <span class="s2">&quot;temperature_list&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="p">],</span>
+        <span class="s2">&quot;bead_list&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">],</span>
+        <span class="s2">&quot;number_of_samples&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_samples_overall&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_samples_per_job&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_blocks&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_states&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_modes&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_beads&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;path_scratch&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;path_root&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;path_data&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;path_rho&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;id_data&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;id_rho&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;partition&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;hostname&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;block_size&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">),</span>
+        <span class="s2">&quot;memory_per_node&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="s2">&quot;total_memory&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="s2">&quot;cpus_per_task&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="s2">&quot;cores_per_socket&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="s2">&quot;wait_param&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;script_name&quot;</span><span class="p">:</span> <span class="s2">&quot;pimc.py&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="PimcSubmissionClass.prepare_paths"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.PimcSubmissionClass.prepare_paths">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; fill the param_dict with values from the give FileStructure &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">prepare_paths</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_FS</span><span class="p">,</span> <span class="n">input_param_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; takes a FileStructure object and an optional parameter dictionary - no error checking at the moment &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">input_FS</span><span class="p">,</span> <span class="n">input_param_dict</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PimcSubmissionClass.setup_blocks_and_jobs"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.PimcSubmissionClass.setup_blocks_and_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">setup_blocks_and_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; calculates the following:</span>
@@ -283,10 +579,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;number_of_samples&quot;</span><span class="p">]</span>
         <span class="n">block_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;block_size&quot;</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">block_size</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">block_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="n">block_size</span> <span class="o">&lt;</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;block size </span><span class="si">{block_size}</span><span class="s2"> must be less than the number of samples </span><span class="si">{n_samples}</span><span class="s2">&quot;</span>
-        <span class="k">assert</span> <span class="n">block_size</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_SAMPLES_PER_JOB</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;block size </span><span class="si">{block_size}</span><span class="s2"> must be less than the maximum number of samples per job </span><span class="si">{self.MAX_SAMPLES_PER_JOB}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="n">block_size</span> <span class="o">&lt;=</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;block size </span><span class="si">{block_size}</span><span class="s2"> must be less than or equal to the number of samples </span><span class="si">{n_samples}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="n">block_size</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_SAMPLES_PER_JOB</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;block size </span><span class="si">{block_size}</span><span class="s2"> must be less than or equal to the maximum number of samples per job </span><span class="si">{self.MAX_SAMPLES_PER_JOB}</span><span class="s2">&quot;</span>
 
         <span class="c1"># calculate how many samples we need for each job</span>
         <span class="n">samples_per_job</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_SAMPLES_PER_JOB</span><span class="p">)</span>
@@ -322,14 +618,23 @@
 
                 <span class="n">params</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="p">)</span>
                 <span class="n">params</span><span class="p">[</span><span class="s2">&quot;number_of_beads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">P</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;number_of_links&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">P</span>
                 <span class="n">params</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">T</span>
 
-                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;highmem&#39;</span> <span class="k">if</span> <span class="n">hostname</span> <span class="o">==</span> <span class="s1">&#39;feynman&#39;</span> <span class="k">else</span> <span class="s1">&#39;serial&#39;</span>
+                <span class="c1"># clean up this area</span>
+                <span class="n">hostname</span> <span class="o">=</span> <span class="n">get_hostname</span><span class="p">()</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hostname</span>
 
-                <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Hostname </span><span class="si">{hostname}</span><span class="se">\n</span><span class="s1">Partition </span><span class="si">{params[&quot;partition&quot;]}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="n">assert_partition_exists</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">hostname</span> <span class="o">==</span> <span class="s2">&quot;feynman&quot;</span> <span class="ow">or</span> <span class="n">hostname</span> <span class="o">==</span> <span class="s2">&quot;nlogn&quot;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># only c</span>
+                        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;highmem&#39;</span> <span class="k">if</span> <span class="n">hostname</span> <span class="o">==</span> <span class="s1">&#39;feynman&#39;</span> <span class="k">else</span> <span class="s1">&#39;serial&#39;</span>
+
+                <span class="k">if</span> <span class="n">hostname</span> <span class="o">==</span> <span class="s2">&quot;orca&quot;</span> <span class="ow">or</span> <span class="n">hostname</span> <span class="o">==</span> <span class="s2">&quot;graham&quot;</span><span class="p">:</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+                <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Hostname </span><span class="si">{hostname}</span><span class="se">\n</span><span class="s1">Partition </span><span class="si">{params[&quot;partition&quot;]}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="n">assert_partition_exists</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">])</span>
 
                 <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_job_command</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 
@@ -361,150 +666,6 @@
 
             <span class="c1"># print(job_boss.hostname)</span>
         <span class="k">return</span></div></div>
-
-
-<div class="viewcode-block" id="prepare_job_feynman"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.prepare_job_feynman">[docs]</a><span class="k">def</span> <span class="nf">prepare_job_feynman</span><span class="p">(</span><span class="n">param_dict</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;wrapper for job_boss job submission&quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;feynman job&quot;</span><span class="p">)</span>
-
-    <span class="c1"># for saftey</span>
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;feynman&quot;</span>
-
-    <span class="n">template_name</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;D</span><span class="si">{id_data:d}</span><span class="s2">_&quot;</span>
-                     <span class="s2">&quot;R</span><span class="si">{id_rho:d}</span><span class="s2">_&quot;</span>
-                     <span class="c1"># &quot;A{number_of_states:d}_&quot;</span>
-                     <span class="c1"># &quot;N{number_of_modes:d}_&quot;</span>
-                     <span class="c1"># &quot;X{number_of_samples:d}_&quot;</span>
-                     <span class="s2">&quot;P</span><span class="si">{number_of_beads:d}</span><span class="s2">_&quot;</span>
-                     <span class="s2">&quot;T</span><span class="si">{temperature:.2f}</span><span class="s2">&quot;</span>
-                     <span class="p">)</span>
-
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;job_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_name</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
-
-    <span class="n">template_from</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{:}</span><span class="s2">results/</span><span class="si">{:}</span><span class="s2">_J</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
-    <span class="n">template_from</span> <span class="o">=</span> <span class="n">template_from</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;path_scratch&quot;</span><span class="p">],</span>
-                                         <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;job_name&quot;</span><span class="p">],</span>
-                                         <span class="c1"># param_dict[&quot;path_rho&quot;],</span>
-                                         <span class="p">)</span>
-    <span class="n">template_to</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;path_rho&quot;</span><span class="p">])</span>
-
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_from&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_from</span>
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_to&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_to</span>
-    <span class="c1"># TODO - remove circular dependancy?</span>
-    <span class="kn">from</span> <span class="nn">..pimc</span> <span class="k">import</span> <span class="n">BoxData</span>
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BoxData</span><span class="o">.</span><span class="n">json_serialize</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_dict</span><span class="p">)</span>
-
-    <span class="n">export_options</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span>
-                      <span class="s2">&quot; --export=&quot;</span>
-                      <span class="s2">&quot;ROOT_DIR=</span><span class="si">{path_rho:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,SCRATCH_DIR=</span><span class="si">{path_scratch:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,COPY_FROM=</span><span class="si">{copy_from:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,COPY_TO=</span><span class="si">{copy_to:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,PYTHON3_PATH=/home/ngraymon/.dev/ubuntu_18.04/bin/python3&quot;</span>
-                      <span class="s2">&quot;,SAMPLING_SCRIPT=/home/ngraymon/pibronic/pibronic/server/pimc.py&quot;</span>
-                      <span class="s2">&quot;,EXECUTION_PARAMETERS=</span><span class="se">\&#39;</span><span class="si">{execution_parameters:s}</span><span class="se">\&#39;</span><span class="s2">&quot;</span>
-                      <span class="p">)</span>
-
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;export_options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">export_options</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
-
-    <span class="c1"># print(param_dict[&quot;hostname&quot;])</span>
-
-    <span class="n">sbatch</span> <span class="o">=</span> <span class="s2">&quot;sbatch&quot;</span>
-    <span class="n">sbatch</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="s2">&quot; -m n&quot;</span>  <span class="c1"># this stops all mail from being sent</span>
-                <span class="s2">&quot; --priority 0&quot;</span>  <span class="c1"># this defines the priority of the job, default is 0</span>
-                <span class="s2">&quot; --ntasks=1&quot;</span>
-                <span class="s2">&quot; --job-name=</span><span class="si">{job_name:s}</span><span class="s2">&quot;</span>
-                <span class="s2">&quot; --partition=</span><span class="si">{partition:s}</span><span class="s2">&quot;</span>
-                <span class="s2">&quot; --workdir=</span><span class="si">{hostname:s}</span><span class="s2">:</span><span class="si">{path_rho:}</span><span class="s2">execution_output/&quot;</span>
-                <span class="s2">&quot; --output=</span><span class="si">{path_rho:}</span><span class="s2">execution_output/</span><span class="si">{job_name:s}</span><span class="s2">.o%A&quot;</span>
-                <span class="c1"># &quot; --ntask={number_of_tasks:d}&quot;</span>
-                <span class="s2">&quot; --cpus-per-task=</span><span class="si">{cpus_per_task:d}</span><span class="s2">&quot;</span>
-                <span class="s2">&quot; --cores-per-socket=</span><span class="si">{cores_per_socket:d}</span><span class="s2">&quot;</span>
-                <span class="s2">&quot; --mem=</span><span class="si">{memory_per_node:}</span><span class="s2">G&quot;</span>
-                <span class="c1"># &quot; --mem-per-cpu={memory_per_cpu:}G&quot; # mutually exclusive with --mem</span>
-                <span class="s2">&quot; </span><span class="si">{wait_param:s}</span><span class="s2">&quot;</span>  <span class="c1"># optional wait parameter</span>
-                <span class="s2">&quot; </span><span class="si">{export_options:s}</span><span class="s2">&quot;</span>
-                <span class="s2">&quot; /home/ngraymon/pibronic/pibronic/server/pimc_job.sh&quot;</span>
-                <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">sbatch</span></div>
-
-
-<div class="viewcode-block" id="prepare_job_nlogn"><a class="viewcode-back" href="../../../pibronic.server.html#pibronic.server.job_boss.prepare_job_nlogn">[docs]</a><span class="k">def</span> <span class="nf">prepare_job_nlogn</span><span class="p">(</span><span class="n">param_dict</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;wrapper for job_boss job submission&quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;nlogn job&quot;</span><span class="p">)</span>
-
-    <span class="c1"># for saftey</span>
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;hostname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;nlogn&quot;</span>
-
-    <span class="n">template_name</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;D</span><span class="si">{id_data:d}</span><span class="s2">_&quot;</span>
-                     <span class="s2">&quot;R</span><span class="si">{id_rho:d}</span><span class="s2">_&quot;</span>
-                     <span class="c1"># &quot;A{number_of_states:d}_&quot;</span>
-                     <span class="c1"># &quot;N{number_of_modes:d}_&quot;</span>
-                     <span class="c1"># &quot;X{number_of_samples:d}_&quot;</span>
-                     <span class="s2">&quot;P</span><span class="si">{number_of_beads:d}</span><span class="s2">_&quot;</span>
-                     <span class="s2">&quot;T</span><span class="si">{temperature:.2f}</span><span class="s2">&quot;</span>
-                     <span class="p">)</span>
-
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;job_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_name</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
-
-    <span class="c1"># template_from = &quot;\&quot;{:}results/&quot;</span>
-    <span class="n">template_from</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
-    <span class="n">template_from</span> <span class="o">=</span> <span class="n">template_from</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;path_scratch&quot;</span><span class="p">],</span>
-                                         <span class="c1"># param_dict[&quot;job_name&quot;],</span>
-                                         <span class="c1"># param_dict[&quot;path_rho&quot;],</span>
-                                         <span class="p">)</span>
-    <span class="n">template_to</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="si">{:}</span><span class="s2">results/</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;path_rho&quot;</span><span class="p">])</span>
-
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_from&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_from</span>
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;copy_to&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_to</span>
-
-    <span class="c1"># del param_dict[&quot;delta_beta&quot;]</span>
-    <span class="c1"># del param_dict[&quot;number_of_samples_per_job&quot;]</span>
-    <span class="c1"># del param_dict[&quot;number_of_samples_overall&quot;]</span>
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;execution_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pimc</span><span class="o">.</span><span class="n">BoxData</span><span class="o">.</span><span class="n">json_serialize</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_dict</span><span class="p">)</span>
-
-    <span class="n">export_options</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span>
-                      <span class="s2">&quot; --export=&quot;</span>
-                      <span class="s2">&quot;ROOT_DIR=</span><span class="si">{path_rho:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,SCRATCH_DIR=</span><span class="si">{path_scratch:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,COPY_FROM=</span><span class="si">{copy_from:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,COPY_TO=</span><span class="si">{copy_to:s}</span><span class="s2">&quot;</span>
-                      <span class="s2">&quot;,PYTHON3_PATH=/home/ngraymon/.dev/ubuntu_18.04/bin/python3&quot;</span>
-                      <span class="c1"># &quot;,PYTHON3_PATH=/home/ngraymon/test/local/bin/python3&quot;</span>
-                      <span class="s2">&quot;,SAMPLING_SCRIPT=/home/ngraymon/test/Pibronic/pibronic/server/pimc.py&quot;</span>
-                      <span class="s2">&quot;,EXECUTION_PARAMETERS=</span><span class="se">\&#39;</span><span class="si">{execution_parameters:s}</span><span class="se">\&#39;</span><span class="s2">&quot;</span>
-                      <span class="p">)</span>
-
-    <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;export_options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">export_options</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
-
-    <span class="n">sbatch</span> <span class="o">=</span> <span class="s2">&quot;sbatch&quot;</span>
-    <span class="n">sbatch</span> <span class="o">+=</span> <span class="p">(</span>
-               <span class="s2">&quot; -m n&quot;</span>  <span class="c1"># this stops all mail from being sent</span>
-               <span class="s2">&quot; --priority 0&quot;</span>  <span class="c1"># this defines the priority of the job, default is 0</span>
-               <span class="s2">&quot; --ntasks=1&quot;</span>
-               <span class="s2">&quot; --job-name=</span><span class="si">{job_name:s}</span><span class="s2">&quot;</span>
-               <span class="s2">&quot; --partition=</span><span class="si">{partition:s}</span><span class="s2">&quot;</span>
-               <span class="s2">&quot; --workdir=</span><span class="si">{hostname:s}</span><span class="s2">:</span><span class="si">{path_rho:}</span><span class="s2">execution_output/&quot;</span>
-               <span class="s2">&quot; --output=</span><span class="si">{path_rho:}</span><span class="s2">execution_output/</span><span class="si">{job_name:s}</span><span class="s2">.o%A&quot;</span>
-               <span class="c1"># &quot; --ntask={number_of_tasks:d}&quot;</span>
-               <span class="s2">&quot; --cpus-per-task=</span><span class="si">{cpus_per_task:d}</span><span class="s2">&quot;</span>
-               <span class="s2">&quot; --cores-per-socket=</span><span class="si">{cores_per_socket:d}</span><span class="s2">&quot;</span>
-               <span class="s2">&quot; --mem=</span><span class="si">{memory_per_node:}</span><span class="s2">G&quot;</span>
-               <span class="c1"># &quot; --mem-per-cpu={memory_per_cpu:}G&quot; # mutually exclusive with --mem</span>
-               <span class="s2">&quot; </span><span class="si">{wait_param:s}</span><span class="s2">&quot;</span>  <span class="c1"># optional wait parameter</span>
-               <span class="s2">&quot; </span><span class="si">{export_options:s}</span><span class="s2">&quot;</span>
-               <span class="s2">&quot; /home/ngraymon/test/Pibronic/pibronic/server/pimc_job.sh&quot;</span>
-               <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">sbatch</span></div>
-
-<span class="c1">#</span>
-<span class="c1">#</span>
-<span class="c1">#</span>
-<span class="c1">#</span>
-<span class="c1">#</span>
 </pre></div>
 
           </div>
@@ -512,7 +673,23 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
@@ -541,7 +718,7 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>

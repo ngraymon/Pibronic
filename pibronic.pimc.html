@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.pimc package &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.pimc package &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="pibronic.plotting package" href="pibronic.plotting.html" />
@@ -30,668 +30,618 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
-  <div class="section" id="pibronic-pimc-package">
-<h1>pibronic.pimc package<a class="headerlink" href="#pibronic-pimc-package" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-pibronic.pimc">
+<span id="pibronic-pimc-package"></span><h1>pibronic.pimc package<a class="headerlink" href="#module-pibronic.pimc" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="scripts-that-run-the-pimc-code">
+<h2>Scripts that run the PIMC code<a class="headerlink" href="#scripts-that-run-the-pimc-code" title="Permalink to this headline">¶</a></h2>
+</div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pibronic.pimc.minimal">
-<span id="pibronic-pimc-minimal-module"></span><h2>pibronic.pimc.minimal module<a class="headerlink" href="#module-pibronic.pimc.minimal" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pibronic.pimc.pimc">
+<span id="pibronic-pimc-pimc-module"></span><h2>pibronic.pimc.pimc module<a class="headerlink" href="#module-pibronic.pimc.pimc" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="pibronic.pimc.minimal.BoxData">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">BoxData</code><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.ModelClass">
+<em class="property">class </em><code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">ModelClass</code><span class="sig-paren">(</span><em>states=1</em>, <em>modes=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>use this to pass execution paramters back and forth between methods</p>
+<p>information describing a quantum mechanical system</p>
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.beads">
-<code class="descname">beads</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.beads" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.ModelClass.cubic">
+<code class="descname">cubic</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.cubic" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.beta">
-<code class="descname">beta</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.beta" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.block_size">
-<code class="descname">block_size</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.block_size" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.blocks">
-<code class="descname">blocks</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.blocks" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.ModelClass.energy">
+<code class="descname">energy</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.energy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxData.build">
-<em class="property">classmethod </em><code class="descname">build</code><span class="sig-paren">(</span><em>id_data</em>, <em>id_rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.build" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.ModelClass.from_json_file">
+<em class="property">classmethod </em><code class="descname">from_json_file</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelClass.from_json_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.from_json_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>constructor wrapper</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.delta_beta">
-<code class="descname">delta_beta</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.delta_beta" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.ModelClass.linear">
+<code class="descname">linear</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.linear" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.draw_sample">
-<code class="descname">draw_sample</code><span class="sig-paren">(</span><em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.draw_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.draw_sample" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.ModelClass.load_model">
+<code class="descname">load_model</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelClass.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelClass.modes">
+<code class="descname">modes</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.modes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelClass.omega">
+<code class="descname">omega</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.omega" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelClass.quadratic">
+<code class="descname">quadratic</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelClass.quartic">
+<code class="descname">quartic</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.quartic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelClass.states">
+<code class="descname">states</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelClass.states" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.pimc.pimc.ModelVibronic">
+<em class="property">class </em><code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">ModelVibronic</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.pimc.ModelClass" title="pibronic.pimc.pimc.ModelClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.pimc.ModelClass</span></code></a></p>
+<p>stores information about the system of interest</p>
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelVibronic.compute_linear_displacement">
+<code class="descname">compute_linear_displacement</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronic.compute_linear_displacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronic.compute_linear_displacement" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the energy shift equivalent to a linear displacement</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelVibronic.compute_weight_for_each_state">
+<code class="descname">compute_weight_for_each_state</code><span class="sig-paren">(</span><em>modified_energy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronic.compute_weight_for_each_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronic.compute_weight_for_each_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>these are the weights for the oscillators associated with each state</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelVibronic.finish_folding_in_terms">
+<code class="descname">finish_folding_in_terms</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronic.finish_folding_in_terms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronic.finish_folding_in_terms" title="Permalink to this definition">¶</a></dt>
+<dd><p>set the terms we ‘folded in’ to zero</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelVibronic.initialize_TDP_object">
+<code class="descname">initialize_TDP_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronic.initialize_TDP_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronic.initialize_TDP_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates the TemperatureDependentClass object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelVibronic.optimize_energy">
+<code class="descname">optimize_energy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronic.optimize_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronic.optimize_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>shift the energy to reduce the order of the raw partition function value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelVibronic.precompute">
+<code class="descname">precompute</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronic.precompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronic.precompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>precompute some constants</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.pimc.pimc.ModelVibronicPM">
+<em class="property">class </em><code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">ModelVibronicPM</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronicPM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronicPM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.pimc.ModelVibronic" title="pibronic.pimc.pimc.ModelVibronic"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.pimc.ModelVibronic</span></code></a></p>
+<p>plus minus version of ModelVibronic</p>
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelVibronicPM.beta_minus">
+<code class="descname">beta_minus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronicPM.beta_minus" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelVibronicPM.beta_plus">
+<code class="descname">beta_plus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronicPM.beta_plus" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelVibronicPM.delta_beta">
+<code class="descname">delta_beta</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronicPM.delta_beta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelVibronicPM.initialize_TDP_object">
+<code class="descname">initialize_TDP_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronicPM.initialize_TDP_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronicPM.initialize_TDP_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates the TemperatureDependentClass object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelVibronicPM.precompute">
+<code class="descname">precompute</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelVibronicPM.precompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronicPM.precompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>precompute some constants</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelVibronicPM.tau_minus">
+<code class="descname">tau_minus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronicPM.tau_minus" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.ModelVibronicPM.tau_plus">
+<code class="descname">tau_plus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.ModelVibronicPM.tau_plus" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.pimc.pimc.ModelSampling">
+<em class="property">class </em><code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">ModelSampling</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.pimc.ModelClass" title="pibronic.pimc.pimc.ModelClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.pimc.ModelClass</span></code></a></p>
+<p>stores information about the system of interest</p>
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.compute_linear_displacement">
+<code class="descname">compute_linear_displacement</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.compute_linear_displacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.compute_linear_displacement" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the energy shift equivalent to a linear displacement</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.compute_sampling_constants">
+<code class="descname">compute_sampling_constants</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.compute_sampling_constants"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.compute_sampling_constants" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.compute_weight_for_each_state">
+<code class="descname">compute_weight_for_each_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.compute_weight_for_each_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.compute_weight_for_each_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>these are the weights for the oscillators associated with each state</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.draw_sample">
+<code class="descname">draw_sample</code><span class="sig-paren">(</span><em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.draw_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.draw_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates collective co-ordinates and stores them in self.cc_samples with dimensions BNP</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.finish_folding_in_terms">
+<code class="descname">finish_folding_in_terms</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.finish_folding_in_terms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.finish_folding_in_terms" title="Permalink to this definition">¶</a></dt>
+<dd><p>set the terms we ‘folded in’ to zero</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.initialize_TDP_object">
+<code class="descname">initialize_TDP_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.initialize_TDP_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.initialize_TDP_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates the TemperatureDependentClass object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.load_model">
+<code class="descname">load_model</code><span class="sig-paren">(</span><em>filePath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.optimize_energy">
+<code class="descname">optimize_energy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.optimize_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.optimize_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>shift the energy to reduce the order of the raw partition function value</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.ModelSampling.precompute">
+<code class="descname">precompute</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#ModelSampling.precompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.ModelSampling.precompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>precompute some constants</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pibronic.pimc.pimc.BoxData">
+<em class="property">class </em><code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">BoxData</code><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>use this to pass execution parameters back and forth between methods</p>
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.beads">
+<code class="descname">beads</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.beads" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.beta">
+<code class="descname">beta</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.beta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.block_size">
+<code class="descname">block_size</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.block_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.blocks">
+<code class="descname">blocks</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.blocks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="pibronic.pimc.pimc.BoxData.build">
+<em class="property">classmethod </em><code class="descname">build</code><span class="sig-paren">(</span><em>id_data</em>, <em>id_rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>constructor wrapper</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.delta_beta">
+<code class="descname">delta_beta</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.delta_beta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pibronic.pimc.pimc.BoxData.draw_sample">
+<code class="descname">draw_sample</code><span class="sig-paren">(</span><em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.draw_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.draw_sample" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws samples from the distribution rho -
 the rho object fills its cc_samples parameter with collective co-ordinates
 which will be transformed to bead dependent co-ordinates by self.transform_sampled_coordinates()</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.encode_self">
-<code class="descname">encode_self</code><span class="sig-paren">(</span><em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.encode_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.encode_self" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.encode_self">
+<code class="descname">encode_self</code><span class="sig-paren">(</span><em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.encode_self"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.encode_self" title="Permalink to this definition">¶</a></dt>
 <dd><p>encodes json str with member values or given params</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxData.from_FileStructure">
-<em class="property">classmethod </em><code class="descname">from_FileStructure</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.from_FileStructure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.from_FileStructure" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.from_FileStructure">
+<em class="property">classmethod </em><code class="descname">from_FileStructure</code><span class="sig-paren">(</span><em>FS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.from_FileStructure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.from_FileStructure" title="Permalink to this definition">¶</a></dt>
 <dd><p>constructor wrapper</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxData.from_json_file">
-<em class="property">classmethod </em><code class="descname">from_json_file</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.from_json_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.from_json_file" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.from_json_file">
+<em class="property">classmethod </em><code class="descname">from_json_file</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.from_json_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.from_json_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>constructor wrapper</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxData.from_json_string">
-<em class="property">classmethod </em><code class="descname">from_json_string</code><span class="sig-paren">(</span><em>json_str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.from_json_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.from_json_string" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.from_json_string">
+<em class="property">classmethod </em><code class="descname">from_json_string</code><span class="sig-paren">(</span><em>json_str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.from_json_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.from_json_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>constructor wrapper</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.generate_random_R_values">
-<code class="descname">generate_random_R_values</code><span class="sig-paren">(</span><em>result</em>, <em>storage_array</em>, <em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.generate_random_R_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.generate_random_R_values" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.generate_random_R_values">
+<code class="descname">generate_random_R_values</code><span class="sig-paren">(</span><em>result</em>, <em>storage_array</em>, <em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.generate_random_R_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.generate_random_R_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Randomly generates R values that have no relation to the distribution rho or g
 they only have the correct dimensions BANP and are shifted appropriately</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.hash_rho">
+<code class="descname">hash_rho</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.hash_rho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.hash_vib">
+<code class="descname">hash_vib</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.hash_vib" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.id_data">
+<code class="descname">id_data</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.id_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.id_rho">
+<code class="descname">id_rho</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.id_rho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.hacky_dmitri_load_sample">
-<code class="descname">hacky_dmitri_load_sample</code><span class="sig-paren">(</span><em>path</em>, <em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.hacky_dmitri_load_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.hacky_dmitri_load_sample" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.initialize_models">
+<code class="descname">initialize_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.initialize_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.initialize_models" title="Permalink to this definition">¶</a></dt>
 <dd><p>x</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.hacky_dmitri_sampling_function">
-<code class="descname">hacky_dmitri_sampling_function</code><span class="sig-paren">(</span><em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.hacky_dmitri_sampling_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.hacky_dmitri_sampling_function" title="Permalink to this definition">¶</a></dt>
-<dd><p>the cake is a lie</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.id_data">
-<code class="descname">id_data</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.id_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.id_rho">
-<code class="descname">id_rho</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.id_rho" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.initialize_models">
-<code class="descname">initialize_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.initialize_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.initialize_models" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxData.json_serialize">
-<em class="property">classmethod </em><code class="descname">json_serialize</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.json_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.json_serialize" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.json_serialize">
+<em class="property">classmethod </em><code class="descname">json_serialize</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.json_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.json_serialize" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.load_json_string">
-<code class="descname">load_json_string</code><span class="sig-paren">(</span><em>json_str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.load_json_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.load_json_string" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.load_json_string">
+<code class="descname">load_json_string</code><span class="sig-paren">(</span><em>json_str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.load_json_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.load_json_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>decodes the json_str and sets member parameters</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.modes">
-<code class="descname">modes</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.modes" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.modes">
+<code class="descname">modes</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.modes" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.path_rho_model">
-<code class="descname">path_rho_model</code><em class="property"> = ''</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.path_rho_model" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.path_rho_model">
+<code class="descname">path_rho_model</code><em class="property"> = ''</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.path_rho_model" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.path_vib_model">
-<code class="descname">path_vib_model</code><em class="property"> = ''</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.path_vib_model" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.path_vib_model">
+<code class="descname">path_vib_model</code><em class="property"> = ''</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.path_vib_model" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.preprocess">
-<code class="descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.preprocess" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.preprocess">
+<code class="descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxData.rho">
+<code class="descname">rho</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.rho" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.rho">
-<code class="descname">rho</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.rho" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.samples">
+<code class="descname">samples</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.samples" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.samples">
-<code class="descname">samples</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.samples" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.states">
+<code class="descname">states</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.states" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.states">
-<code class="descname">states</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.states" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.tau">
+<code class="descname">tau</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.tau" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.tau">
-<code class="descname">tau</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.tau" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.temperature">
-<code class="descname">temperature</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.temperature" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.temperature">
+<code class="descname">temperature</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.temperature" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxData.transform_sampled_coordinates">
-<code class="descname">transform_sampled_coordinates</code><span class="sig-paren">(</span><em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxData.transform_sampled_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.transform_sampled_coordinates" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.transform_sampled_coordinates">
+<code class="descname">transform_sampled_coordinates</code><span class="sig-paren">(</span><em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxData.transform_sampled_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.transform_sampled_coordinates" title="Permalink to this definition">¶</a></dt>
 <dd><p>transform from collective co-ordinates to bead dependent co-ordinates</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxData.vib">
-<code class="descname">vib</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxData.vib" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxData.vib">
+<code class="descname">vib</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxData.vib" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="pibronic.pimc.minimal.BoxDataPM">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">BoxDataPM</code><span class="sig-paren">(</span><em>delta_beta=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxDataPM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.minimal.BoxData" title="pibronic.pimc.minimal.BoxData"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.minimal.BoxData</span></code></a></p>
+<dt id="pibronic.pimc.pimc.BoxDataPM">
+<em class="property">class </em><code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">BoxDataPM</code><span class="sig-paren">(</span><em>delta_beta=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxDataPM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxDataPM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.pimc.BoxData" title="pibronic.pimc.pimc.BoxData"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.pimc.BoxData</span></code></a></p>
 <p>plus minus version of BoxData</p>
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxDataPM.beta_minus">
-<code class="descname">beta_minus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM.beta_minus" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxDataPM.beta_minus">
+<code class="descname">beta_minus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxDataPM.beta_minus" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxDataPM.beta_plus">
-<code class="descname">beta_plus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM.beta_plus" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxDataPM.beta_plus">
+<code class="descname">beta_plus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxDataPM.beta_plus" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxDataPM.delta_beta">
-<code class="descname">delta_beta</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM.delta_beta" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxDataPM.delta_beta">
+<code class="descname">delta_beta</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxDataPM.delta_beta" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxDataPM.initialize_models">
-<code class="descname">initialize_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxDataPM.initialize_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM.initialize_models" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxDataPM.initialize_models">
+<code class="descname">initialize_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxDataPM.initialize_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxDataPM.initialize_models" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxDataPM.preprocess">
-<code class="descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxDataPM.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM.preprocess" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxDataPM.preprocess">
+<code class="descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxDataPM.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxDataPM.preprocess" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxDataPM.tau_minus">
-<code class="descname">tau_minus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM.tau_minus" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxDataPM.tau_minus">
+<code class="descname">tau_minus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxDataPM.tau_minus" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxDataPM.tau_plus">
-<code class="descname">tau_plus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxDataPM.tau_plus" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxDataPM.tau_plus">
+<code class="descname">tau_plus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxDataPM.tau_plus" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="pibronic.pimc.minimal.BoxResult">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">BoxResult</code><span class="sig-paren">(</span><em>data=None</em>, <em>X=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResult">
+<em class="property">class </em><code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">BoxResult</code><span class="sig-paren">(</span><em>data=None</em>, <em>X=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>use this to pass results back and forth between methods</p>
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResult.compute_path_to_file">
-<code class="descname">compute_path_to_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResult.compute_path_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult.compute_path_to_file" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResult.compute_path_to_file">
+<code class="descname">compute_path_to_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult.compute_path_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.compute_path_to_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>used by BoxResultPM as well</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pibronic.pimc.minimal.BoxResult.id_job">
-<code class="descname">id_job</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult.id_job" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResult.hash_rho">
+<code class="descname">hash_rho</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.hash_rho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxResult.hash_vib">
+<code class="descname">hash_vib</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.hash_vib" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxResult.id_job">
+<code class="descname">id_job</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.id_job" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResult.initialize_arrays">
-<code class="descname">initialize_arrays</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResult.initialize_arrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult.initialize_arrays" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResult.initialize_arrays">
+<code class="descname">initialize_arrays</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult.initialize_arrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.initialize_arrays" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxResult.key_list">
+<code class="descname">key_list</code><em class="property"> = ['number_of_samples', 's_rho', 's_g']</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.key_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResult.load_multiple_results">
-<code class="descname">load_multiple_results</code><span class="sig-paren">(</span><em>list_of_paths</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResult.load_multiple_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult.load_multiple_results" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
+<dt id="pibronic.pimc.pimc.BoxResult.load_multiple_results">
+<code class="descname">load_multiple_results</code><span class="sig-paren">(</span><em>list_of_paths</em>, <em>desired_number_of_samples=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult.load_multiple_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.load_multiple_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>load results from more than one file
+the optional argument desired_number_of_samples can be provided
+the method will then try to load as many samples UPTO the desired_number_of_samples and no more</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResult.load_results">
-<code class="descname">load_results</code><span class="sig-paren">(</span><em>path_full</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResult.load_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult.load_results" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResult.load_results">
+<code class="descname">load_results</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult.load_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.load_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>load results from one file</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="pibronic.pimc.pimc.BoxResult.read_number_of_samples">
+<em class="property">classmethod </em><code class="descname">read_number_of_samples</code><span class="sig-paren">(</span><em>path_full</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult.read_number_of_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.read_number_of_samples" title="Permalink to this definition">¶</a></dt>
 <dd><p>x</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxResult.read_number_of_samples">
-<em class="property">classmethod </em><code class="descname">read_number_of_samples</code><span class="sig-paren">(</span><em>path_full</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResult.read_number_of_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult.read_number_of_samples" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResult.result_keys_are_present_in">
+<em class="property">classmethod </em><code class="descname">result_keys_are_present_in</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult.result_keys_are_present_in"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.result_keys_are_present_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>x</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResult.save_results">
-<code class="descname">save_results</code><span class="sig-paren">(</span><em>number_of_samples</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResult.save_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult.save_results" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResult.save_results">
+<code class="descname">save_results</code><span class="sig-paren">(</span><em>number_of_samples</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult.save_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.save_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>x</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxResult.verify_result_keys_are_present">
-<em class="property">classmethod </em><code class="descname">verify_result_keys_are_present</code><span class="sig-paren">(</span><em>path</em>, <em>fileObj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResult.verify_result_keys_are_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResult.verify_result_keys_are_present" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResult.verify_result_keys_are_present">
+<em class="property">classmethod </em><code class="descname">verify_result_keys_are_present</code><span class="sig-paren">(</span><em>path</em>, <em>fileObj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResult.verify_result_keys_are_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResult.verify_result_keys_are_present" title="Permalink to this definition">¶</a></dt>
 <dd><p>x</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="pibronic.pimc.minimal.BoxResultPM">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">BoxResultPM</code><span class="sig-paren">(</span><em>data=None</em>, <em>X=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResultPM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResultPM" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.minimal.BoxResult" title="pibronic.pimc.minimal.BoxResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.minimal.BoxResult</span></code></a></p>
+<dt id="pibronic.pimc.pimc.BoxResultPM">
+<em class="property">class </em><code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">BoxResultPM</code><span class="sig-paren">(</span><em>data=None</em>, <em>X=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResultPM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResultPM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.pimc.BoxResult" title="pibronic.pimc.pimc.BoxResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.pimc.BoxResult</span></code></a></p>
 <p>plus minus version of BoxResult</p>
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResultPM.initialize_arrays">
-<code class="descname">initialize_arrays</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResultPM.initialize_arrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResultPM.initialize_arrays" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResultPM.initialize_arrays">
+<code class="descname">initialize_arrays</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResultPM.initialize_arrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResultPM.initialize_arrays" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pibronic.pimc.pimc.BoxResultPM.key_list">
+<code class="descname">key_list</code><em class="property"> = ['s_gP', 's_gM', 'number_of_samples', 's_rho', 's_g']</em><a class="headerlink" href="#pibronic.pimc.pimc.BoxResultPM.key_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResultPM.load_multiple_results">
-<code class="descname">load_multiple_results</code><span class="sig-paren">(</span><em>list_of_paths</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResultPM.load_multiple_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResultPM.load_multiple_results" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
+<dt id="pibronic.pimc.pimc.BoxResultPM.load_multiple_results">
+<code class="descname">load_multiple_results</code><span class="sig-paren">(</span><em>list_of_paths</em>, <em>desired_number_of_samples=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResultPM.load_multiple_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResultPM.load_multiple_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>load results from more than one file
+the optional argument desired_number_of_samples can be provided
+the method will then try to load as many samples UPTO the desired_number_of_samples and no more</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResultPM.load_results">
-<code class="descname">load_results</code><span class="sig-paren">(</span><em>path_full</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResultPM.load_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResultPM.load_results" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.BoxResultPM.save_results">
-<code class="descname">save_results</code><span class="sig-paren">(</span><em>number_of_samples</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResultPM.save_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResultPM.save_results" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResultPM.load_results">
+<code class="descname">load_results</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResultPM.load_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResultPM.load_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>x</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.BoxResultPM.verify_result_keys_are_present">
-<em class="property">classmethod </em><code class="descname">verify_result_keys_are_present</code><span class="sig-paren">(</span><em>path</em>, <em>fileObj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#BoxResultPM.verify_result_keys_are_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.BoxResultPM.verify_result_keys_are_present" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResultPM.result_keys_are_present_in">
+<em class="property">classmethod </em><code class="descname">result_keys_are_present_in</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResultPM.result_keys_are_present_in"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResultPM.result_keys_are_present_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>x</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="pibronic.pimc.pimc.BoxResultPM.save_results">
+<code class="descname">save_results</code><span class="sig-paren">(</span><em>number_of_samples</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResultPM.save_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResultPM.save_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>x</p>
 </dd></dl>
-
-<dl class="class">
-<dt id="pibronic.pimc.minimal.ModelClass">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">ModelClass</code><span class="sig-paren">(</span><em>states=1</em>, <em>modes=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>information describing a quantum mechanical system</p>
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelClass.cubic">
-<code class="descname">cubic</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.cubic" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelClass.energy">
-<code class="descname">energy</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.energy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="classmethod">
-<dt id="pibronic.pimc.minimal.ModelClass.from_json_file">
-<em class="property">classmethod </em><code class="descname">from_json_file</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelClass.from_json_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.from_json_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>constructor wrapper</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelClass.linear">
-<code class="descname">linear</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.linear" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelClass.load_model">
-<code class="descname">load_model</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelClass.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.load_model" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.BoxResultPM.verify_result_keys_are_present">
+<em class="property">classmethod </em><code class="descname">verify_result_keys_are_present</code><span class="sig-paren">(</span><em>path</em>, <em>fileObj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#BoxResultPM.verify_result_keys_are_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.BoxResultPM.verify_result_keys_are_present" title="Permalink to this definition">¶</a></dt>
 <dd><p>x</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelClass.modes">
-<code class="descname">modes</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.modes" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelClass.omega">
-<code class="descname">omega</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.omega" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelClass.quadratic">
-<code class="descname">quadratic</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.quadratic" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelClass.quartic">
-<code class="descname">quartic</code><em class="property"> = None</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.quartic" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelClass.states">
-<code class="descname">states</code><em class="property"> = 0</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelClass.states" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pibronic.pimc.minimal.ModelSampling">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">ModelSampling</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.minimal.ModelClass" title="pibronic.pimc.minimal.ModelClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.minimal.ModelClass</span></code></a></p>
-<p>stores information about the system of interest</p>
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.compute_linear_displacement">
-<code class="descname">compute_linear_displacement</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.compute_linear_displacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.compute_linear_displacement" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute the energy shift equivalent to a linear displacement</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.compute_sampling_constants">
-<code class="descname">compute_sampling_constants</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.compute_sampling_constants"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.compute_sampling_constants" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.compute_weight_for_each_state">
-<code class="descname">compute_weight_for_each_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.compute_weight_for_each_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.compute_weight_for_each_state" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.draw_sample">
-<code class="descname">draw_sample</code><span class="sig-paren">(</span><em>sample_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.draw_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.draw_sample" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates collective co-ordinates and stores them in self.cc_samples with dimensions BNP</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.finish_folding_in_terms">
-<code class="descname">finish_folding_in_terms</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.finish_folding_in_terms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.finish_folding_in_terms" title="Permalink to this definition">¶</a></dt>
-<dd><p>set the terms we ‘folded in’ to zero</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.initialize_TDP_object">
-<code class="descname">initialize_TDP_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.initialize_TDP_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.initialize_TDP_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>creates the TemperatureDependentClass object</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.load_model">
-<code class="descname">load_model</code><span class="sig-paren">(</span><em>filePath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.load_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>x</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.optimize_energy">
-<code class="descname">optimize_energy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.optimize_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.optimize_energy" title="Permalink to this definition">¶</a></dt>
-<dd><p>shift the energy to reduce the order of the raw partition function value</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelSampling.precompute">
-<code class="descname">precompute</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelSampling.precompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelSampling.precompute" title="Permalink to this definition">¶</a></dt>
-<dd><p>precompute some constants</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pibronic.pimc.minimal.ModelVibronic">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">ModelVibronic</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronic" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.minimal.ModelClass" title="pibronic.pimc.minimal.ModelClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.minimal.ModelClass</span></code></a></p>
-<p>stores information about the system of interest</p>
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelVibronic.compute_linear_displacement">
-<code class="descname">compute_linear_displacement</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronic.compute_linear_displacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronic.compute_linear_displacement" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute the energy shift equivalent to a linear displacement</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelVibronic.compute_weight_for_each_state">
-<code class="descname">compute_weight_for_each_state</code><span class="sig-paren">(</span><em>modified_energy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronic.compute_weight_for_each_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronic.compute_weight_for_each_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>these are the weights for the oscillators associated with each state</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelVibronic.finish_folding_in_terms">
-<code class="descname">finish_folding_in_terms</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronic.finish_folding_in_terms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronic.finish_folding_in_terms" title="Permalink to this definition">¶</a></dt>
-<dd><p>set the terms we ‘folded in’ to zero</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelVibronic.initialize_TDP_object">
-<code class="descname">initialize_TDP_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronic.initialize_TDP_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronic.initialize_TDP_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>creates the TemperatureDependentClass object</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelVibronic.optimize_energy">
-<code class="descname">optimize_energy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronic.optimize_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronic.optimize_energy" title="Permalink to this definition">¶</a></dt>
-<dd><p>shift the energy to reduce the order of the raw partition function value</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelVibronic.precompute">
-<code class="descname">precompute</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronic.precompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronic.precompute" title="Permalink to this definition">¶</a></dt>
-<dd><p>precompute some constants</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pibronic.pimc.minimal.ModelVibronicPM">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">ModelVibronicPM</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronicPM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronicPM" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pibronic.pimc.minimal.ModelVibronic" title="pibronic.pimc.minimal.ModelVibronic"><code class="xref py py-class docutils literal notranslate"><span class="pre">pibronic.pimc.minimal.ModelVibronic</span></code></a></p>
-<p>plus minus version of ModelVibronic</p>
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelVibronicPM.beta_minus">
-<code class="descname">beta_minus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronicPM.beta_minus" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelVibronicPM.beta_plus">
-<code class="descname">beta_plus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronicPM.beta_plus" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelVibronicPM.delta_beta">
-<code class="descname">delta_beta</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronicPM.delta_beta" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelVibronicPM.initialize_TDP_object">
-<code class="descname">initialize_TDP_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronicPM.initialize_TDP_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronicPM.initialize_TDP_object" title="Permalink to this definition">¶</a></dt>
-<dd><p>creates the TemperatureDependentClass object</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pibronic.pimc.minimal.ModelVibronicPM.precompute">
-<code class="descname">precompute</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#ModelVibronicPM.precompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronicPM.precompute" title="Permalink to this definition">¶</a></dt>
-<dd><p>precompute some constants</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelVibronicPM.tau_minus">
-<code class="descname">tau_minus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronicPM.tau_minus" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pibronic.pimc.minimal.ModelVibronicPM.tau_plus">
-<code class="descname">tau_plus</code><em class="property"> = 0.0</em><a class="headerlink" href="#pibronic.pimc.minimal.ModelVibronicPM.tau_plus" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pibronic.pimc.minimal.TemperatureDependentClass">
-<em class="property">class </em><code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">TemperatureDependentClass</code><span class="sig-paren">(</span><em>model</em>, <em>tau</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#TemperatureDependentClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.TemperatureDependentClass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>store temperture dependent constants here</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pibronic.pimc.minimal.block_compute">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">block_compute</code><span class="sig-paren">(</span><em>data</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#block_compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.block_compute" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.block_compute">
+<code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">block_compute</code><span class="sig-paren">(</span><em>data</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#block_compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.block_compute" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the numerator and denominator for block_size # of sampled points in each loop</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pibronic.pimc.minimal.block_compute_gR">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">block_compute_gR</code><span class="sig-paren">(</span><em>data</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#block_compute_gR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.block_compute_gR" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute and save only g(R) for building data_set to train ML algorithm
-for block_size # of sampled points in each loop</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.block_compute_gR_from_raw_samples">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">block_compute_gR_from_raw_samples</code><span class="sig-paren">(</span><em>data</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#block_compute_gR_from_raw_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.block_compute_gR_from_raw_samples" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute and save g(R) and R values for building data_set to train ML algorithm
-for block_size # of sampled points in each loop</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.block_compute_pm">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">block_compute_pm</code><span class="sig-paren">(</span><em>data</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#block_compute_pm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.block_compute_pm" title="Permalink to this definition">¶</a></dt>
+<dt id="pibronic.pimc.pimc.block_compute_pm">
+<code class="descclassname">pibronic.pimc.pimc.</code><code class="descname">block_compute_pm</code><span class="sig-paren">(</span><em>data</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/pimc.html#block_compute_pm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.pimc.block_compute_pm" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="pibronic.pimc.minimal.block_compute_rhoR_from_input_samples">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">block_compute_rhoR_from_input_samples</code><span class="sig-paren">(</span><em>data</em>, <em>result</em>, <em>input_R_values</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#block_compute_rhoR_from_input_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.block_compute_rhoR_from_input_samples" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute and save rho(R) from input R values for testing data_set to train ML algorithm
-for block_size # of sampled points in each loop</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.build_denominator">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">build_denominator</code><span class="sig-paren">(</span><em>rho_model</em>, <em>outputArray</em>, <em>idx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#build_denominator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.build_denominator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the state trace over the bead product of the o matricies of the rho model</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.build_numerator">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">build_numerator</code><span class="sig-paren">(</span><em>data</em>, <em>vib</em>, <em>outputArray</em>, <em>idx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#build_numerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.build_numerator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the numerator and saves it to the outputArray</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.build_o_matrix">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">build_o_matrix</code><span class="sig-paren">(</span><em>data</em>, <em>model</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#build_o_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.build_o_matrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the O matrix of a model, storing the result inside the model object</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.build_scaling_factors">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">build_scaling_factors</code><span class="sig-paren">(</span><em>S12</em>, <em>model_one</em>, <em>model_two</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#build_scaling_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.build_scaling_factors" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the individual and combined scaling factors for both provided models</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.diagonalize_coupling_matrix">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">diagonalize_coupling_matrix</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#diagonalize_coupling_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.diagonalize_coupling_matrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.draw_histogram">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">draw_histogram</code><span class="sig-paren">(</span><em>data</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#draw_histogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.draw_histogram" title="Permalink to this definition">¶</a></dt>
-<dd><p>debug shit</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="pibronic.pimc.minimal.float_tolerance">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">float_tolerance</code><em class="property"> = 1e-23</em><a class="headerlink" href="#pibronic.pimc.minimal.float_tolerance" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO - eventually this should be replaced so that each time a sample is drawn
-a new seed is generated and stored in the results file indexed with the fraction it generated</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.plus_minus_wrapper">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">plus_minus_wrapper</code><span class="sig-paren">(</span><em>id_data</em>, <em>id_rho=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#plus_minus_wrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.plus_minus_wrapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate all the possible temp +/- approaches</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.pos_sym_assert">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">pos_sym_assert</code><span class="sig-paren">(</span><em>tensor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#pos_sym_assert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.pos_sym_assert" title="Permalink to this definition">¶</a></dt>
-<dd><p>raises error if provided tensor is not positive semi-definite</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.save_gR_with_samples">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">save_gR_with_samples</code><span class="sig-paren">(</span><em>data</em>, <em>result</em>, <em>input_R_values</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#save_gR_with_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.save_gR_with_samples" title="Permalink to this definition">¶</a></dt>
-<dd><p>temporary function to save g(R) results with R values
-don’t want to pollute BoxResult with extra functions that might not be necessary in the future
-so this will go here for now</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.scale_o_matricies">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">scale_o_matricies</code><span class="sig-paren">(</span><em>scalingFactor</em>, <em>model_one</em>, <em>model_two</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#scale_o_matricies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.scale_o_matricies" title="Permalink to this definition">¶</a></dt>
-<dd><p>divides the O matricies of the models by the scalingFactor</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.simple_wrapper">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">simple_wrapper</code><span class="sig-paren">(</span><em>id_data</em>, <em>id_rho=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#simple_wrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.simple_wrapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Just do simple expval(Z) calculation</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pibronic.pimc.minimal.un_scale_o_matricies">
-<code class="descclassname">pibronic.pimc.minimal.</code><code class="descname">un_scale_o_matricies</code><span class="sig-paren">(</span><em>scalingFactor</em>, <em>model_one</em>, <em>model_two</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pibronic/pimc/minimal.html#un_scale_o_matricies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pibronic.pimc.minimal.un_scale_o_matricies" title="Permalink to this definition">¶</a></dt>
-<dd><p>multiples the O matricies of the models by the scalingFactor</p>
-</dd></dl>
-
-</div>
-<div class="section" id="module-pibronic.pimc">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pibronic.pimc" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="scripts-that-run-the-pimc-code">
-<h3>Scripts that run the PIMC code<a class="headerlink" href="#scripts-that-run-the-pimc-code" title="Permalink to this headline">¶</a></h3>
-</div>
 </div>
 </div>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">pibronic.pimc package</a><ul>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pibronic.pimc.minimal">pibronic.pimc.minimal module</a></li>
-<li><a class="reference internal" href="#module-pibronic.pimc">Module contents</a><ul>
-<li><a class="reference internal" href="#scripts-that-run-the-pimc-code">Scripts that run the PIMC code</a></li>
+<h1 class="logo"><a href="index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="pibronic.html">pibronic package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#pibronic">Pibronic</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="pibronic.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pibronic.data.html">pibronic.data package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">pibronic.pimc package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.plotting.html">pibronic.plotting package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.server.html">pibronic.server package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.stats.html">pibronic.stats package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pibronic.vibronic.html">pibronic.vibronic package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.constants">pibronic.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.everything">pibronic.everything module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.helper">pibronic.helper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.julia_wrapper">pibronic.julia_wrapper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pibronic.html#module-pibronic.log_conf">pibronic.log_conf module</a></li>
 </ul>
 </li>
 </ul>
-</li>
-</ul>
+
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
@@ -703,13 +653,6 @@ so this will go here for now</p>
   </ul></li>
 </ul>
 </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/pibronic.pimc.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <div class="searchformwrapper">
@@ -730,8 +673,8 @@ so this will go here for now</p>
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/pibronic.pimc.rst.txt"

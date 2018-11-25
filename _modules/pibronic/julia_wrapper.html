@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.julia_wrapper &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.julia_wrapper &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -37,60 +37,121 @@
 
 <span class="c1"># system imports</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">realpath</span>
 
 <span class="c1"># third party imports</span>
 
 <span class="c1"># local imports</span>
-<span class="kn">from</span> <span class="nn">pibronic.data</span> <span class="k">import</span> <span class="n">file_structure</span> <span class="k">as</span> <span class="n">fs</span>
 <span class="kn">from</span> <span class="nn">pibronic</span> <span class="k">import</span> <span class="n">constants</span>
 <span class="kn">from</span> <span class="nn">pibronic.log_conf</span> <span class="k">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">pibronic.data</span> <span class="k">import</span> <span class="n">file_structure</span> <span class="k">as</span> <span class="n">fs</span>
+<span class="kn">from</span> <span class="nn">pibronic.server.job_boss</span> <span class="k">import</span> <span class="n">subprocess_run_wrapper</span>
+
+<span class="sd">&quot;&quot;&quot; this dictionary is used to map the output of processes running Julia scripts</span>
+<span class="sd">each Julia script prints out some number of &quot;Name: value&quot; strings</span>
+<span class="sd">we want to capture the value&#39;s in those strings</span>
+<span class="sd">however we may want to associate them with different Names</span>
+<span class="sd">the keys of this dictionary are the new Names we wish to use, and the values are the old Names</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">keyDict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;Z_MC&quot;</span><span class="p">:</span> <span class="s2">&quot;Z_MC&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;E_MC&quot;</span><span class="p">:</span> <span class="s2">&quot;E_MC&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Cv_MC&quot;</span><span class="p">:</span> <span class="s2">&quot;Cv_MC&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SvN_MC&quot;</span><span class="p">:</span> <span class="s2">&quot;SvN_MC&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;S2_MC&quot;</span><span class="p">:</span> <span class="s2">&quot;S2_MC&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Z_trotter&quot;</span><span class="p">:</span> <span class="s2">&quot;Z_trotter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;E_trotter&quot;</span><span class="p">:</span> <span class="s2">&quot;E_trotter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Cv_trotter&quot;</span><span class="p">:</span> <span class="s2">&quot;Cv_trotter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SvN_trotter&quot;</span><span class="p">:</span> <span class="s2">&quot;SvN_trotter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;S2_trotter&quot;</span><span class="p">:</span> <span class="s2">&quot;S2_trotter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Z_sos&quot;</span><span class="p">:</span> <span class="s2">&quot;Z_sos&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;E_sos&quot;</span><span class="p">:</span> <span class="s2">&quot;E_sos&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Cv_sos&quot;</span><span class="p">:</span> <span class="s2">&quot;Cv_sos&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SvN_sos&quot;</span><span class="p">:</span> <span class="s2">&quot;SvN_sos&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;S2_sos&quot;</span><span class="p">:</span> <span class="s2">&quot;S2_sos&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;E0_exact&quot;</span><span class="p">:</span> <span class="s2">&quot;E0_exact&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SvN_exact&quot;</span><span class="p">:</span> <span class="s2">&quot;SvN_exact&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;S2_exact&quot;</span><span class="p">:</span> <span class="s2">&quot;S2_exact&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Z_rho&quot;</span><span class="p">:</span> <span class="s2">&quot;Z_analytical&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;E_rho&quot;</span><span class="p">:</span> <span class="s2">&quot;E_analytical&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Cv_rho&quot;</span><span class="p">:</span> <span class="s2">&quot;Cv_analytical&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SvN_rho&quot;</span><span class="p">:</span> <span class="s2">&quot;SvN_analytical&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;S2_rho&quot;</span><span class="p">:</span> <span class="s2">&quot;S2_analytical&quot;</span><span class="p">,</span>
+    <span class="c1"># &quot;Z_rho+beta&quot;: &quot;Zrho+(beta)&quot;,</span>
+    <span class="c1"># &quot;Z_rho-beta&quot;: &quot;Zrho-(beta)&quot;,</span>
+    <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tau&quot;</span><span class="p">:</span> <span class="s2">&quot;tau&quot;</span><span class="p">,</span>
+<span class="p">}</span>
 
 
-<div class="viewcode-block" id="compute"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.compute">[docs]</a><span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">old_dict</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="s2">&quot;Computing&quot;</span><span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
-    <span class="c1"># out = &quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
-    <span class="n">rawOutput</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">()))</span>
+<div class="viewcode-block" id="parse_ouput"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.parse_ouput">[docs]</a><span class="k">def</span> <span class="nf">parse_ouput</span><span class="p">(</span><span class="n">byte_string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; takes the byte string output from the Julia script as input</span>
+<span class="sd">    splits it into a list of string representations of each line</span>
+<span class="sd">    makes a dictionary by splitting each line at the semicolon</span>
+<span class="sd">    with the key as all characters on the left and the value as all characters on the right</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rawOutput</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">byte_string</span><span class="o">.</span><span class="n">decode</span><span class="p">()))</span>
     <span class="n">lineList</span> <span class="o">=</span> <span class="p">[</span><span class="n">string</span> <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">rawOutput</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">string</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+    <span class="c1"># quick check to make sure that our assumption about the structure of the output is correct</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lineList</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="s2">&quot;:&quot;</span> <span class="ow">in</span> <span class="n">line</span>
+    <span class="c1"># the following step requires that every line has a semicolon</span>
     <span class="n">output_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lineList</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output_dict</span></div>
 
+
+<div class="viewcode-block" id="convert_keys"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.convert_keys">[docs]</a><span class="k">def</span> <span class="nf">convert_keys</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">output_dict</span><span class="p">,</span> <span class="n">input_beta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; uses the keyDict to map keys from the output_dict to new keys</span>
+<span class="sd">    stores the resulting key,value pairs in a new_dict</span>
+<span class="sd">    calls update on old_dict using this new_dict it has created</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">temp_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">keyDict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;Z_coupled&quot;</span><span class="p">:</span> <span class="s2">&quot;ZH&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Z_harmonic&quot;</span><span class="p">:</span> <span class="s2">&quot;Zrho&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Z_sampling&quot;</span><span class="p">:</span> <span class="s2">&quot;Zrho&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Z_sampling+beta&quot;</span><span class="p">:</span> <span class="s2">&quot;Zrho+(beta)&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Z_sampling-beta&quot;</span><span class="p">:</span> <span class="s2">&quot;Zrho-(beta)&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;E_coupled&quot;</span><span class="p">:</span> <span class="s2">&quot;E&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;E_harmonic&quot;</span><span class="p">:</span> <span class="s2">&quot;Erho&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;E_sampling&quot;</span><span class="p">:</span> <span class="s2">&quot;Erho&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Cv_coupled&quot;</span><span class="p">:</span> <span class="s2">&quot;Cv&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Cv_harmonic&quot;</span><span class="p">:</span> <span class="s2">&quot;Cvrho&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Cv_sampling&quot;</span><span class="p">:</span> <span class="s2">&quot;Cvrho&quot;</span><span class="p">,</span>
-        <span class="c1">#</span>
-        <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;tau&quot;</span><span class="p">:</span> <span class="s2">&quot;tau&quot;</span><span class="p">,</span>
-    <span class="p">}</span>
 
     <span class="k">for</span> <span class="n">newKey</span><span class="p">,</span> <span class="n">oldKey</span> <span class="ow">in</span> <span class="n">keyDict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">oldKey</span> <span class="ow">in</span> <span class="n">output_dict</span><span class="p">:</span>
             <span class="n">temp_dict</span><span class="p">[</span><span class="n">newKey</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">output_dict</span><span class="p">[</span><span class="n">oldKey</span><span class="p">])</span>
 
-    <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">temperature</span><span class="p">):</span> <span class="n">temp_dict</span><span class="p">}</span>
+    <span class="n">key_T</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">extract_T_from_beta</span><span class="p">(</span><span class="n">input_beta</span><span class="p">))</span>
+
+    <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">key_T</span><span class="p">:</span> <span class="n">temp_dict</span><span class="p">}</span>
 
     <span class="n">old_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_dict</span><span class="p">)</span>
+    <span class="c1"># print(old_dict)</span>
     <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="validate_old_data"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.validate_old_data">[docs]</a><span class="k">def</span> <span class="nf">validate_old_data</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">FS</span><span class="p">):</span>
+<div class="viewcode-block" id="compute"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.compute">[docs]</a><span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">path_src</span><span class="p">,</span> <span class="n">old_dict</span><span class="p">,</span> <span class="n">input_beta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; x &quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="s2">&quot;Computing&quot;</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+
+    <span class="c1"># check to make sure the job wasn&#39;t killed</span>
+    <span class="k">if</span> <span class="s2">&quot;Killed&quot;</span> <span class="ow">in</span> <span class="n">error</span><span class="o">.</span><span class="n">decode</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;We ran into an error: {error.decode():s}&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">output_dict</span> <span class="o">=</span> <span class="n">parse_ouput</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+    <span class="c1"># print(output_dict)</span>
+
+    <span class="c1"># check to make sure that we didn&#39;t get 0 results</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">output_dict</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;The results dictionary after running Julia code on </span><span class="si">{path_src}</span><span class="s2"> is empty, therefore the calculation did not complete successfully&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">convert_keys</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">output_dict</span><span class="p">,</span> <span class="n">input_beta</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="validate_old_rho_data"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.validate_old_rho_data">[docs]</a><span class="k">def</span> <span class="nf">validate_old_rho_data</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">FS</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; check if the old hashes match the new ones,</span>
 <span class="sd">    otherwise we have to throw away all the old data</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -108,118 +169,319 @@
     <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="analytic_of_sampling_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.analytic_of_sampling_model">[docs]</a><span class="k">def</span> <span class="nf">analytic_of_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="n">path_analytic</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_analytic_rho</span>
-    <span class="n">path_original</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_model</span>
+<div class="viewcode-block" id="validate_old_model_data"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.validate_old_model_data">[docs]</a><span class="k">def</span> <span class="nf">validate_old_model_data</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">FS</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; check if the old hashes match the new ones,</span>
+<span class="sd">    otherwise we have to throw away all the old data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;hash_vib&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">old_dict</span><span class="p">:</span>
+        <span class="c1"># throw away all the old data</span>
+        <span class="n">old_dict</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="k">elif</span> <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;hash_vib&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_vib</span><span class="p">:</span>
+        <span class="c1"># throw away all the old data</span>
+        <span class="n">old_dict</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="c1"># add the new hashes</span>
+    <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;hash_vib&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">hash_vib</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="base_func"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.base_func">[docs]</a><span class="k">def</span> <span class="nf">base_func</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">path_dst</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path_src</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
     <span class="n">old_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">path_dst</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_dst</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">old_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-    <span class="n">validate_old_data</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">FS</span><span class="p">)</span>
-    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">path_original</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
-    <span class="n">compute</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">old_dict</span><span class="p">)</span>
+    <span class="n">validate</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">FS</span><span class="p">)</span>
 
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
-    <span class="k">return</span></div>
-
-
-<div class="viewcode-block" id="analytic_of_original_coupled_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.analytic_of_original_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">analytic_of_original_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="n">path_analytic</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="s2">&quot;original_analytic_results.txt&quot;</span>
-    <span class="n">path_original</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_params</span> <span class="o">+</span> <span class="s2">&quot;original_coupled_model.json&quot;</span>
-
-    <span class="n">old_dict</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">old_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-    <span class="n">validate_old_data</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">FS</span><span class="p">)</span>
-    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">path_original</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
-    <span class="n">compute</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">old_dict</span><span class="p">)</span>
-
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_analytic</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">compute</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">path_src</span><span class="p">,</span> <span class="n">old_dict</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+        <span class="n">validate</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">FS</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_dst</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Calculation did not complete successfully&quot;</span><span class="p">)</span>
 
     <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="sos_of_coupled_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.sos_of_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">sos_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="n">old_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">basis_size</span> <span class="o">=</span> <span class="mi">80</span>
-
-    <span class="n">path_sos</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_sos_vib</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">B</span><span class="o">=</span><span class="n">basis_size</span><span class="p">)</span>
-
-    <span class="c1"># is this a mistake? why check for vib then open rho ??</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path_sos</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_sos</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">old_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="n">basis_size</span><span class="p">)</span>
-    <span class="n">compute</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">old_dict</span><span class="p">)</span>
-
-    <span class="n">validate_old_data</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">FS</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_sos</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">old_dict</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
-
+<div class="viewcode-block" id="analytic_wrapper"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.analytic_wrapper">[docs]</a><span class="k">def</span> <span class="nf">analytic_wrapper</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this wrapper evaluates the given command with the appropriate arguments</span>
+<span class="sd">    before passing the args to the base_func()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_src&quot;</span><span class="p">],</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
+    <span class="n">base_func</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="prepare_julia"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.prepare_julia">[docs]</a><span class="k">def</span> <span class="nf">prepare_julia</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;preform any tasks necessary to setup the environment for executing julia code&quot;&quot;&quot;</span>
-    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;/usr/bin/modulecmd&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="s1">&#39;julia/0.6.3&#39;</span><span class="p">]</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
-    <span class="n">out</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
-    <span class="n">exec</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+<div class="viewcode-block" id="analytic_of_sampling_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.analytic_of_sampling_model">[docs]</a><span class="k">def</span> <span class="nf">analytic_of_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; attempts to analytically calculate Z from the sampling model (rho_#)</span>
+<span class="sd">    checks for previous results data, reads it in, then tosses the data if the hashes are not valid</span>
+<span class="sd">    attempts to execute the analytical Julia script, and if successful saves the output</span>
+<span class="sd">    writes the combined old data and new data to the appropriate file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">construct_command_dictionary</span><span class="p">()[</span><span class="s2">&quot;analytical uncoupled&quot;</span><span class="p">]</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;validate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">validate_old_rho_data</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_dst&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_analytic_rho</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_model</span>
+    <span class="n">analytic_wrapper</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="analytic_of_original_coupled_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.analytic_of_original_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">analytic_of_original_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; attempts to analytically calculate Z from the original model</span>
+<span class="sd">    checks for previous results data, reads it in, then tosses the data if the hashes are not valid</span>
+<span class="sd">    attempts to execute the analytical Julia script, and if successful saves the output</span>
+<span class="sd">    writes the combined old data and new data to the appropriate file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">construct_command_dictionary</span><span class="p">()[</span><span class="s2">&quot;analytical coupled&quot;</span><span class="p">]</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;validate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">validate_old_model_data</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_dst&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_analytic_orig</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_orig_model</span>
+    <span class="n">analytic_wrapper</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="sos_wrapper"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.sos_wrapper">[docs]</a><span class="k">def</span> <span class="nf">sos_wrapper</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">basis_size</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this wrapper evaluates the given command with the appropriate arguments</span>
+<span class="sd">    before passing the args to the base_func()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="n">basis_size</span><span class="p">)</span>
+    <span class="n">base_func</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="sos_of_coupled_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.sos_of_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">sos_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">basis_size</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; attempts to calculate Z using SOS</span>
+<span class="sd">    checks for previous results data, reads it in, then tosses the data if the hashes are not valid</span>
+<span class="sd">    attempts to execute the SOS Julia script, and if successful saves the output</span>
+<span class="sd">    writes the combined old data and new data to the appropriate file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">construct_command_dictionary</span><span class="p">()[</span><span class="s2">&quot;sos&quot;</span><span class="p">]</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;validate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">validate_old_model_data</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_dst&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_sos_vib</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">B</span><span class="o">=</span><span class="n">basis_size</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_dst&quot;</span><span class="p">]</span>
+    <span class="n">sos_wrapper</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">basis_size</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="trotter_wrapper"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.trotter_wrapper">[docs]</a><span class="k">def</span> <span class="nf">trotter_wrapper</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">nbeads</span><span class="p">,</span> <span class="n">basis_size</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this wrapper evaluates the given command with the appropriate arguments</span>
+<span class="sd">    before passing the args to the base_func()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+                                                 <span class="n">B</span><span class="o">=</span><span class="n">basis_size</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="n">nbeads</span><span class="p">)</span>
+    <span class="n">base_func</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="trotter_of_coupled_model"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.trotter_of_coupled_model">[docs]</a><span class="k">def</span> <span class="nf">trotter_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">nbeads</span><span class="p">,</span> <span class="n">basis_size</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; attempts to calculate Z using SOS, including the trotter error</span>
+<span class="sd">    checks for previous results data, reads it in, then tosses the data if the hashes are not valid</span>
+<span class="sd">    attempts to execute the trotter Julia script, and if successful saves the output</span>
+<span class="sd">    writes the combined old data and new data to the appropriate file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">construct_command_dictionary</span><span class="p">()[</span><span class="s2">&quot;trotter&quot;</span><span class="p">]</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;validate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">validate_old_model_data</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_dst&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">template_trotter_vib</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">P</span><span class="o">=</span><span class="n">nbeads</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="n">basis_size</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path_dst&quot;</span><span class="p">]</span>
+    <span class="n">trotter_wrapper</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">nbeads</span><span class="p">,</span> <span class="n">basis_size</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="iterate_method"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.iterate_method">[docs]</a><span class="k">def</span> <span class="nf">iterate_method</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">n_iterations</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this is just a wrapper for the iterative method at the moment</span>
+<span class="sd">    it doesn&#39;t check for old data - it just regenerates the output every time</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path_iterate</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_iter_model</span>
+
+    <span class="n">command</span> <span class="o">=</span> <span class="n">construct_command_dictionary</span><span class="p">()[</span><span class="s2">&quot;iterative&quot;</span><span class="p">]</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F</span><span class="o">=</span><span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="n">path_iterate</span><span class="p">,</span>
+                             <span class="n">VS</span><span class="o">=</span><span class="n">FS</span><span class="o">.</span><span class="n">path_iter_mat</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">n_iterations</span><span class="p">,</span>
+                             <span class="p">)</span>
+    <span class="c1"># print(&quot;command&quot;, command)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="c1"># print(out.decode())</span>
+    <span class="c1"># print(error.decode())</span>
+
+    <span class="c1"># we assume there were no issues!</span>
+    <span class="c1"># TODO - this should be fixed after the iterative method has been finalized</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="prepare_julia"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.prepare_julia">[docs]</a><span class="k">def</span> <span class="nf">prepare_julia</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;preform any tasks necessary to setup the environment for executing Julia code&quot;&quot;&quot;</span>
+
+    <span class="c1"># a dynamic approach to checking possibly Julia versions would be preferred</span>
+    <span class="k">assert</span> <span class="n">version</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;0.7.0&quot;</span><span class="p">,</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span> <span class="s2">&quot;1.0.1&quot;</span><span class="p">],</span> <span class="s2">&quot;Incompatible Julia version&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_run_wrapper</span><span class="p">([</span><span class="s1">&#39;julia&#39;</span><span class="p">,</span> <span class="s1">&#39;-v&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;julia version&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;modulecmd&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;Julia/</span><span class="si">{version:s}</span><span class="s1">&#39;</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_run_wrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="n">exec</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>  <span class="c1"># this line is what ACTUALLY executes the module load</span>
     <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="construct_command_dictionary"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.construct_command_dictionary">[docs]</a><span class="k">def</span> <span class="nf">construct_command_dictionary</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
-    <span class="n">julia</span> <span class="o">=</span> <span class="s2">&quot;julia /home/ngraymon/julia_confirm/VibronicToolkit.jl/bin/&quot;</span>
-    <span class="n">a_c</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;analytical_coupled.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2">&quot;</span>
-    <span class="n">a_s</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;analytical_sampling.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2">&quot;</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;sos.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2"> --basis-size </span><span class="si">{B:}</span><span class="s2">&quot;</span>
-    <span class="n">t</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;trotter.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2"> --basis-size </span><span class="si">{B:}</span><span class="s2"> --num-links </span><span class="si">{P:}</span><span class="s2">&quot;</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">julia</span> <span class="o">+</span> <span class="s2">&quot;sampling.jl --conf </span><span class="si">{F:}</span><span class="s2"> --beta </span><span class="si">{T:}</span><span class="s2"> --num-links </span><span class="si">{P:}</span><span class="s2"> --num-samples </span><span class="si">{X:}</span><span class="s2">&quot;</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;analytical_coupled&quot;</span><span class="p">:</span> <span class="n">a_c</span><span class="p">,</span> <span class="s2">&quot;analytical_sampling&quot;</span><span class="p">:</span> <span class="n">a_s</span><span class="p">,</span> <span class="s2">&quot;sos&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span> <span class="s2">&quot;trotter&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">}</span></div>
+
+    <span class="n">prepare_julia</span><span class="p">()</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;julia&#39;</span><span class="p">,</span> <span class="s1">&#39;-e&#39;</span><span class="p">,</span> <span class="s1">&#39;import VibronicToolkit; print(pathof(VibronicToolkit))&#39;</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_run_wrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">stderr</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{result.stderr}</span><span class="s2"> happened!&quot;</span>
+
+    <span class="n">path_root_jl_file</span> <span class="o">=</span> <span class="n">realpath</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>  <span class="c1"># get the path to */src/*.jl</span>
+    <span class="n">path_root_folder</span> <span class="o">=</span> <span class="n">dirname</span><span class="p">(</span><span class="n">dirname</span><span class="p">(</span><span class="n">path_root_jl_file</span><span class="p">))</span>  <span class="c1"># go up 2 directories</span>
+    <span class="n">path_bin</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">path_root_folder</span><span class="p">,</span> <span class="s2">&quot;pibronic_bin&quot;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span>  <span class="c1"># the path to */bin/</span>
+
+    <span class="n">j_path</span> <span class="o">=</span> <span class="s2">&quot;julia &quot;</span> <span class="o">+</span> <span class="n">path_bin</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+         <span class="s2">&quot;analytical coupled&quot;</span><span class="p">:</span>
+         <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j_path</span> <span class="o">+</span> <span class="s2">&quot;analytical.jl&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--conf </span><span class="si">{F:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--beta </span><span class="si">{T:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--uncoupled&quot;</span><span class="p">,</span>
+                   <span class="p">]),</span>
+         <span class="s2">&quot;analytical uncoupled&quot;</span><span class="p">:</span>
+         <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j_path</span> <span class="o">+</span> <span class="s2">&quot;analytical.jl&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--conf </span><span class="si">{F:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--beta </span><span class="si">{T:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="p">]),</span>
+         <span class="s2">&quot;sos&quot;</span><span class="p">:</span>
+         <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j_path</span> <span class="o">+</span> <span class="s2">&quot;sos.jl&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--conf </span><span class="si">{F:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--beta </span><span class="si">{T:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--basis-size </span><span class="si">{B:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="p">]),</span>
+         <span class="s2">&quot;trotter&quot;</span><span class="p">:</span>
+         <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j_path</span> <span class="o">+</span> <span class="s2">&quot;trotter.jl&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;--conf </span><span class="si">{F:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--beta </span><span class="si">{T:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--basis-size </span><span class="si">{B:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--num-links </span><span class="si">{P:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="p">]),</span>
+         <span class="c1"># if --sampling-conf is not provided the diagonal of the Hamiltonian is used by default</span>
+         <span class="s2">&quot;sampling&quot;</span><span class="p">:</span>
+         <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j_path</span> <span class="o">+</span> <span class="s2">&quot;sampling.jl&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--conf </span><span class="si">{F:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--beta </span><span class="si">{T:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--num-links </span><span class="si">{P:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--num-samples </span><span class="si">{X:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="c1"># &quot;--sampling-conf {:}&quot;,</span>
+                   <span class="p">]),</span>
+         <span class="s2">&quot;finite difference sampling&quot;</span><span class="p">:</span>
+         <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j_path</span> <span class="o">+</span> <span class="s2">&quot;sampling.jl&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--conf </span><span class="si">{F:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--beta </span><span class="si">{T:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--num-links </span><span class="si">{P:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--num-samples </span><span class="si">{X:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--dbeta </span><span class="si">{:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--sampling-beta </span><span class="si">{:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--samplings-conf </span><span class="si">{:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="p">]),</span>
+         <span class="s2">&quot;iterative&quot;</span><span class="p">:</span>
+         <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j_path</span> <span class="o">+</span> <span class="s2">&quot;iterative_decomposition.jl&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;--conf </span><span class="si">{F:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--max-iter </span><span class="si">{N:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--out-conf </span><span class="si">{P:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;--out-vs </span><span class="si">{VS:}</span><span class="s2">&quot;</span><span class="p">,</span>
+                   <span class="p">]),</span>
+         <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../pibronic.html#pibronic.julia_wrapper.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;main function for testing or using from the command line&quot;&quot;&quot;</span>
+
+    <span class="c1"># parse input, and set any default values</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">)</span>
+    <span class="n">id_data</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id_data&#39;</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span>
+    <span class="n">id_rho</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id_rho&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">temperature</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;temperature&#39;</span><span class="p">,</span> <span class="mf">300.00</span><span class="p">)</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+    <span class="n">nbeads</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;beads&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="n">basis_size</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;basis_size&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;method&#39;</span><span class="p">,</span> <span class="s1">&#39;iterate&#39;</span><span class="p">)</span>
+
+    <span class="c1"># generate the file structure object</span>
+    <span class="n">FS</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">)</span>
+    <span class="n">FS</span><span class="o">.</span><span class="n">generate_model_hashes</span><span class="p">()</span>
+
+    <span class="c1"># execute the specified (or default) method</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;iterate&quot;</span><span class="p">:</span>
+        <span class="n">iterate_method</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;analytical_original&quot;</span><span class="p">:</span>
+        <span class="n">analytic_of_original_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;analytical_sampling&quot;</span><span class="p">:</span>
+        <span class="n">analytic_of_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;trotter_coupled&quot;</span><span class="p">:</span>
+        <span class="n">trotter_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">nbeads</span><span class="o">=</span><span class="n">nbeads</span><span class="p">,</span> <span class="n">basis_size</span><span class="o">=</span><span class="n">basis_size</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;sos&quot;</span><span class="p">:</span>
+        <span class="n">sos_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">basis_size</span><span class="o">=</span><span class="n">basis_size</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;The provided method </span><span class="si">{method}</span><span class="s2"> has not been added to the </span><span class="se">\</span>
+<span class="s2">                         if/elif statement in the main() function of julia_wrapper.py&quot;</span><span class="p">)</span></div>
 
 
 <span class="k">if</span> <span class="p">(</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;x&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;call from the command line&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the root directory where the calculation will occur&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-t&#39;</span><span class="p">,</span> <span class="s1">&#39;--temperature&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">300.00</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Temperature in Kelvin&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--beta&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Beta value&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="s1">&#39;--id_data&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Data set id number&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-r&#39;</span><span class="p">,</span> <span class="s1">&#39;--id_rho&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Rho id number&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--nbeads&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of beads if calling a sampling method&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-B&#39;</span><span class="p">,</span> <span class="s1">&#39;--basis_size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of basis functions if calling a trotter/sos method&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--method&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify a certain method&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="s2">&quot;wrong number of args&quot;</span>
-    <span class="k">assert</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;rho id is invalid&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">id_rho</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;rho id must be &gt;= 0&quot;</span><span class="p">)</span>
 
-    <span class="n">temperature</span> <span class="o">=</span> <span class="mf">300.0</span> <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
-    <span class="n">beta</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">temperature</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">beta</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Cannot provide both a temperature and a beta value&quot;</span><span class="p">)</span>
 
-    <span class="n">prepare_julia</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">temperature</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">temperature</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Temperature must be &gt; 0.0&quot;</span><span class="p">)</span>
 
-    <span class="n">cmd_dict</span> <span class="o">=</span> <span class="n">construct_command_dictionary</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">nbeads</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="ow">and</span> <span class="s1">&#39;sampling&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Number of beads should only be specified if using a sampling method&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">nbeads</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Number of beads must be &gt;= 3&quot;</span><span class="p">)</span>
 
-    <span class="n">path_root</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">id_data</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-    <span class="n">id_rho</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">basis_size</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="ow">and</span> <span class="p">(</span><span class="s1">&#39;trotter&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="ow">and</span> <span class="s1">&#39;sos&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Basis size should only be specified if using a trotter/sos method&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">basis_size</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Basis size must be &gt;= 2&quot;</span><span class="p">)</span>
 
-    <span class="n">FS</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">FileStructure</span><span class="p">(</span><span class="n">path_root</span><span class="p">,</span> <span class="n">id_data</span><span class="p">,</span> <span class="n">id_rho</span><span class="p">)</span>
-    <span class="n">FS</span><span class="o">.</span><span class="n">generate_model_hashes</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">:</span>
+        <span class="n">cmd_dict</span> <span class="o">=</span> <span class="n">construct_command_dictionary</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cmd_dict</span><span class="p">:</span>
+            <span class="n">valid_methods</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cmd_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;Provided method </span><span class="si">{args.method}</span><span class="s2"> is not one of the valid methods:</span><span class="se">\n</span><span class="si">{valid_methods}</span><span class="s2">&quot;</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
 
-    <span class="c1"># analytic_of_original_coupled_model(FS, cmd_dict[&quot;analytical_coupled&quot;], beta)</span>
-    <span class="n">analytic_of_sampling_model</span><span class="p">(</span><span class="n">FS</span><span class="p">,</span> <span class="n">cmd_dict</span><span class="p">[</span><span class="s2">&quot;analytical_sampling&quot;</span><span class="p">],</span> <span class="n">beta</span><span class="p">)</span>
-    <span class="c1"># sos_of_coupled_model(FS, cmd_dict[&quot;sos&quot;], beta)</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">main</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 
           </div>
@@ -227,7 +489,23 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../index.html">Documentation overview</a><ul>
@@ -256,7 +534,7 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>

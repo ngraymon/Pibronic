@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pibronic.pimc.pimc &#8212; Pibronic 0.1.2 documentation</title>
+    <title>pibronic.pimc.pimc &#8212; Pibronic 0.3.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -56,8 +56,6 @@
 <span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">hbar</span>
 <span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_structure</span>
 <span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">file_name</span>  <span class="c1"># do we need this?</span>
-<span class="c1"># from ..data import vibronic_model_io as vIO</span>
-<span class="c1"># from ..data.vibronic_model_keys import VibronicModelKeys as VMK</span>
 <span class="kn">from</span> <span class="nn">..vibronic</span> <span class="k">import</span> <span class="n">vIO</span><span class="p">,</span> <span class="n">VMK</span>
 <span class="c1"># from ..server import job_boss</span>
 <span class="kn">from</span> <span class="nn">..server.server</span> <span class="k">import</span> <span class="n">ServerExecutionParameters</span> <span class="k">as</span> <span class="n">SEP</span>
@@ -94,7 +92,7 @@
 
 
 <span class="k">class</span> <span class="nc">TemperatureDependentClass</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;store temperture dependent constants here&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;store temperature dependent constants here&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">tau</span><span class="p">):</span>
         <span class="c1"># construct the coth and csch tensors</span>
         <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">omega</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;AN&#39;</span><span class="p">])</span>
@@ -194,7 +192,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">beta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">tau</span>
 
-        <span class="c1"># model paramters</span>
+        <span class="c1"># model parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;AA&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;NAA&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
@@ -317,7 +315,7 @@
         <span class="k">return</span>
 
 <div class="viewcode-block" id="ModelSampling.load_model"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filePath</span><span class="p">):</span>
-        <span class="n">newStates</span><span class="p">,</span> <span class="n">sameModes</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_sampling_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">filePath</span><span class="p">)</span>
+        <span class="n">newStates</span><span class="p">,</span> <span class="n">sameModes</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_diagonal_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">filePath</span><span class="p">)</span>
 
         <span class="c1"># replace the vibronic models state size with rho&#39;s state size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="n">newStates</span>
@@ -328,7 +326,7 @@
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">size_list</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="p">[</span><span class="n">letter</span><span class="p">]</span> <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">key</span><span class="p">])</span>
 
-        <span class="c1"># model paramters</span>
+        <span class="c1"># model parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;NA&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
@@ -350,7 +348,7 @@
         <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span>
         <span class="c1"># print(kwargs[VMK.G1], &quot;\n&quot;, self.linear)</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">G2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span>
-        <span class="n">vIO</span><span class="o">.</span><span class="n">load_sample_from_JSON</span><span class="p">(</span><span class="n">filePath</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">vIO</span><span class="o">.</span><span class="n">load_diagonal_model_from_JSON</span><span class="p">(</span><span class="n">filePath</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modes</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">N</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">A</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">VMK</span><span class="o">.</span><span class="n">E</span><span class="p">]</span>
@@ -376,7 +374,6 @@
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="ModelSampling.compute_weight_for_each_state"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.compute_weight_for_each_state">[docs]</a>    <span class="k">def</span> <span class="nf">compute_weight_for_each_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="sd">&quot;&quot;&quot;these are the weights for the oscillators associated with each state&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_weight</span><span class="p">))</span>
         <span class="c1"># self.state_weight /= 2. * np.prod(np.sinh((self.beta * self.omega) / 2.))</span>
@@ -386,7 +383,6 @@
 
         <span class="c1"># normalize the weights</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span><span class="p">)</span>
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="ModelSampling.optimize_energy"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.optimize_energy">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -415,6 +411,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">[:,</span> <span class="n">a</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span>
             <span class="c1"># then we remove it from the calculation</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">[:,</span> <span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="c1"># this value should not be used after this point</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">energy</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="ModelSampling.compute_sampling_constants"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.ModelSampling.compute_sampling_constants">[docs]</a>    <span class="k">def</span> <span class="nf">compute_sampling_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
@@ -425,35 +423,19 @@
                                                <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state_weight</span>
                                                <span class="p">)</span>
 
+        <span class="kn">import</span> <span class="nn">collections</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="mf">1E6</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sample sources&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_sources</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_sources</span><span class="p">))</span>
+
         <span class="c1"># the ordered offsets for multiple surfaces</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_shift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_sources</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="c1"># calculate the means of each gaussian</span>
+        <span class="c1"># calculate the means of each Gaussian</span>
 
         <span class="c1"># inverse_covariance_matrix = 2. * coth_tensor[:, :, NEW] - sch_tensor[:, :, NEW] * O_eigvals[NEW, NEW, :]</span>
         <span class="c1"># inverse_covariance_matrix = 2. * self.const.coth[..., NEW] - self.const.csch[..., NEW] * data.circulant_eigvals[NEW, NEW, ...]</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">inverse_covariance</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">const</span><span class="o">.</span><span class="n">cothANP</span>
                                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">const</span><span class="o">.</span><span class="n">cschANP</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">circulant_eigvals</span><span class="p">)</span>
-        <span class="c1"># print(data.circulant_eigvects.T)</span>
-        <span class="c1"># print(  &quot;Mode 1 &quot;,</span>
-        <span class="c1">#         self.inverse_covariance[0,0,-1],</span>
-        <span class="c1">#         np.sqrt(self.inverse_covariance[0,0,-1]),</span>
-        <span class="c1">#         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])),</span>
-        <span class="c1">#         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size[&#39;P&#39;][0]),</span>
-        <span class="c1">#         6*(np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size[&#39;P&#39;][0])),</span>
-        <span class="c1">#         np.divide(1., np.sqrt(self.inverse_covariance[0,0,-1])) / np.sqrt(self.size[&#39;P&#39;][0]/ 20),</span>
-        <span class="c1">#         sep=&quot;\n&quot;,</span>
-        <span class="c1">#     )</span>
-        <span class="c1"># print(  &quot;Mode 2 &quot;,</span>
-        <span class="c1">#         self.inverse_covariance[0,1,-1],</span>
-        <span class="c1">#         np.sqrt(self.inverse_covariance[0,1,-1]),</span>
-        <span class="c1">#         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])),</span>
-        <span class="c1">#         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size[&#39;P&#39;][0]),</span>
-        <span class="c1">#         6*(np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size[&#39;P&#39;][0])),</span>
-        <span class="c1">#         np.divide(1., np.sqrt(self.inverse_covariance[0,1,-1])) / np.sqrt(self.size[&#39;P&#39;][0] / 20),</span>
-        <span class="c1">#         sep=&quot;\n&quot;,</span>
-        <span class="c1">#     )</span>
-        <span class="c1"># self.self.inverse_covariance -= self.const.cschANP * data.circulant_eigvals</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">standard_deviation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_covariance</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_sources</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;BNP&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="k">return</span></div>
@@ -478,7 +460,7 @@
 
 
 <div class="viewcode-block" id="BoxData"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData">[docs]</a><span class="k">class</span> <span class="nc">BoxData</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;use this to pass execution paramters back and forth between methods&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;use this to pass execution parameters back and forth between methods&quot;&quot;&quot;</span>
     <span class="n">block_size</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">samples</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">blocks</span> <span class="o">=</span> <span class="mi">0</span>
@@ -509,7 +491,7 @@
 
     <span class="c1"># it would probably be better to shuffle this json passing black magic into job boss</span>
     <span class="c1"># perhaps job boss modifies the load_json function before calling it?</span>
-    <span class="c1"># or maybe one of the optional paramters to load_json is the replacement symbol which by default is a colon?</span>
+    <span class="c1"># or maybe one of the optional parameters to load_json is the replacement symbol which by default is a colon?</span>
 
     <span class="c1"># we need to use SOME symbol(semicolon for example)</span>
     <span class="c1"># to allow the string to be treated as a SINGLE environment variable</span>
@@ -517,7 +499,7 @@
     <span class="n">_COMMA_REPLACEMENT</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span>
     <span class="n">_SEPARATORS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_COMMA_REPLACEMENT</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">)</span>
 
-    <span class="c1"># the hash values for the vibronic model and the gaussian mixture distribution</span>
+    <span class="c1"># the hash values for the vibronic model and the Gaussian mixture distribution</span>
     <span class="n">hash_vib</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">hash_rho</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -531,7 +513,7 @@
         <span class="n">data</span><span class="o">.</span><span class="n">path_vib_model</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_vib_model</span>
         <span class="n">data</span><span class="o">.</span><span class="n">path_rho_model</span> <span class="o">=</span> <span class="n">FS</span><span class="o">.</span><span class="n">path_rho_model</span>
 
-        <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_coupled_model</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">vIO</span><span class="o">.</span><span class="n">extract_dimensions_of_model</span><span class="p">(</span><span class="n">FS</span><span class="p">)</span>
         <span class="n">data</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="n">A</span>
         <span class="n">data</span><span class="o">.</span><span class="n">modes</span> <span class="o">=</span> <span class="n">N</span>
 
@@ -675,8 +657,12 @@
 
         <span class="c1"># remove sample dependent normal mode displacement (from sampling model)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">sample_shift</span><span class="p">[</span><span class="n">sample_view</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">states</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qTempTensor</span><span class="p">[:,</span> <span class="n">a</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
         <span class="c1"># add surface dependent normal mode displacement (from vibronic model)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
+        <span class="c1"># self.qTensor -= self.vib.state_shift[NEW, :, :, NEW]</span>
+
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="BoxData.initialize_models"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.initialize_models">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -688,6 +674,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">ModelSampling</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_rho_model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">tempSize</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beads</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qTempTensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tempSize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="BoxData.preprocess"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxData.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -711,11 +700,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">param_dict</span><span class="p">[</span><span class="n">letter</span><span class="p">]</span> <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">key</span><span class="p">])</span>
 
         <span class="c1"># compute constants</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">boltzman</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">beads</span>
 
         <span class="c1"># where we store the transformed samples</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;BANP&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
+        <span class="c1"># self.qTempTensor = None</span>
 
         <span class="c1"># storage for the numerator calculation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;BPAA&#39;</span><span class="p">])</span>
@@ -765,6 +755,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">ModelSampling</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_rho_model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">tempSize</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beads</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qTempTensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tempSize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F64</span><span class="p">)</span>
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="BoxDataPM.preprocess"><a class="viewcode-back" href="../../../pibronic.pimc.html#pibronic.pimc.pimc.BoxDataPM.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1091,7 +1084,7 @@
         <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;The Covariance matrix is not symmetric positive-semidefinite&quot;</span>
         <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
 
-    <span class="c1"># alternatively we can try to compute choleskys decomposition</span>
+    <span class="c1"># alternatively we can try to compute the Cholesky decomposition</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">choleskys</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinAlgError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -1101,15 +1094,15 @@
     <span class="k">return</span>
 
 
-<span class="k">def</span> <span class="nf">scale_o_matricies</span><span class="p">(</span><span class="n">scalingFactor</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;divides the O matricies of the models by the scalingFactor&quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">scale_o_matrices</span><span class="p">(</span><span class="n">scalingFactor</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;divides the O matrices of the models by the scalingFactor&quot;&quot;&quot;</span>
     <span class="n">model_one</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">/=</span> <span class="n">scalingFactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
     <span class="n">model_two</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">/=</span> <span class="n">scalingFactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
     <span class="k">return</span>
 
 
-<span class="k">def</span> <span class="nf">un_scale_o_matricies</span><span class="p">(</span><span class="n">scalingFactor</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;multiples the O matricies of the models by the scalingFactor&quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">un_scale_o_matrices</span><span class="p">(</span><span class="n">scalingFactor</span><span class="p">,</span> <span class="n">model_one</span><span class="p">,</span> <span class="n">model_two</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;multiples the O matrices of the models by the scalingFactor&quot;&quot;&quot;</span>
     <span class="n">model_one</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">*=</span> <span class="n">scalingFactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
     <span class="n">model_two</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">*=</span> <span class="n">scalingFactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
     <span class="k">return</span>
@@ -1126,11 +1119,19 @@
     <span class="k">return</span>
 
 
-<span class="k">def</span> <span class="nf">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">state_shift</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculates the O matrix of a model, storing the result inside the model object&quot;&quot;&quot;</span>
 
+    <span class="c1"># add surface dependent normal mode displacement (from model)</span>
+    <span class="k">if</span> <span class="n">state_shift</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">-=</span> <span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
+        <span class="n">q1</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">qTempTensor</span> <span class="o">-=</span> <span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
+        <span class="n">q1</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">qTempTensor</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+
     <span class="c1"># name and select the views</span>
-    <span class="n">q1</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+    <span class="c1"># q1 = data.qTensor.view()</span>
     <span class="n">q2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">q1</span><span class="o">.</span><span class="n">view</span><span class="p">(),</span> <span class="n">shift</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
     <span class="n">coth</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">cothBANP</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
@@ -1153,11 +1154,18 @@
 
     <span class="c1"># this only works because omatrix is filled with zeros already</span>
     <span class="n">model</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">*=</span> <span class="n">model</span><span class="o">.</span><span class="n">omatrix_prefactor</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
+
+    <span class="c1"># remove surface dependent normal mode displacement (from model)</span>
+    <span class="k">if</span> <span class="n">state_shift</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">+=</span> <span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">qTempTensor</span> <span class="o">+=</span> <span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
+
     <span class="k">return</span>
 
 
 <span class="k">def</span> <span class="nf">build_denominator</span><span class="p">(</span><span class="n">rho_model</span><span class="p">,</span> <span class="n">outputArray</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Calculates the state trace over the bead product of the o matricies of the rho model&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Calculates the state trace over the bead product of the o matrices of the rho model&quot;&quot;&quot;</span>
     <span class="c1"># outputArray[idx] = rho_model.omatrix.prod(axis=1).sum(axis=1)</span>
     <span class="n">outputArray</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho_model</span><span class="o">.</span><span class="n">omatrix</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
     <span class="k">return</span>
@@ -1167,7 +1175,7 @@
 
     <span class="c1"># ------------------------------------------------------------------------</span>
     <span class="c1"># shift to surface independent co-ordinates</span>
-    <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
+    <span class="c1"># data.qTensor += data.vib.state_shift[NEW, :, :, NEW]</span>
 
     <span class="c1"># build the coupling matrix</span>
     <span class="c1"># quadratic terms</span>
@@ -1183,13 +1191,13 @@
                                       <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span><span class="p">,</span>
                                       <span class="c1"># optimize=&#39;optimal&#39;,  # not clear if this is faster</span>
                                       <span class="p">)</span>
-    <span class="c1"># reference hamiltonian (energy shifts)</span>
+    <span class="c1"># reference Hamiltonian (energy shifts)</span>
     <span class="n">data</span><span class="o">.</span><span class="n">coupling_matrix</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">energy</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
 
     <span class="c1"># print(&quot;V\n&quot;, data.coupling_matrix[0, 0, :, :])</span>
 
     <span class="c1"># shift back to surface dependent co-ordinates</span>
-    <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">-=</span> <span class="n">data</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
+    <span class="c1"># data.qTensor -= data.vib.state_shift[NEW, :, :, NEW]</span>
     <span class="c1"># ------------------------------------------------------------------------</span>
 
     <span class="c1"># check that the coupling matrix is symmetric in surfaces</span>
@@ -1207,7 +1215,7 @@
     <span class="c1"># build the M matrix</span>
     <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;abcd, abd, abed-&gt;abce&#39;</span><span class="p">,</span>
               <span class="n">data</span><span class="o">.</span><span class="n">coupling_eigvects</span><span class="p">,</span>
-              <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">data</span><span class="o">.</span><span class="n">tau</span><span class="o">*</span><span class="n">data</span><span class="o">.</span><span class="n">coupling_eigvals</span><span class="p">),</span>
+              <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">data</span><span class="o">.</span><span class="n">tau</span><span class="o">*</span><span class="n">data</span><span class="o">.</span><span class="n">coupling_eigvals</span><span class="p">),</span>  <span class="c1"># replace this part to salis</span>
               <span class="n">data</span><span class="o">.</span><span class="n">coupling_eigvects</span><span class="p">,</span>
               <span class="n">out</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">M_matrix</span><span class="p">,</span>
               <span class="n">optimize</span><span class="o">=</span><span class="s1">&#39;optimal&#39;</span>
@@ -1252,7 +1260,7 @@
 
     <span class="k">for</span> <span class="n">block_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">blocks</span><span class="p">):</span>
 
-        <span class="c1"># indicies</span>
+        <span class="c1"># indices</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">block_index</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">sample_view</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
@@ -1260,11 +1268,11 @@
         <span class="c1"># generate sample points in collective co-ordinates</span>
         <span class="n">data</span><span class="o">.</span><span class="n">draw_sample</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
 
-        <span class="c1"># process the sapmled points</span>
+        <span class="c1"># process the sampled points</span>
         <span class="n">data</span><span class="o">.</span><span class="n">transform_sampled_coordinates</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
 
-        <span class="c1"># build O matricies for system distribution</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
+        <span class="c1"># build O matrices for system distribution</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
 
         <span class="c1"># compute parts with normal scaling factor</span>
         <span class="n">diagonalize_coupling_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -1311,7 +1319,7 @@
 
     <span class="k">for</span> <span class="n">block_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">blocks</span><span class="p">):</span>
 
-        <span class="c1"># indicies</span>
+        <span class="c1"># indices</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">block_index</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">sample_view</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
@@ -1321,8 +1329,8 @@
         <span class="c1"># we transform the dimensionless co-ordinates to surface dependent co-ordinates q = R - d</span>
         <span class="n">data</span><span class="o">.</span><span class="n">qTensor</span> <span class="o">-=</span> <span class="n">data</span><span class="o">.</span><span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">[</span><span class="n">NEW</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">NEW</span><span class="p">]</span>
 
-        <span class="c1"># build O matricies for system distribution</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
+        <span class="c1"># build O matrices for system distribution</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
         <span class="n">build_denominator</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">rho_of_R</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
 
     <span class="c1"># return and let the caller of the function save the results appropriately</span>
@@ -1344,7 +1352,7 @@
 
     <span class="k">for</span> <span class="n">block_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">blocks</span><span class="p">):</span>
 
-        <span class="c1"># indicies</span>
+        <span class="c1"># indices</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">block_index</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">sample_view</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
@@ -1353,8 +1361,8 @@
         <span class="c1"># but which were not sampled from</span>
         <span class="n">data</span><span class="o">.</span><span class="n">generate_random_R_values</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">input_view</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
 
-        <span class="c1"># build O matricies for system distribution</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
+        <span class="c1"># build O matrices for system distribution</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
 
         <span class="c1"># compute parts with normal scaling factor</span>
         <span class="n">diagonalize_coupling_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -1383,7 +1391,7 @@
     <span class="n">S12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;BP&#39;</span><span class="p">])</span>
 
     <span class="k">for</span> <span class="n">block_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">blocks</span><span class="p">):</span>
-        <span class="c1"># indicies</span>
+        <span class="c1"># indices</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">block_index</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">sample_view</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
@@ -1391,17 +1399,17 @@
         <span class="c1"># generate sample points in collective co-ordinates</span>
         <span class="n">data</span><span class="o">.</span><span class="n">draw_sample</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
 
-        <span class="c1"># process the sapmled points</span>
+        <span class="c1"># process the sampled points</span>
         <span class="n">data</span><span class="o">.</span><span class="n">transform_sampled_coordinates</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
 
-        <span class="c1"># build O matricies for sampling distribution</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
-        <span class="c1"># build O matricies for system distribution</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
+        <span class="c1"># build O matrices for sampling distribution</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
+        <span class="c1"># build O matrices for system distribution</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
 
         <span class="c1"># compute parts with normal scaling factor</span>
         <span class="n">build_scaling_factors</span><span class="p">(</span><span class="n">S12</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
-        <span class="n">scale_o_matricies</span><span class="p">(</span><span class="n">S12</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
+        <span class="n">scale_o_matrices</span><span class="p">(</span><span class="n">S12</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
 
         <span class="n">build_denominator</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">y_rho</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
         <span class="n">diagonalize_coupling_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -1439,7 +1447,7 @@
     <span class="c1"># log.info(&quot;Start: {:f}&quot;.format(startTime))</span>
     <span class="k">for</span> <span class="n">block_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">blocks</span><span class="p">):</span>
 
-        <span class="c1"># indicies</span>
+        <span class="c1"># indices</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">block_index</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">block_size</span>
         <span class="n">sample_view</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
@@ -1447,28 +1455,31 @@
         <span class="c1"># generate sample points in collective co-ordinates</span>
         <span class="n">data</span><span class="o">.</span><span class="n">draw_sample</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
 
-        <span class="c1"># process the sapmled points</span>
+        <span class="c1"># process the sampled points</span>
+        <span class="c1"># print(data.qTensor.shape)</span>
         <span class="n">data</span><span class="o">.</span><span class="n">transform_sampled_coordinates</span><span class="p">(</span><span class="n">sample_view</span><span class="p">)</span>
+        <span class="c1"># print(np.allclose(data.qTensor[:,0,:,:],data.qTensor[:,1,:,:]))</span>
+        <span class="c1"># print(data.qTensor.shape)</span>
 
-        <span class="c1"># build O matricies for sampling distribution</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
-        <span class="c1"># build O matricies for system distribution</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
+        <span class="c1"># build O matrices for sampling distribution</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
+        <span class="c1"># build O matrices for system distribution</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
 
         <span class="c1"># compute parts with normal scaling factor</span>
         <span class="n">build_scaling_factors</span><span class="p">(</span><span class="n">S12</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
-        <span class="n">scale_o_matricies</span><span class="p">(</span><span class="n">S12</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
+        <span class="n">scale_o_matrices</span><span class="p">(</span><span class="n">S12</span><span class="p">,</span> <span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">)</span>
         <span class="n">build_denominator</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">y_rho</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
         <span class="n">diagonalize_coupling_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">build_numerator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const</span><span class="p">,</span> <span class="n">y_g</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
 
         <span class="c1"># Plus</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const_plus</span><span class="p">)</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const_plus</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
         <span class="n">vib</span><span class="o">.</span><span class="n">const_plus</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">/=</span> <span class="n">S12</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
         <span class="n">build_numerator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const_plus</span><span class="p">,</span> <span class="n">y_gp</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
 
         <span class="c1"># Minus</span>
-        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const_minus</span><span class="p">)</span>
+        <span class="n">build_o_matrix</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const_minus</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">state_shift</span><span class="p">)</span>
         <span class="n">vib</span><span class="o">.</span><span class="n">const_minus</span><span class="o">.</span><span class="n">omatrix</span> <span class="o">/=</span> <span class="n">S12</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NEW</span><span class="p">,</span> <span class="n">NEW</span><span class="p">]</span>
         <span class="n">build_numerator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vib</span><span class="o">.</span><span class="n">const_minus</span><span class="p">,</span> <span class="n">y_gm</span><span class="p">,</span> <span class="n">sample_view</span><span class="p">)</span>
 
@@ -1568,7 +1579,23 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Pibronic</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pibronic.html">pibronic package</a></li>
+</ul>
+
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
@@ -1597,7 +1624,7 @@
       &copy;2018, Neil Raymond.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
     </div>
