@@ -19,7 +19,16 @@ coverage:
     changes: off
 
 ignore:
+  # testing the electronic structure code has very low priority
   - "pibronic/vibronic/orthonormal/sequences.py"
+  - "pibronic/vibronic/electronic_structure.py"
+  - "pibronic/vibronic/model_auto.py"
+  - "pibronic/vibronic/model_op.py"
+  - "pibronic/vibronic/model_h.py"
+  # testing the code which draws code also has low priority
+  - "pibronic/plotting/plotting.py"
+  - "pibronic/plotting/grid_plots.py"
+
 
 parsers:
   gcov:
